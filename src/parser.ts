@@ -103,7 +103,7 @@ export class Parser {
   }
 
   private doctype(): Node.Node {
-    if (this.match("<!doctype")) {
+    if (this.match("<!doctype") || this.match("<!DOCTYPE")) {
       const start = this.current;
       do {
         this.advance();
