@@ -85,43 +85,45 @@ export class Parser {
 
   private node(): Node.Node {
     this.whitespace();
-    const node = this.comment();
+    let node: Node.Node;
+
+    if (this.match("</")) {
+      this.error("Unexpected closing tag");
+    }
+
+    if (this.match("<!--")) {
+      node = this.comment();
+    } else if (this.match("<!doctype") || this.match("<!DOCTYPE")) {
+      node = this.doctype();
+    } else if (this.match("<")) {
+      node = this.element();
+    } else {
+      node = this.text();
+    }
+
     this.whitespace();
     return node;
   }
 
   private comment(): Node.Node {
-    if (this.match("<!--")) {
-      const start = this.current;
-      do {
-        this.advance();
-      } while (!this.match(`-->`));
-      const comment = this.source.slice(start, this.current - 3);
-      return new Node.Comment(comment, this.line);
-    }
-    return this.doctype();
+    const start = this.current;
+    do {
+      this.advance();
+    } while (!this.match(`-->`));
+    const comment = this.source.slice(start, this.current - 3);
+    return new Node.Comment(comment, this.line);
   }
 
   private doctype(): Node.Node {
-    if (this.match("<!doctype") || this.match("<!DOCTYPE")) {
-      const start = this.current;
-      do {
-        this.advance();
-      } while (!this.match(`>`));
-      const doctype = this.source.slice(start, this.current - 1).trim();
-      return new Node.Doctype(doctype, this.line);
-    }
-    return this.element();
+    const start = this.current;
+    do {
+      this.advance();
+    } while (!this.match(`>`));
+    const doctype = this.source.slice(start, this.current - 1).trim();
+    return new Node.Doctype(doctype, this.line);
   }
 
   private element(): Node.Node {
-    if (this.match("</")) {
-      this.error("Unexpected closing tag");
-    }
-    if (!this.match("<")) {
-      return this.text();
-    }
-
     const name = this.identifier("/", ">");
     if (!name) {
       this.error("Expected a tag name");
@@ -141,6 +143,9 @@ export class Parser {
     }
 
     let children: Node.Node[] = [];
+
+    this.whitespace();
+
     if (!this.peek("</")) {
       children = this.children(name);
     }

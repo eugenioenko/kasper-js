@@ -21,20 +21,11 @@ describe("kasper interpreter", () => {
       flag: "r",
     });
 
-    // const parsed = kasper.parse(source);
+    const parsed = kasper.parse(source);
 
-    //expect(parsed).toEqual(target);
-    const parsed = kasper
-      .parse(source)
-      .replace(/,"line"\:\d+/g, "")
-      .split("},{");
-    const origin = target.replace(/,"line"\:\d+/g, "").split("},{");
-
-    for (let i = 0; i < parsed.length; ++i) {
-      expect(parsed[i]).toEqual(origin[i]);
-    }
+    expect(parsed).toEqual(target);
   });
-  /*
+
   it("kasper parses a file with random white spaces", () => {
     const source = fs.readFileSync(__dirname + "/samples/sample2.html", {
       encoding: "utf8",
@@ -50,5 +41,5 @@ describe("kasper interpreter", () => {
     for (let i = 0; i < parsed.length; ++i) {
       expect(parsed[i]).toEqual(origin[i]);
     }
-  });*/
+  });
 });
