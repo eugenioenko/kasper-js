@@ -108,7 +108,7 @@ export class Parser {
       do {
         this.advance();
       } while (!this.match(`>`));
-      const doctype = this.source.slice(start, this.current - 1);
+      const doctype = this.source.slice(start, this.current - 1).trim();
       return new Node.Doctype(doctype, this.line);
     }
     return this.element();
