@@ -1,6 +1,6 @@
 import { KasperError } from "./error";
 import * as Node from "./nodes";
-import { isAlphaNumeric, SelfClosingTags, WhiteSpaces } from "./utils";
+import { SelfClosingTags, WhiteSpaces } from "./utils";
 
 export class Parser {
   public current: number;
@@ -35,7 +35,6 @@ export class Parser {
             return this.nodes;
           }
         }
-        this.synchronize();
       }
     }
     this.source = "";
@@ -84,14 +83,11 @@ export class Parser {
     throw new KasperError(message, this.line, this.col);
   }
 
-  private synchronize(): void {
-    do {
-      this.advance();
-    } while (!this.eof());
-  }
-
   private node(): Node.Node {
-    return this.comment();
+    this.whitespace();
+    const node = this.comment();
+    this.whitespace();
+    return node;
   }
 
   private comment(): Node.Node {
@@ -120,7 +116,6 @@ export class Parser {
 
   private element(): Node.Node {
     if (this.match("</")) {
-      debugger;
       this.error("Unexpected closing tag");
     }
     if (!this.match("<")) {
@@ -129,43 +124,45 @@ export class Parser {
 
     const name = this.identifier("/", ">");
     if (!name) {
-      debugger;
-      this.error("Expected tag name");
+      this.error("Expected a tag name");
     }
+
     const attributes = this.attributes();
+
     if (
       this.match("/>") ||
       (SelfClosingTags.includes(name) && this.match(">"))
     ) {
       return new Node.Element(name, attributes, [], this.line);
     }
+
     if (!this.match(">")) {
       this.error("Expected closing tag");
     }
+
     let children: Node.Node[] = [];
-    if (this.match(`</`)) {
-      this.whitespace();
-    } else {
+    if (!this.peek("</")) {
       children = this.children(name);
     }
+
     this.close(name);
     return new Node.Element(name, attributes, children, this.line);
   }
 
   private close(name: string): void {
+    if (!this.match("</")) {
+      this.error(`Expected </${name}>`);
+    }
     if (!this.match(`${name}`)) {
-      debugger;
       this.error(`Expected </${name}>`);
     }
     this.whitespace();
     if (!this.match(">")) {
-      debugger;
       this.error(`Expected </${name}>`);
     }
   }
 
   private children(parent: string): Node.Node[] {
-    this.whitespace();
     const children: Node.Node[] = [];
     do {
       if (this.eof()) {
@@ -176,9 +173,35 @@ export class Parser {
         continue;
       }
       children.push(node);
-    } while (!this.match(`</`));
-    this.whitespace();
+    } while (!this.peek(`</`));
+
     return children;
+  }
+
+  private attributes(): Node.Attribute[] {
+    const attributes: Node.Attribute[] = [];
+    while (!this.peek(">", "/>") && !this.eof()) {
+      this.whitespace();
+      const name = this.identifier("=", ">", "/>");
+      if (!name) {
+        debugger;
+      }
+      this.whitespace();
+      let value = "";
+      if (this.match("=")) {
+        this.whitespace();
+        if (this.match("'")) {
+          value = this.string("'");
+        } else if (this.match('"')) {
+          value = this.string('"');
+        } else {
+          value = this.identifier(">", "/>");
+        }
+      }
+      this.whitespace();
+      attributes.push(new Node.Attribute(name, value, this.line));
+    }
+    return attributes;
   }
 
   private text(): Node.Node {
@@ -219,31 +242,5 @@ export class Parser {
       this.advance();
     }
     return this.source.slice(start, this.current - 1);
-  }
-
-  private attributes(): Node.Attribute[] {
-    const attributes: Node.Attribute[] = [];
-    while (!this.peek(">", "/>") && !this.eof()) {
-      this.whitespace();
-      const name = this.identifier("=", ">", "/>");
-      if (!name) {
-        debugger;
-      }
-      this.whitespace();
-      let value = "";
-      if (this.match("=")) {
-        this.whitespace();
-        if (this.match("'")) {
-          value = this.string("'");
-        } else if (this.match('"')) {
-          value = this.string('"');
-        } else {
-          value = this.identifier(">", "/>");
-        }
-      }
-      this.whitespace();
-      attributes.push(new Node.Attribute(name, value, this.line));
-    }
-    return attributes;
   }
 }
