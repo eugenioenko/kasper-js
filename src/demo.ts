@@ -6,7 +6,7 @@ export const DemoSource1 = `
 <input type=checkbox value =    something />
 </body>
 `;
-export const DemoSource = `<!DOCTYPE html>\n
+export const DemoSource = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">

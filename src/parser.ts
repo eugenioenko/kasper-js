@@ -124,6 +124,7 @@ export class Parser {
   }
 
   private element(): Node.Node {
+    const line = this.line;
     const name = this.identifier("/", ">");
     if (!name) {
       this.error("Expected a tag name");
@@ -143,15 +144,13 @@ export class Parser {
     }
 
     let children: Node.Node[] = [];
-
     this.whitespace();
-
     if (!this.peek("</")) {
       children = this.children(name);
     }
 
     this.close(name);
-    return new Node.Element(name, attributes, children, this.line);
+    return new Node.Element(name, attributes, children, line);
   }
 
   private close(name: string): void {
@@ -187,9 +186,10 @@ export class Parser {
     const attributes: Node.Attribute[] = [];
     while (!this.peek(">", "/>") && !this.eof()) {
       this.whitespace();
+      const line = this.line;
       const name = this.identifier("=", ">", "/>");
       if (!name) {
-        debugger;
+        this.error("Blank attribute name");
       }
       this.whitespace();
       let value = "";
@@ -204,13 +204,14 @@ export class Parser {
         }
       }
       this.whitespace();
-      attributes.push(new Node.Attribute(name, value, this.line));
+      attributes.push(new Node.Attribute(name, value, line));
     }
     return attributes;
   }
 
   private text(): Node.Node {
     const start = this.current;
+    const line = this.line;
     while (!this.peek("<") && !this.eof()) {
       this.advance();
     }
@@ -218,7 +219,7 @@ export class Parser {
     if (!text) {
       return null;
     }
-    return new Node.Text(text, this.line);
+    return new Node.Text(text, line);
   }
 
   private whitespace(): number {
