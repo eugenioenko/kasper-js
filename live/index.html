@@ -105,7 +105,6 @@
         const source = editor.getValue();
         const result = kasper.execute(source);
         output.setValue(result.split("},{").join("},\n{"));
-        console.log(result);
       });
     </script>
   </body>

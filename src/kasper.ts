@@ -26,9 +26,8 @@ if (typeof window !== "undefined") {
     execute,
     parse,
   };
-} else {
-  exports.kasper = {
-    execute,
-    parse,
-  };
 }
+exports.kasper = {
+  execute,
+  parse,
+};

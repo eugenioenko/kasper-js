@@ -4,12 +4,13 @@
   "description": "A javascript template parser",
   "main": "index.js",
   "scripts": {
-    "start": "npx webpack",
+    "start": "npx webpack --config webpack.config.js",
     "build": "webpack --config webpack.prod.js",
     "lint": "npx tslint -c tslint.json 'src/*.ts'",
     "generator": "node tools/generator.js",
     "cli": "node dist/@script",
-    "test": "jasmine"
+    "test": "jasmine",
+    "testprod": "env NODE_ENV=production jasmine"
   },
   "keywords": [
     "javascript",
@@ -18,6 +19,7 @@
   "author": "eugenioenko",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^17.0.0",
     "jasmine": "^3.10.0",
     "terser-webpack-plugin": "^1.2.3",
     "ts-loader": "^5.3.3",
