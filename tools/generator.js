@@ -1,7 +1,12 @@
 let fs = require("fs");
 
 const NodeAST = {
-  Element: ["name: string", "attributes: Node[]", "children: Node[]"],
+  Element: [
+    "name: string",
+    "attributes: Node[]",
+    "children: Node[]",
+    "self: boolean",
+  ],
   Attribute: ["name: string", "value: string"],
   Text: ["value: string"],
   Comment: ["value: string"],

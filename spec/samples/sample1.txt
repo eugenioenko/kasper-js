@@ -489,14 +489,14 @@ P R E F O R M A T T E D T E X T
           </article>
           <article id="embedded__audio">
             <header><h2>Audio</h2></header>
-            <div><audio controls="">audio</audio></div>
+            <div><audio controls>audio</audio></div>
             <footer>
               <p><a href="#top">[Top]</a></p>
             </footer>
           </article>
           <article id="embedded__video">
             <header><h2>Video</h2></header>
-            <div><video controls="">video</video></div>
+            <div><video controls>video</video></div>
             <footer>
               <p><a href="#top">[Top]</a></p>
             </footer>
