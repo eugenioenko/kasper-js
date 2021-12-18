@@ -1,5 +1,6 @@
 import { DemoSource } from "./demo";
 import { Parser } from "./parser";
+import { Viewer } from "./viewer";
 
 export function execute(source: string): string {
   const parser = new Parser();
@@ -8,6 +9,12 @@ export function execute(source: string): string {
     return JSON.stringify(parser.errors);
   }
   const result = JSON.stringify(nodes);
+  try {
+    const texts = new Viewer().transpile(nodes);
+    console.log(texts);
+  } catch {
+    console.log("error on viewer");
+  }
   return result;
 }
 
@@ -21,13 +28,15 @@ export function parse(source: string): string {
 }
 
 if (typeof window !== "undefined") {
-  (window as any).kasper = {
+  ((window as any) || {}).kasper = {
     demoSourceCode: DemoSource,
     execute,
     parse,
   };
 }
-exports.kasper = {
-  execute,
-  parse,
-};
+if (typeof exports !== "undefined") {
+  exports.kasper = {
+    execute,
+    parse,
+  };
+}
