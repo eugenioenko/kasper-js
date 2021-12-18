@@ -8,7 +8,8 @@
     "build": "webpack --config webpack.prod.js",
     "lint": "npx tslint -c tslint.json 'src/*.ts'",
     "generator": "node tools/generator.js",
-    "cli": "node dist/@script"
+    "cli": "node dist/@script",
+    "test": "jasmine"
   },
   "keywords": [
     "javascript",
@@ -17,14 +18,12 @@
   "author": "eugenioenko",
   "license": "MIT",
   "devDependencies": {
+    "jasmine": "^3.10.0",
     "terser-webpack-plugin": "^1.2.3",
     "ts-loader": "^5.3.3",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3333",
     "webpack": "^4.29.5",
     "webpack-cli": "^3.2.3"
-  },
-  "dependencies": {
-    "@types/node": "^12.12.3"
   }
 }

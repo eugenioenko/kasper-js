@@ -1,6 +1,6 @@
 import { KasperError } from "./error";
 import * as Node from "./nodes";
-import { isAlphaNumeric, SelfClosingTags, WhiteSpaces } from "./utils";
+import { SelfClosingTags, WhiteSpaces } from "./utils";
 
 export class Parser {
   public current: number;
@@ -35,7 +35,7 @@ export class Parser {
             return this.nodes;
           }
         }
-        this.synchronize();
+        break;
       }
     }
     this.source = "";
@@ -52,7 +52,7 @@ export class Parser {
     return false;
   }
 
-  private advance(): void {
+  private advance(eofError: string = ""): void {
     if (!this.eof()) {
       if (this.check("\n")) {
         this.line += 1;
@@ -60,6 +60,8 @@ export class Parser {
       }
       this.col += 1;
       this.current++;
+    } else {
+      this.error(`Unexpected end of file. ${eofError}`);
     }
   }
 
@@ -84,88 +86,90 @@ export class Parser {
     throw new KasperError(message, this.line, this.col);
   }
 
-  private synchronize(): void {
-    do {
-      this.advance();
-    } while (!this.eof());
-  }
-
   private node(): Node.Node {
-    return this.comment();
+    this.whitespace();
+    let node: Node.Node;
+
+    if (this.match("</")) {
+      this.error("Unexpected closing tag");
+    }
+
+    if (this.match("<!--")) {
+      node = this.comment();
+    } else if (this.match("<!doctype") || this.match("<!DOCTYPE")) {
+      node = this.doctype();
+    } else if (this.match("<")) {
+      node = this.element();
+    } else {
+      node = this.text();
+    }
+
+    this.whitespace();
+    return node;
   }
 
   private comment(): Node.Node {
-    if (this.match("<!--")) {
-      const start = this.current;
-      do {
-        this.advance();
-      } while (!this.match(`-->`));
-      const comment = this.source.slice(start, this.current - 3);
-      return new Node.Comment(comment, this.line);
-    }
-    return this.doctype();
+    const start = this.current;
+    do {
+      this.advance("Expected comment closing '-->'");
+    } while (!this.match(`-->`));
+    const comment = this.source.slice(start, this.current - 3);
+    return new Node.Comment(comment, this.line);
   }
 
   private doctype(): Node.Node {
-    if (this.match("<!doctype")) {
-      const start = this.current;
-      do {
-        this.advance();
-      } while (!this.match(`>`));
-      const doctype = this.source.slice(start, this.current - 1);
-      return new Node.Doctype(doctype, this.line);
-    }
-    return this.element();
+    const start = this.current;
+    do {
+      this.advance("Expected closing doctype");
+    } while (!this.match(`>`));
+    const doctype = this.source.slice(start, this.current - 1).trim();
+    return new Node.Doctype(doctype, this.line);
   }
 
   private element(): Node.Node {
-    if (this.match("</")) {
-      debugger;
-      this.error("Unexpected closing tag");
-    }
-    if (!this.match("<")) {
-      return this.text();
-    }
-
+    const line = this.line;
     const name = this.identifier("/", ">");
     if (!name) {
-      debugger;
-      this.error("Expected tag name");
+      this.error("Expected a tag name");
     }
+
     const attributes = this.attributes();
+
     if (
       this.match("/>") ||
       (SelfClosingTags.includes(name) && this.match(">"))
     ) {
       return new Node.Element(name, attributes, [], this.line);
     }
+
     if (!this.match(">")) {
       this.error("Expected closing tag");
     }
+
     let children: Node.Node[] = [];
-    if (this.match(`</`)) {
-      this.whitespace();
-    } else {
+    this.whitespace();
+    if (!this.peek("</")) {
       children = this.children(name);
     }
+
     this.close(name);
-    return new Node.Element(name, attributes, children, this.line);
+    return new Node.Element(name, attributes, children, line);
   }
 
   private close(name: string): void {
+    if (!this.match("</")) {
+      this.error(`Expected </${name}>`);
+    }
     if (!this.match(`${name}`)) {
-      debugger;
       this.error(`Expected </${name}>`);
     }
     this.whitespace();
     if (!this.match(">")) {
-      debugger;
       this.error(`Expected </${name}>`);
     }
   }
 
   private children(parent: string): Node.Node[] {
-    this.whitespace();
     const children: Node.Node[] = [];
     do {
       if (this.eof()) {
@@ -176,58 +180,19 @@ export class Parser {
         continue;
       }
       children.push(node);
-    } while (!this.match(`</`));
-    this.whitespace();
+    } while (!this.peek(`</`));
+
     return children;
-  }
-
-  private text(): Node.Node {
-    const start = this.current;
-    while (!this.peek("<") && !this.eof()) {
-      this.advance();
-    }
-    const text = this.source.slice(start, this.current).trim();
-    if (!text) {
-      return null;
-    }
-    return new Node.Text(text, this.line);
-  }
-
-  private whitespace(): number {
-    let count = 0;
-    while (this.peek(...WhiteSpaces) && !this.eof()) {
-      count += 1;
-      this.advance();
-    }
-    return count;
-  }
-
-  private identifier(...closing: string[]): string {
-    this.whitespace();
-    const start = this.current;
-    while (!this.peek(...WhiteSpaces, ...closing) && !this.eof()) {
-      this.advance();
-    }
-    const end = this.current;
-    this.whitespace();
-    return this.source.slice(start, end).trim();
-  }
-
-  private string(...closing: string[]): string {
-    const start = this.current;
-    while (!this.match(...closing) && !this.eof()) {
-      this.advance();
-    }
-    return this.source.slice(start, this.current - 1);
   }
 
   private attributes(): Node.Attribute[] {
     const attributes: Node.Attribute[] = [];
     while (!this.peek(">", "/>") && !this.eof()) {
       this.whitespace();
+      const line = this.line;
       const name = this.identifier("=", ">", "/>");
       if (!name) {
-        debugger;
+        this.error("Blank attribute name");
       }
       this.whitespace();
       let value = "";
@@ -242,8 +207,49 @@ export class Parser {
         }
       }
       this.whitespace();
-      attributes.push(new Node.Attribute(name, value, this.line));
+      attributes.push(new Node.Attribute(name, value, line));
     }
     return attributes;
+  }
+
+  private text(): Node.Node {
+    const start = this.current;
+    const line = this.line;
+    while (!this.peek("<") && !this.eof()) {
+      this.advance();
+    }
+    const text = this.source.slice(start, this.current).trim();
+    if (!text) {
+      return null;
+    }
+    return new Node.Text(text, line);
+  }
+
+  private whitespace(): number {
+    let count = 0;
+    while (this.peek(...WhiteSpaces) && !this.eof()) {
+      count += 1;
+      this.advance();
+    }
+    return count;
+  }
+
+  private identifier(...closing: string[]): string {
+    this.whitespace();
+    const start = this.current;
+    while (!this.peek(...WhiteSpaces, ...closing)) {
+      this.advance(`Expected closing ${closing}`);
+    }
+    const end = this.current;
+    this.whitespace();
+    return this.source.slice(start, end).trim();
+  }
+
+  private string(closing: string): string {
+    const start = this.current;
+    while (!this.match(closing)) {
+      this.advance(`Expected closing ${closing}`);
+    }
+    return this.source.slice(start, this.current - 1);
   }
 }

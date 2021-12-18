@@ -98,13 +98,14 @@
         return editor;
       }
 
-      const editor = createEditor("editor", demoSourceCode, "html");
+      const editor = createEditor("editor", kasper.demoSourceCode, "html");
       const output = createEditor("output", "output", "json");
 
       document.getElementById("execute").addEventListener("click", () => {
         const source = editor.getValue();
         const result = kasper.execute(source);
         output.setValue(result.split("},{").join("},\n{"));
+        console.log(result);
       });
     </script>
   </body>
