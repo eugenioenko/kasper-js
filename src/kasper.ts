@@ -9,12 +9,7 @@ export function execute(source: string): string {
     return JSON.stringify(parser.errors);
   }
   const result = JSON.stringify(nodes);
-  try {
-    const texts = new Viewer().transpile(nodes);
-    return texts.join("\n");
-  } catch {
-    console.log("error on viewer");
-  }
+  console.log(result);
   return result;
 }
 
@@ -36,6 +31,8 @@ if (typeof window !== "undefined") {
 }
 if (typeof exports !== "undefined") {
   exports.kasper = {
+    Parser,
+    Viewer,
     execute,
     parse,
   };
