@@ -16,7 +16,7 @@ describe("kasper interpreter", () => {
   });
 
   it("kasper parses a file ", () => {
-    const source = fs.readFileSync(__dirname + "/samples/sample1.html", {
+    const source = fs.readFileSync(__dirname + "/samples/sample1.txt", {
       encoding: "utf8",
       flag: "r",
     });
@@ -27,7 +27,7 @@ describe("kasper interpreter", () => {
   });
 
   it("kasper parses a file with random white spaces", () => {
-    const source = fs.readFileSync(__dirname + "/samples/sample2.html", {
+    const source = fs.readFileSync(__dirname + "/samples/sample2.txt", {
       encoding: "utf8",
       flag: "r",
     });
