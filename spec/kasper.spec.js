@@ -5,7 +5,6 @@ const fs = require("fs");
 describe("kasper interpreter", () => {
   let target = "";
   beforeAll(() => {
-    console.log(kasperSrc);
     target = fs.readFileSync(__dirname + "/samples/output.txt", {
       encoding: "utf8",
       flag: "r",
