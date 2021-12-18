@@ -19,6 +19,7 @@
   "author": "eugenioenko",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^17.0.0",
     "jasmine": "^3.10.0",
     "terser-webpack-plugin": "^1.2.3",
     "ts-loader": "^5.3.3",
