@@ -51,11 +51,11 @@ export class Viewer implements KNode.NodeVisitor<string> {
   }
 
   public visitCommentNode(node: KNode.Comment): string {
-    return node.value;
+    return `<!-- ${node.value} -->`;
   }
 
   public visitDoctypeNode(node: KNode.Doctype): string {
-    return `<doctype ${node.value}>`;
+    return `<!doctype ${node.value}>`;
   }
 
   public error(message: string): void {

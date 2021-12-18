@@ -28,8 +28,10 @@ describe("kasper interpreter", () => {
     });
 
     const rendered = kasper.view(source);
-    expect(1).toEqual(1);
-    //expect(rendered.replace(/\s+/g, "")).toEqual(target.replace(/\s+/g, ""));
+
+    expect(rendered.toLowerCase().replace(/\s+/g, "")).toEqual(
+      source.toLowerCase().replace(/\s+/g, "")
+    );
   });
 
   it("kasper parses a file with random white spaces", () => {
