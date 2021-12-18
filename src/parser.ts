@@ -139,7 +139,7 @@ export class Parser {
       this.match("/>") ||
       (SelfClosingTags.includes(name) && this.match(">"))
     ) {
-      return new Node.Element(name, attributes, [], this.line);
+      return new Node.Element(name, attributes, [], true, this.line);
     }
 
     if (!this.match(">")) {
@@ -153,7 +153,7 @@ export class Parser {
     }
 
     this.close(name);
-    return new Node.Element(name, attributes, children, line);
+    return new Node.Element(name, attributes, children, false, line);
   }
 
   private close(name: string): void {

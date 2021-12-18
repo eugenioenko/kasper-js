@@ -11,7 +11,7 @@ export function execute(source: string): string {
   const result = JSON.stringify(nodes);
   try {
     const texts = new Viewer().transpile(nodes);
-    console.log(texts);
+    return texts.join("\n");
   } catch {
     console.log("error on viewer");
   }

@@ -26,19 +26,36 @@ export class Viewer implements KNode.NodeVisitor<string> {
   }
 
   public visitElementNode(node: KNode.Element): string {
-    return "";
+    let attrs = node.attributes.map((attr) => this.evaluate(attr)).join(" ");
+    if (attrs.length) {
+      attrs = " " + attrs;
+    }
+
+    if (node.self) {
+      return `<${node.name}${attrs}/>`;
+    }
+
+    const children = node.children.map((elm) => this.evaluate(elm)).join("\n");
+    return `<${node.name}${attrs}>${children}</${node.name}>`;
   }
+
   public visitAttributeNode(node: KNode.Attribute): string {
-    return "";
+    if (node.value) {
+      return `${node.name}="${node.value}"`;
+    }
+    return node.name;
   }
+
   public visitTextNode(node: KNode.Text): string {
-    return "";
+    return node.value;
   }
+
   public visitCommentNode(node: KNode.Comment): string {
-    return "";
+    return node.value;
   }
+
   public visitDoctypeNode(node: KNode.Doctype): string {
-    return "";
+    return `<doctype ${node.value}>`;
   }
 
   public error(message: string): void {
