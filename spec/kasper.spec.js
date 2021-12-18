@@ -1,10 +1,11 @@
-const kasper = require("../dist/kasper.js").kasper;
+const kasperSrc = require("./helpers").kasperSrc();
+const kasper = require(kasperSrc).kasper;
 const fs = require("fs");
 
 describe("kasper interpreter", () => {
   let target = "";
-
   beforeAll(() => {
+    console.log(kasperSrc);
     target = fs.readFileSync(__dirname + "/samples/output.txt", {
       encoding: "utf8",
       flag: "r",
