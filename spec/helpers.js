@@ -16,6 +16,15 @@ function parse(source) {
   return JSON.stringify(nodes);
 }
 
+function view(source) {
+  const parser = new kasper.Parser();
+  const nodes = parser.parse(source);
+  const viewer = new kasper.Viewer();
+  const view = viewer.transpile(nodes);
+  return view.join("");
+}
+
 module.exports = {
   parse,
+  view,
 };

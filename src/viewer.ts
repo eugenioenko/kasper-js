@@ -35,7 +35,7 @@ export class Viewer implements KNode.NodeVisitor<string> {
       return `<${node.name}${attrs}/>`;
     }
 
-    const children = node.children.map((elm) => this.evaluate(elm)).join("\n");
+    const children = node.children.map((elm) => this.evaluate(elm)).join("");
     return `<${node.name}${attrs}>${children}</${node.name}>`;
   }
 

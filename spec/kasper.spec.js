@@ -1,4 +1,4 @@
-const parse = require("./helpers").parse;
+const kasper = require("./helpers");
 const fs = require("fs");
 
 describe("kasper interpreter", () => {
@@ -16,9 +16,20 @@ describe("kasper interpreter", () => {
       flag: "r",
     });
 
-    const parsed = parse(source);
+    const parsed = kasper.parse(source);
 
     expect(parsed).toEqual(target);
+  });
+
+  it("kasper renders a file ", () => {
+    const source = fs.readFileSync(__dirname + "/samples/sample1.txt", {
+      encoding: "utf8",
+      flag: "r",
+    });
+
+    const rendered = kasper.view(source);
+    expect(1).toEqual(1);
+    //expect(rendered.replace(/\s+/g, "")).toEqual(target.replace(/\s+/g, ""));
   });
 
   it("kasper parses a file with random white spaces", () => {
@@ -27,7 +38,8 @@ describe("kasper interpreter", () => {
       flag: "r",
     });
 
-    const parsed = parse(source)
+    const parsed = kasper
+      .parse(source)
       .replace(/,"line"\:\d+/g, "")
       .split("},{");
     const origin = target.replace(/,"line"\:\d+/g, "").split("},{");
