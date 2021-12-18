@@ -35,6 +35,7 @@ export class Parser {
             return this.nodes;
           }
         }
+        break;
       }
     }
     this.source = "";
@@ -51,7 +52,7 @@ export class Parser {
     return false;
   }
 
-  private advance(): void {
+  private advance(eofError: string = ""): void {
     if (!this.eof()) {
       if (this.check("\n")) {
         this.line += 1;
@@ -59,6 +60,8 @@ export class Parser {
       }
       this.col += 1;
       this.current++;
+    } else {
+      this.error(`Unexpected end of file. ${eofError}`);
     }
   }
 
@@ -108,7 +111,7 @@ export class Parser {
   private comment(): Node.Node {
     const start = this.current;
     do {
-      this.advance();
+      this.advance("Expected comment closing '-->'");
     } while (!this.match(`-->`));
     const comment = this.source.slice(start, this.current - 3);
     return new Node.Comment(comment, this.line);
@@ -117,7 +120,7 @@ export class Parser {
   private doctype(): Node.Node {
     const start = this.current;
     do {
-      this.advance();
+      this.advance("Expected closing doctype");
     } while (!this.match(`>`));
     const doctype = this.source.slice(start, this.current - 1).trim();
     return new Node.Doctype(doctype, this.line);
@@ -234,18 +237,18 @@ export class Parser {
   private identifier(...closing: string[]): string {
     this.whitespace();
     const start = this.current;
-    while (!this.peek(...WhiteSpaces, ...closing) && !this.eof()) {
-      this.advance();
+    while (!this.peek(...WhiteSpaces, ...closing)) {
+      this.advance(`Expected closing ${closing}`);
     }
     const end = this.current;
     this.whitespace();
     return this.source.slice(start, end).trim();
   }
 
-  private string(...closing: string[]): string {
+  private string(closing: string): string {
     const start = this.current;
-    while (!this.match(...closing) && !this.eof()) {
-      this.advance();
+    while (!this.match(closing)) {
+      this.advance(`Expected closing ${closing}`);
     }
     return this.source.slice(start, this.current - 1);
   }
