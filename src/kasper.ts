@@ -16,7 +16,9 @@ export function execute(source: string): string {
 
 export function parse(source: string): string {
   const parser = new Parser();
+
   const nodes = parser.parse(source);
+
   if (parser.errors.length) {
     return JSON.stringify(parser.errors);
   }
