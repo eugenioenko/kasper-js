@@ -8,6 +8,7 @@ export function execute(source: string): string {
   if (parser.errors.length) {
     return JSON.stringify(parser.errors);
   }
+
   const result = JSON.stringify(nodes);
   console.log(result);
   return result;
