@@ -20,6 +20,7 @@ export function parse(source: string): string {
   if (parser.errors.length) {
     return JSON.stringify(parser.errors);
   }
+
   return JSON.stringify(nodes);
 }
 
