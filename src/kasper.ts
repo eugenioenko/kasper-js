@@ -1,6 +1,7 @@
 import { DemoSource } from "./demo";
 import { Parser } from "./parser";
 import { Viewer } from "./viewer";
+import { Transpiler } from "./transpiler";
 
 export function execute(source: string): string {
   const parser = new Parser();
@@ -9,7 +10,14 @@ export function execute(source: string): string {
     return JSON.stringify(parser.errors);
   }
   const result = JSON.stringify(nodes);
-  console.log(result);
+  return result;
+}
+
+export function transpile(source: string): Node[] {
+  const parser = new Parser();
+  const nodes = parser.parse(source);
+  const transpiler = new Transpiler();
+  const result = transpiler.transpile(nodes);
   return result;
 }
 
@@ -27,6 +35,7 @@ if (typeof window !== "undefined") {
     demoSourceCode: DemoSource,
     execute,
     parse,
+    transpile,
   };
 }
 
@@ -34,7 +43,9 @@ if (typeof exports !== "undefined") {
   exports.kasper = {
     Parser,
     Viewer,
+    Transpiler,
     execute,
     parse,
+    transpile,
   };
 }

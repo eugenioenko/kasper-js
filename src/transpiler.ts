@@ -1,13 +1,13 @@
 import * as KNode from "./nodes";
 
-export class Transpiler implements KNode.NodeVisitor<string> {
+export class Transpiler implements KNode.NodeVisitor<Node> {
   public errors: string[] = [];
 
-  private evaluate(node: KNode.Node): string {
+  private evaluate(node: KNode.Node): Node {
     return node.accept(this);
   }
 
-  public transpile(nodes: KNode.Node[]): string[] {
+  public transpile(nodes: KNode.Node[]): Node[] {
     this.errors = [];
     const result = [];
     for (const node of nodes) {
@@ -25,37 +25,44 @@ export class Transpiler implements KNode.NodeVisitor<string> {
     return result;
   }
 
-  public visitElementNode(node: KNode.Element): string {
-    let attrs = node.attributes.map((attr) => this.evaluate(attr)).join(" ");
-    if (attrs.length) {
-      attrs = " " + attrs;
+  public visitElementNode(node: KNode.Element): Node {
+    const element = document.createElement(node.name);
+
+    const attrs = node.attributes.map((attr) => this.evaluate(attr));
+    for (const attr of attrs) {
+      element.setAttributeNode(attr as Attr);
     }
 
     if (node.self) {
-      return `<${node.name}${attrs}/>`;
+      return element;
     }
 
-    const children = node.children.map((elm) => this.evaluate(elm)).join("");
-    return `<${node.name}${attrs}>${children}</${node.name}>`;
+    const children = node.children.map((elm) => this.evaluate(elm));
+    for (const child of children) {
+      element.append(child);
+    }
+
+    return element;
   }
 
-  public visitAttributeNode(node: KNode.Attribute): string {
+  public visitAttributeNode(node: KNode.Attribute): Node {
+    const attr = document.createAttribute(node.name);
     if (node.value) {
-      return `${node.name}="${node.value}"`;
+      attr.value = node.value;
     }
-    return node.name;
+    return attr;
   }
 
-  public visitTextNode(node: KNode.Text): string {
-    return node.value;
+  public visitTextNode(node: KNode.Text): Node {
+    return document.createTextNode(node.value);
   }
 
-  public visitCommentNode(node: KNode.Comment): string {
-    return `<!-- ${node.value} -->`;
+  public visitCommentNode(node: KNode.Comment): Node {
+    return new Comment(node.value);
   }
 
-  public visitDoctypeNode(node: KNode.Doctype): string {
-    return `<!doctype ${node.value}>`;
+  public visitDoctypeNode(node: KNode.Doctype): Node {
+    return document.implementation.createDocumentType("html", "", "");
   }
 
   public error(message: string): void {
