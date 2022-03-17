@@ -29,6 +29,7 @@ if (typeof window !== "undefined") {
     parse,
   };
 }
+
 if (typeof exports !== "undefined") {
   exports.kasper = {
     Parser,
