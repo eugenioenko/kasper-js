@@ -1,0 +1,60 @@
+<void
+  @component
+  @let:open="(index) => { console.log(index); }"
+  @let:user="{name: 'John', age: 17}"
+>
+  <!-- loop statements -->
+  <ul>
+    <li @each="item of this.items">
+      <button @on:click="this.open(index)">{{item}}</button>
+    </li>
+  </ul>
+  <ul>
+    <li @for="index = 0; 20 >= index; ++index">{{index}}</li>
+  </ul>
+  <ul @let:index="0">
+    <li @while="20 >= index">{{index}}{{void index += 1}}</li>
+  </ul>
+
+  <!-- conditional statements-->
+  <div @if="this.something > 20">less 20</div>
+  <div @elseif="this.something === 30">its 30</div>
+  <div @else>other</div>
+
+  <div @switch="this.status">
+    <span @case="'pending'">Pending...</span>
+    <span @case="'completed'">Done</span>
+    <span @case="'failed'">Error</span>
+    <span @default>Default</span>
+  </div>
+
+  <h1>{{this.user.firstName + this.user.lastName}}</h1>
+
+  <!-- attribute binding -->
+  <a href="{{this.link}}">link</a>
+  <a @attr:href="this.link">link</a>
+  <span @attr:html="this.rawInnerHtml"></span>
+  <div class="text-blue {{this.active ? 'active' : 'inactive'}}"></div>
+  <div @attr:class="this.active ? 'active' : 'inactive'"></div>
+
+  <!-- event binding -->
+  <button @on:click="{{ this.onClick() }}">CTA</button>
+  <button @on:click="this.onClick(20, $event)">CTA</button>
+
+  <my-component
+    @:onUserNameChange="{{(name) => user.name = name}}"
+    @:userId="{{args.userId}}"
+  >
+    content of component
+  </my-component>
+  <input type="email" @model="this.user.email" />
+  <input type="email" @model="this.user.email" />
+  <input type="email" @on:input="{{(email) => this.email = $args[0]" />
+
+  <!-- rendering child content -->
+  <void @inlet />
+
+  <!-- templates -->
+  <void @outlet="my-template" />
+  <void @template="my-template"> template content </void>
+</void>
