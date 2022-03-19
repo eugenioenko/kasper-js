@@ -1,10 +1,10 @@
-import { DemoSource } from "./demo";
-import { Parser } from "./parser";
-import { Viewer } from "./viewer";
+import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
+import { DemoSource } from "./types/demo";
+import { Viewer } from "./viewer";
 
 export function execute(source: string): string {
-  const parser = new Parser();
+  const parser = new TemplateParser();
   const nodes = parser.parse(source);
   if (parser.errors.length) {
     return JSON.stringify(parser.errors);
@@ -14,7 +14,7 @@ export function execute(source: string): string {
 }
 
 export function transpile(source: string): Node[] {
-  const parser = new Parser();
+  const parser = new TemplateParser();
   const nodes = parser.parse(source);
   const transpiler = new Transpiler();
   const result = transpiler.transpile(nodes);
@@ -22,7 +22,7 @@ export function transpile(source: string): Node[] {
 }
 
 export function parse(source: string): string {
-  const parser = new Parser();
+  const parser = new TemplateParser();
   const nodes = parser.parse(source);
   if (parser.errors.length) {
     return JSON.stringify(parser.errors);
@@ -41,9 +41,9 @@ if (typeof window !== "undefined") {
 
 if (typeof exports !== "undefined") {
   exports.kasper = {
-    Parser,
-    Viewer,
+    TemplateParser,
     Transpiler,
+    Viewer,
     execute,
     parse,
     transpile,

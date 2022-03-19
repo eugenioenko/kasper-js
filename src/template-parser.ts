@@ -1,8 +1,8 @@
-import { KasperError } from "./error";
-import * as Node from "./nodes";
+import { KasperError } from "./types/error";
+import * as Node from "./types/nodes";
 import { SelfClosingTags, WhiteSpaces } from "./utils";
 
-export class Parser {
+export class TemplateParser {
   public current: number;
   public line: number;
   public col: number;
