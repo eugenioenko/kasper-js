@@ -14,6 +14,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     node.accept(this, parent);
   }
 
+  private execute(source: string): any[] {
+    const tokens = this.scanner.scan(source);
+    const expressions = this.parser.parse(tokens);
+    return expressions.map((expression) =>
+      this.interpreter.evaluate(expression)
+    );
+  }
+
   public transpile(
     nodes: KNode.KNode[],
     entries?: { [key: string]: any }
@@ -53,6 +61,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         index += 1;
       }
       this.interpreter.scope = currentScope;
+      return;
+    }
+
+    const iff = node.attributes.find(
+      (attr) => (attr as KNode.Attribute).name === "@if"
+    );
+
+    if (iff) {
+      const ifResult = this.execute((iff as KNode.Attribute).value);
+      if (ifResult && ifResult.length && ifResult[0]) {
+        this.createElementKNode(node, parent);
+      }
       return;
     }
 
