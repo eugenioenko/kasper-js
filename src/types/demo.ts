@@ -13,6 +13,7 @@ export const DemoSource = `
       {{index + 1}}: {{hobby}}
     </li>
   </ul>
+  <div>100 + 20 / (10 * (10 -20) + 4) = {{100 + 20 / (10 * (10 -20) + 4)}}</div>
 </div>
 `;
 
