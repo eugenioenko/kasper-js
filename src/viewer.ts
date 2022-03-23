@@ -1,13 +1,13 @@
 import * as KNode from "./types/nodes";
 
-export class Viewer implements KNode.NodeVisitor<string> {
+export class Viewer implements KNode.KNodeVisitor<string> {
   public errors: string[] = [];
 
-  private evaluate(node: KNode.Node): string {
+  private evaluate(node: KNode.KNode): string {
     return node.accept(this);
   }
 
-  public transpile(nodes: KNode.Node[]): string[] {
+  public transpile(nodes: KNode.KNode[]): string[] {
     this.errors = [];
     const result = [];
     for (const node of nodes) {
@@ -25,7 +25,7 @@ export class Viewer implements KNode.NodeVisitor<string> {
     return result;
   }
 
-  public visitElementNode(node: KNode.Element): string {
+  public visitElementKNode(node: KNode.Element): string {
     let attrs = node.attributes.map((attr) => this.evaluate(attr)).join(" ");
     if (attrs.length) {
       attrs = " " + attrs;
@@ -39,22 +39,22 @@ export class Viewer implements KNode.NodeVisitor<string> {
     return `<${node.name}${attrs}>${children}</${node.name}>`;
   }
 
-  public visitAttributeNode(node: KNode.Attribute): string {
+  public visitAttributeKNode(node: KNode.Attribute): string {
     if (node.value) {
       return `${node.name}="${node.value}"`;
     }
     return node.name;
   }
 
-  public visitTextNode(node: KNode.Text): string {
+  public visitTextKNode(node: KNode.Text): string {
     return node.value;
   }
 
-  public visitCommentNode(node: KNode.Comment): string {
+  public visitCommentKNode(node: KNode.Comment): string {
     return `<!-- ${node.value} -->`;
   }
 
-  public visitDoctypeNode(node: KNode.Doctype): string {
+  public visitDoctypeKNode(node: KNode.Doctype): string {
     return `<!doctype ${node.value}>`;
   }
 

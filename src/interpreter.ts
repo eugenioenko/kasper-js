@@ -247,4 +247,12 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   public visitTypeofExpr(expr: Expr.Typeof): any {
     return typeof this.evaluate(expr.value);
   }
+
+  public visitEachExpr(expr: Expr.Each): any {
+    return [
+      expr.name.lexeme,
+      expr.key ? expr.key.lexeme : null,
+      this.evaluate(expr.iterable),
+    ];
+  }
 }

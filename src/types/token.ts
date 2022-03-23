@@ -58,14 +58,17 @@ export enum TokenType {
 
   // Keywords
   And,
+  Const,
   False,
   Instanceof,
   New,
   Null,
   Undefined,
+  Of,
   Or,
   True,
   Typeof,
+  With,
 }
 
 export class Token {
