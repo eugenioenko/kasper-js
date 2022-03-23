@@ -1,4 +1,4 @@
-import * as KNode from "./nodes";
+import * as KNode from "./types/nodes";
 
 export class Viewer implements KNode.NodeVisitor<string> {
   public errors: string[] = [];

@@ -4,9 +4,9 @@ export class KasperError {
   public col: number;
 
   constructor(value: string, line: number, col: number) {
+    this.value = value;
     this.line = line;
     this.col = col;
-    this.value = value;
   }
 
   public toString(): string {
