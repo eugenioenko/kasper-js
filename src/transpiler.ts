@@ -1,13 +1,24 @@
+import { ExpressionParser } from "./expression-parser";
+import { Interpreter } from "./interpreter";
+import { Scanner } from "./scanner";
+import { Scope } from "./scope";
 import * as KNode from "./types/nodes";
 
 export class Transpiler implements KNode.NodeVisitor<Node> {
+  private scanner = new Scanner();
+  private parser = new ExpressionParser();
+  private interpreter = new Interpreter();
   public errors: string[] = [];
 
   private evaluate(node: KNode.Node): Node {
     return node.accept(this);
   }
 
-  public transpile(nodes: KNode.Node[]): Node[] {
+  public transpile(
+    nodes: KNode.Node[],
+    entries?: { [key: string]: any }
+  ): Node[] {
+    this.interpreter.scope.init(entries);
     this.errors = [];
     const result = [];
     for (const node of nodes) {
@@ -53,8 +64,33 @@ export class Transpiler implements KNode.NodeVisitor<Node> {
     return attr;
   }
 
+  private templateParse(source: string): string {
+    const tokens = this.scanner.scan(source);
+    const expressions = this.parser.parse(tokens);
+    if (this.parser.errors.length) {
+      this.error(`Template string  error: ${this.parser.errors[0]}`);
+    }
+    let result = "";
+    for (const expression of expressions) {
+      result += `${this.interpreter.evaluate(expression)}`;
+    }
+    return result;
+  }
+
   public visitTextNode(node: KNode.Text): Node {
-    return document.createTextNode(node.value);
+    const regex = /\{\{.+\}\}/;
+    if (regex.test(node.value)) {
+      const result = node.value.replace(
+        /\{\{([\s\S]+?)\}\}/g,
+        (m, placeholder) => {
+          return this.templateParse(placeholder);
+        }
+      );
+
+      return document.createTextNode(result);
+    } else {
+      return document.createTextNode(node.value);
+    }
   }
 
   public visitCommentNode(node: KNode.Comment): Node {

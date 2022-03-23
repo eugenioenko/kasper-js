@@ -1,7 +1,9 @@
 export class Scope {
   public values: Map<string, any>;
+  public parent: Scope;
 
-  constructor(entries?: { [key: string]: any }) {
+  constructor(parent?: Scope, entries?: { [key: string]: any }) {
+    this.parent = parent ? parent : null;
     this.init(entries);
   }
 
@@ -18,6 +20,13 @@ export class Scope {
   }
 
   public get(key: string): any {
-    return this.values.get(key);
+    if (this.values.has(key)) {
+      return this.values.get(key);
+    }
+    if (this.parent !== null) {
+      return this.parent.get(key);
+    }
+
+    return undefined;
   }
 }
