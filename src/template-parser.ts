@@ -1,6 +1,6 @@
 import { KasperError } from "./types/error";
 import * as Node from "./types/nodes";
-import { SelfClosingTags, WhiteSpaces } from "./utils";
+import { SelfClosingTags, WhiteSpaces } from "./types/token";
 
 export class TemplateParser {
   public current: number;

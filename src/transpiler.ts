@@ -1,4 +1,4 @@
-import * as KNode from "@kasper/types/nodes";
+import * as KNode from "./types/nodes";
 
 export class Transpiler implements KNode.NodeVisitor<Node> {
   public errors: string[] = [];
