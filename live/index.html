@@ -117,9 +117,9 @@
         const source = editor.getValue();
         const result = kasper.execute(source);
         const entries = JSON.parse(ejson.getValue());
-        const nodes = kasper.transpile(source, entries);
+        const node = kasper.transpile(source, entries);
 
-        document.getElementById("render").appendChild(nodes[0]);
+        document.getElementById("render").appendChild(node);
 
         output.setValue(result.split("},{").join("},\n{"));
       });

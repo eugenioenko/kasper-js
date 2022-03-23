@@ -16,7 +16,7 @@ function execute(source: string): string {
   return result;
 }
 
-function transpile(source: string, entries?: { [key: string]: any }): Node[] {
+function transpile(source: string, entries?: { [key: string]: any }): Node {
   const parser = new TemplateParser();
   const nodes = parser.parse(source);
   const transpiler = new Transpiler();

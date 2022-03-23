@@ -247,4 +247,8 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   public visitTypeofExpr(expr: Expr.Typeof): any {
     return typeof this.evaluate(expr.value);
   }
+
+  public visitEachExpr(expr: Expr.Each) {
+    return [expr.name, expr.key, this.evaluate(expr.iterable)];
+  }
 }

@@ -1,11 +1,11 @@
 import { Token, TokenType } from 'token';
 
 export abstract class Expr {
-    public result: any;
-    public line: number;
-    // tslint:disable-next-line
-    constructor() { }
-    public abstract accept<R>(visitor: ExprVisitor<R>): R;
+  public result: any;
+  public line: number;
+  // tslint:disable-next-line
+  constructor() { }
+  public abstract accept<R>(visitor: ExprVisitor<R>): R;
 }
 
 // tslint:disable-next-line
@@ -14,6 +14,7 @@ export interface ExprVisitor<R> {
     visitBinaryExpr(expr: Binary): R;
     visitCallExpr(expr: Call): R;
     visitDictionaryExpr(expr: Dictionary): R;
+    visitEachExpr(expr: Each): R;
     visitGetExpr(expr: Get): R;
     visitGroupingExpr(expr: Grouping): R;
     visitKeyExpr(expr: Key): R;
@@ -42,13 +43,13 @@ export class Assign extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitAssignExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitAssignExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Assign';
-    }
+  public toString(): string {
+      return 'Expr.Assign';
+  }
 }
 
 export class Binary extends Expr {
@@ -64,13 +65,13 @@ export class Binary extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitBinaryExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitBinaryExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Binary';
-    }
+  public toString(): string {
+      return 'Expr.Binary';
+  }
 }
 
 export class Call extends Expr {
@@ -86,13 +87,13 @@ export class Call extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitCallExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitCallExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Call';
-    }
+  public toString(): string {
+      return 'Expr.Call';
+  }
 }
 
 export class Dictionary extends Expr {
@@ -104,13 +105,35 @@ export class Dictionary extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitDictionaryExpr(this);
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitDictionaryExpr(this);
+  }
+
+  public toString(): string {
+      return 'Expr.Dictionary';
+  }
+}
+
+export class Each extends Expr {
+    public name: Token;
+    public key: Token;
+    public iterable: Expr;
+
+    constructor(name: Token, key: Token, iterable: Expr, line: number) {
+        super();
+        this.name = name;
+        this.key = key;
+        this.iterable = iterable;
+        this.line = line;
     }
 
-    public toString(): string {
-        return 'Expr.Dictionary';
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitEachExpr(this);
+  }
+
+  public toString(): string {
+      return 'Expr.Each';
+  }
 }
 
 export class Get extends Expr {
@@ -126,13 +149,13 @@ export class Get extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitGetExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitGetExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Get';
-    }
+  public toString(): string {
+      return 'Expr.Get';
+  }
 }
 
 export class Grouping extends Expr {
@@ -144,13 +167,13 @@ export class Grouping extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitGroupingExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitGroupingExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Grouping';
-    }
+  public toString(): string {
+      return 'Expr.Grouping';
+  }
 }
 
 export class Key extends Expr {
@@ -162,13 +185,13 @@ export class Key extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitKeyExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitKeyExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Key';
-    }
+  public toString(): string {
+      return 'Expr.Key';
+  }
 }
 
 export class Logical extends Expr {
@@ -184,13 +207,13 @@ export class Logical extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitLogicalExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitLogicalExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Logical';
-    }
+  public toString(): string {
+      return 'Expr.Logical';
+  }
 }
 
 export class List extends Expr {
@@ -202,13 +225,13 @@ export class List extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitListExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitListExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.List';
-    }
+  public toString(): string {
+      return 'Expr.List';
+  }
 }
 
 export class Literal extends Expr {
@@ -220,13 +243,13 @@ export class Literal extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitLiteralExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitLiteralExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Literal';
-    }
+  public toString(): string {
+      return 'Expr.Literal';
+  }
 }
 
 export class New extends Expr {
@@ -238,13 +261,13 @@ export class New extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitNewExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitNewExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.New';
-    }
+  public toString(): string {
+      return 'Expr.New';
+  }
 }
 
 export class NullCoalescing extends Expr {
@@ -258,13 +281,13 @@ export class NullCoalescing extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitNullCoalescingExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitNullCoalescingExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.NullCoalescing';
-    }
+  public toString(): string {
+      return 'Expr.NullCoalescing';
+  }
 }
 
 export class Postfix extends Expr {
@@ -278,13 +301,13 @@ export class Postfix extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitPostfixExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitPostfixExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Postfix';
-    }
+  public toString(): string {
+      return 'Expr.Postfix';
+  }
 }
 
 export class Set extends Expr {
@@ -300,13 +323,13 @@ export class Set extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitSetExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitSetExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Set';
-    }
+  public toString(): string {
+      return 'Expr.Set';
+  }
 }
 
 export class Template extends Expr {
@@ -318,13 +341,13 @@ export class Template extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitTemplateExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitTemplateExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Template';
-    }
+  public toString(): string {
+      return 'Expr.Template';
+  }
 }
 
 export class Ternary extends Expr {
@@ -340,13 +363,13 @@ export class Ternary extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitTernaryExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitTernaryExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Ternary';
-    }
+  public toString(): string {
+      return 'Expr.Ternary';
+  }
 }
 
 export class Typeof extends Expr {
@@ -358,13 +381,13 @@ export class Typeof extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitTypeofExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitTypeofExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Typeof';
-    }
+  public toString(): string {
+      return 'Expr.Typeof';
+  }
 }
 
 export class Unary extends Expr {
@@ -378,13 +401,13 @@ export class Unary extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitUnaryExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitUnaryExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Unary';
-    }
+  public toString(): string {
+      return 'Expr.Unary';
+  }
 }
 
 export class Variable extends Expr {
@@ -396,12 +419,12 @@ export class Variable extends Expr {
         this.line = line;
     }
 
-    public accept<R>(visitor: ExprVisitor<R>): R {
-        return visitor.visitVariableExpr(this);
-    }
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitVariableExpr(this);
+  }
 
-    public toString(): string {
-        return 'Expr.Variable';
-    }
+  public toString(): string {
+      return 'Expr.Variable';
+  }
 }
 

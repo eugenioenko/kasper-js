@@ -1,67 +1,60 @@
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
-import { Scope } from "./scope";
 import * as KNode from "./types/nodes";
 
-export class Transpiler implements KNode.NodeVisitor<Node> {
+export class Transpiler implements KNode.KNodeVisitor<void> {
   private scanner = new Scanner();
   private parser = new ExpressionParser();
   private interpreter = new Interpreter();
   public errors: string[] = [];
 
-  private evaluate(node: KNode.Node): Node {
-    return node.accept(this);
+  private evaluate(node: KNode.KNode, parent?: Node): void {
+    node.accept(this, parent);
   }
 
   public transpile(
-    nodes: KNode.Node[],
+    nodes: KNode.KNode[],
     entries?: { [key: string]: any }
-  ): Node[] {
+  ): Node {
+    const container = document.createElement("kasper");
     this.interpreter.scope.init(entries);
     this.errors = [];
-    const result = [];
     for (const node of nodes) {
       try {
-        result.push(this.evaluate(node));
+        this.evaluate(node, container);
       } catch (e) {
         console.error(`${e}`);
-        this.errors.push(`${e}`);
-        if (this.errors.length > 100) {
-          this.errors.push("Error limit exceeded");
-          return result;
-        }
       }
     }
-    return result;
+    return container;
   }
 
-  public visitElementNode(node: KNode.Element): Node {
+  public visitElementKNode(node: KNode.Element, parent?: Node): void {
     const element = document.createElement(node.name);
-
-    const attrs = node.attributes.map((attr) => this.evaluate(attr));
-    for (const attr of attrs) {
-      element.setAttributeNode(attr as Attr);
-    }
+    const attrs = node.attributes
+      .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
+      .map((attr) => this.evaluate(attr, element));
 
     if (node.self) {
-      return element;
+      return;
     }
 
-    const children = node.children.map((elm) => this.evaluate(elm));
-    for (const child of children) {
-      element.append(child);
-    }
+    const children = node.children.map((elm) => this.evaluate(elm, element));
 
-    return element;
+    if (parent) {
+      parent.appendChild(element);
+    }
   }
 
-  public visitAttributeNode(node: KNode.Attribute): Node {
+  public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
     const attr = document.createAttribute(node.name);
     if (node.value) {
       attr.value = node.value;
     }
-    return attr;
+    if (parent) {
+      (parent as HTMLElement).setAttributeNode(attr);
+    }
   }
 
   private templateParse(source: string): string {
@@ -77,8 +70,9 @@ export class Transpiler implements KNode.NodeVisitor<Node> {
     return result;
   }
 
-  public visitTextNode(node: KNode.Text): Node {
+  public visitTextKNode(node: KNode.Text, parent?: Node): void {
     const regex = /\{\{.+\}\}/;
+    let text: Text;
     if (regex.test(node.value)) {
       const result = node.value.replace(
         /\{\{([\s\S]+?)\}\}/g,
@@ -86,19 +80,25 @@ export class Transpiler implements KNode.NodeVisitor<Node> {
           return this.templateParse(placeholder);
         }
       );
-
-      return document.createTextNode(result);
+      text = document.createTextNode(result);
     } else {
-      return document.createTextNode(node.value);
+      text = document.createTextNode(node.value);
+    }
+    if (parent) {
+      parent.appendChild(text);
     }
   }
 
-  public visitCommentNode(node: KNode.Comment): Node {
-    return new Comment(node.value);
+  public visitCommentKNode(node: KNode.Comment, parent?: Node): void {
+    const result = new Comment(node.value);
+    if (parent) {
+      parent.appendChild(result);
+    }
   }
 
-  public visitDoctypeNode(node: KNode.Doctype): Node {
-    return document.implementation.createDocumentType("html", "", "");
+  public visitDoctypeKNode(node: KNode.Doctype): void {
+    return;
+    // return document.implementation.createDocumentType("html", "", "");
   }
 
   public error(message: string): void {

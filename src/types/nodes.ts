@@ -1,24 +1,24 @@
-export abstract class Node {
+export abstract class KNode {
     public line: number;
     public type: string;
-    public abstract accept<R>(visitor: NodeVisitor<R>): R;
+    public abstract accept<R>(visitor: KNodeVisitor<R>, parent?: Node): R;
 }
 
-export interface NodeVisitor<R> {
-    visitElementNode(node: Element): R;
-    visitAttributeNode(node: Attribute): R;
-    visitTextNode(node: Text): R;
-    visitCommentNode(node: Comment): R;
-    visitDoctypeNode(node: Doctype): R;
+export interface KNodeVisitor<R> {
+    visitElementKNode(knode: Element, parent?: Node): R;
+    visitAttributeKNode(knode: Attribute, parent?: Node): R;
+    visitTextKNode(knode: Text, parent?: Node): R;
+    visitCommentKNode(knode: Comment, parent?: Node): R;
+    visitDoctypeKNode(knode: Doctype, parent?: Node): R;
 }
 
-export class Element extends Node {
+export class Element extends KNode {
     public name: string;
-    public attributes: Node[];
-    public children: Node[];
+    public attributes: KNode[];
+    public children: KNode[];
     public self: boolean;
 
-    constructor(name: string, attributes: Node[], children: Node[], self: boolean, line: number = 0) {
+    constructor(name: string, attributes: KNode[], children: KNode[], self: boolean, line: number = 0) {
         super();
         this.type = 'element';
         this.name = name;
@@ -28,16 +28,16 @@ export class Element extends Node {
         this.line = line;
     }
 
-    public accept<R>(visitor: NodeVisitor<R>): R {
-        return visitor.visitElementNode(this);
+    public accept<R>(visitor: KNodeVisitor<R>, parent?: Node): R {
+        return visitor.visitElementKNode(this, parent);
     }
 
     public toString(): string {
-        return 'Node.Element';
+        return 'KNode.Element';
     }
 }
 
-export class Attribute extends Node {
+export class Attribute extends KNode {
     public name: string;
     public value: string;
 
@@ -49,16 +49,16 @@ export class Attribute extends Node {
         this.line = line;
     }
 
-    public accept<R>(visitor: NodeVisitor<R>): R {
-        return visitor.visitAttributeNode(this);
+    public accept<R>(visitor: KNodeVisitor<R>, parent?: Node): R {
+        return visitor.visitAttributeKNode(this, parent);
     }
 
     public toString(): string {
-        return 'Node.Attribute';
+        return 'KNode.Attribute';
     }
 }
 
-export class Text extends Node {
+export class Text extends KNode {
     public value: string;
 
     constructor(value: string, line: number = 0) {
@@ -68,16 +68,16 @@ export class Text extends Node {
         this.line = line;
     }
 
-    public accept<R>(visitor: NodeVisitor<R>): R {
-        return visitor.visitTextNode(this);
+    public accept<R>(visitor: KNodeVisitor<R>, parent?: Node): R {
+        return visitor.visitTextKNode(this, parent);
     }
 
     public toString(): string {
-        return 'Node.Text';
+        return 'KNode.Text';
     }
 }
 
-export class Comment extends Node {
+export class Comment extends KNode {
     public value: string;
 
     constructor(value: string, line: number = 0) {
@@ -87,16 +87,16 @@ export class Comment extends Node {
         this.line = line;
     }
 
-    public accept<R>(visitor: NodeVisitor<R>): R {
-        return visitor.visitCommentNode(this);
+    public accept<R>(visitor: KNodeVisitor<R>, parent?: Node): R {
+        return visitor.visitCommentKNode(this, parent);
     }
 
     public toString(): string {
-        return 'Node.Comment';
+        return 'KNode.Comment';
     }
 }
 
-export class Doctype extends Node {
+export class Doctype extends KNode {
     public value: string;
 
     constructor(value: string, line: number = 0) {
@@ -106,12 +106,12 @@ export class Doctype extends Node {
         this.line = line;
     }
 
-    public accept<R>(visitor: NodeVisitor<R>): R {
-        return visitor.visitDoctypeNode(this);
+    public accept<R>(visitor: KNodeVisitor<R>, parent?: Node): R {
+        return visitor.visitDoctypeKNode(this, parent);
     }
 
     public toString(): string {
-        return 'Node.Doctype';
+        return 'KNode.Doctype';
     }
 }
 
