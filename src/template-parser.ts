@@ -8,9 +8,9 @@ export class TemplateParser {
   public col: number;
   public source: string;
   public errors: string[];
-  public nodes: Node.Node[];
+  public nodes: Node.KNode[];
 
-  public parse(source: string): Node.Node[] {
+  public parse(source: string): Node.KNode[] {
     this.current = 0;
     this.line = 1;
     this.col = 1;
@@ -86,9 +86,9 @@ export class TemplateParser {
     throw new KasperError(message, this.line, this.col);
   }
 
-  private node(): Node.Node {
+  private node(): Node.KNode {
     this.whitespace();
-    let node: Node.Node;
+    let node: Node.KNode;
 
     if (this.match("</")) {
       this.error("Unexpected closing tag");
@@ -108,7 +108,7 @@ export class TemplateParser {
     return node;
   }
 
-  private comment(): Node.Node {
+  private comment(): Node.KNode {
     const start = this.current;
     do {
       this.advance("Expected comment closing '-->'");
@@ -117,7 +117,7 @@ export class TemplateParser {
     return new Node.Comment(comment, this.line);
   }
 
-  private doctype(): Node.Node {
+  private doctype(): Node.KNode {
     const start = this.current;
     do {
       this.advance("Expected closing doctype");
@@ -126,7 +126,7 @@ export class TemplateParser {
     return new Node.Doctype(doctype, this.line);
   }
 
-  private element(): Node.Node {
+  private element(): Node.KNode {
     const line = this.line;
     const name = this.identifier("/", ">");
     if (!name) {
@@ -146,7 +146,7 @@ export class TemplateParser {
       this.error("Expected closing tag");
     }
 
-    let children: Node.Node[] = [];
+    let children: Node.KNode[] = [];
     this.whitespace();
     if (!this.peek("</")) {
       children = this.children(name);
@@ -169,8 +169,8 @@ export class TemplateParser {
     }
   }
 
-  private children(parent: string): Node.Node[] {
-    const children: Node.Node[] = [];
+  private children(parent: string): Node.KNode[] {
+    const children: Node.KNode[] = [];
     do {
       if (this.eof()) {
         this.error(`Expected </${parent}>`);
@@ -212,7 +212,7 @@ export class TemplateParser {
     return attributes;
   }
 
-  private text(): Node.Node {
+  private text(): Node.KNode {
     const start = this.current;
     const line = this.line;
     while (!this.peek("<") && !this.eof()) {

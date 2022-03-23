@@ -14,9 +14,10 @@
         margin: auto;
       }
       #editor,
-      #output {
+      #output,
+      #render {
         width: 100%;
-        height: 500px;
+        height: 230px;
         margin-bottom: 30px;
       }
       #json,
@@ -24,6 +25,12 @@
         width: 100%;
         height: 235px;
         margin-bottom: 30px;
+      }
+      #render {
+        border: 1px solid gray;
+        padding: 15px;
+        margin-bottom: 35px;
+        overflow: auto;
       }
       #console {
         height: 150px;
@@ -54,15 +61,11 @@
           <div id="editor"></div>
         </div>
         <div class="sdf-cell sdf-6 sdf-padding">
+          <div id="render">Hit execute to view template output</div>
           <div id="output"></div>
         </div>
-        <div class="sdf-cell sdf-12 sdf-grid">
-          <div class="sdf-cell sdf-6">
-            <button class="sdf-button sdf-success" id="execute">EXECUTE</button>
-          </div>
-        </div>
-        <div class="sdf-cell sdf-12 sdf-padding">
-          <div id="render"></div>
+        <div class="sdf-cell sdf-6 sdf-grid">
+          <button class="sdf-button sdf-success" id="execute">EXECUTE</button>
         </div>
       </div>
     </div>
@@ -111,14 +114,18 @@
 
       const ejson = createEditor("json", kasper.demoJson, "json");
       const editor = createEditor("editor", kasper.demoSourceCode, "html");
-      const output = createEditor("output", "output", "json");
+      const output = createEditor(
+        "output",
+        "Hit execute to view nodes",
+        "json"
+      );
 
       document.getElementById("execute").addEventListener("click", () => {
         const source = editor.getValue();
         const result = kasper.execute(source);
         const entries = JSON.parse(ejson.getValue());
         const node = kasper.transpile(source, entries);
-
+        document.getElementById("render").innerHTML = "";
         document.getElementById("render").appendChild(node);
 
         output.setValue(result.split("},{").join("},\n{"));

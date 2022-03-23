@@ -71,7 +71,7 @@ export class ExpressionParser {
     }
 
     return this.error(
-      this.previous(),
+      this.peek(),
       message + `, unexpected token "${this.peek().lexeme}"`
     );
   }
@@ -90,11 +90,21 @@ export class ExpressionParser {
     } while (!this.eof());
   }
 
-  public foreach(): Expr.Expr {
+  public foreach(tokens: Token[]): Expr.Expr {
+    this.current = 0;
+    this.tokens = tokens;
+    this.errors = [];
+
+    this.consume(
+      TokenType.Const,
+      `Expected const definition starting "each" statement`
+    );
+
     const name = this.consume(
       TokenType.Identifier,
       `Expected an identifier inside "each" statement`
     );
+
     let key: Token = null;
     if (this.match(TokenType.With)) {
       key = this.consume(
@@ -102,9 +112,10 @@ export class ExpressionParser {
         `Expected a "key" identifier after "with" keyword in foreach statement`
       );
     }
+
     this.consume(
-      TokenType.In,
-      `Expected "in" keyword inside foreach statement`
+      TokenType.Of,
+      `Expected "of" keyword inside foreach statement`
     );
     const iterable = this.expression();
 

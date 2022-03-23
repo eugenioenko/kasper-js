@@ -1,6 +1,7 @@
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
+import { Scope } from "./scope";
 import * as KNode from "./types/nodes";
 
 export class Transpiler implements KNode.KNodeVisitor<void> {
@@ -31,8 +32,37 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public visitElementKNode(node: KNode.Element, parent?: Node): void {
+    const each = node.attributes.find(
+      (attr) => (attr as KNode.Attribute).name === "@each"
+    );
+
+    if (each) {
+      const tokens = this.scanner.scan((each as KNode.Attribute).value);
+      const [name, key, iterable] = this.interpreter.evaluate(
+        this.parser.foreach(tokens)
+      );
+      const currentScope = this.interpreter.scope;
+      let index = 0;
+      for (const item of iterable) {
+        const scope: { [key: string]: any } = { [name]: item };
+        if (key) {
+          scope[key] = index;
+        }
+        this.interpreter.scope = new Scope(currentScope, scope);
+        this.createElementKNode(node, parent);
+        index += 1;
+      }
+      this.interpreter.scope = currentScope;
+      return;
+    }
+
+    this.createElementKNode(node, parent);
+  }
+
+  private createElementKNode(node: KNode.Element, parent?: Node): void {
     const element = document.createElement(node.name);
-    const attrs = node.attributes
+
+    node.attributes
       .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
       .map((attr) => this.evaluate(attr, element));
 
@@ -40,7 +70,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       return;
     }
 
-    const children = node.children.map((elm) => this.evaluate(elm, element));
+    node.children.map((elm) => this.evaluate(elm, element));
 
     if (parent) {
       parent.appendChild(element);
@@ -52,6 +82,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (node.value) {
       attr.value = node.value;
     }
+
     if (parent) {
       (parent as HTMLElement).setAttributeNode(attr);
     }
@@ -60,9 +91,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private templateParse(source: string): string {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
+
     if (this.parser.errors.length) {
       this.error(`Template string  error: ${this.parser.errors[0]}`);
     }
+
     let result = "";
     for (const expression of expressions) {
       result += `${this.interpreter.evaluate(expression)}`;
