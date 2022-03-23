@@ -3,8 +3,8 @@ let fs = require("fs");
 const NodeAST = {
   Element: [
     "name: string",
-    "attributes: Node[]",
-    "children: Node[]",
+    "attributes: KNode[]",
+    "children: KNode[]",
     "self: boolean",
   ],
   Attribute: ["name: string", "value: string"],
@@ -18,6 +18,7 @@ const ExpressionAST = {
   Binary: ["left: Expr", "operator: Token", "right: Expr"],
   Call: ["callee: Expr", "paren: Token", "args: Expr[]"],
   Dictionary: ["properties: Expr[]"],
+  Each: ["name: Token", "key: Token", "iterable: Expr"],
   Get: ["entity: Expr", "key: Expr", "type: TokenType"],
   Grouping: ["expression: Expr"],
   Key: ["name: Token"],
@@ -41,12 +42,12 @@ function generateNodeAST(baseClass, AST, filename, imports = "") {
     `export abstract class ${baseClass} {
     public line: number;
     public type: string;
-    public abstract accept<R>(visitor: ${baseClass}Visitor<R>): R;
+    public abstract accept<R>(visitor: ${baseClass}Visitor<R>, parent?: Node): R;
 }\n\n`;
 
   file += `export interface ${baseClass}Visitor<R> {\n`;
   Object.keys(AST).forEach((name) => {
-    file += `    visit${name}${baseClass}(${baseClass.toLowerCase()}: ${name}): R;\n`;
+    file += `    visit${name}${baseClass}(${baseClass.toLowerCase()}: ${name}, parent?: Node): R;\n`;
   });
   file += "}\n\n";
 
@@ -67,8 +68,8 @@ function generateNodeAST(baseClass, AST, filename, imports = "") {
     file += "        this.line = line;\n";
     file += "    }\n";
     file += `
-    public accept<R>(visitor: ${baseClass}Visitor<R>): R {
-        return visitor.visit${name}${baseClass}(this);
+    public accept<R>(visitor: ${baseClass}Visitor<R>, parent?: Node): R {
+        return visitor.visit${name}${baseClass}(this, parent);
     }\n`;
     file += `
     public toString(): string {
@@ -77,7 +78,7 @@ function generateNodeAST(baseClass, AST, filename, imports = "") {
     file += "}\n\n";
   });
 
-  fs.writeFile(`src/${filename}.ts`, file, function (err, data) {
+  fs.writeFile(`src/types/${filename}.ts`, file, function (err, data) {
     if (err) console.log(err);
     console.log(`${filename}.ts generated`);
   });
@@ -132,8 +133,8 @@ function generateExpressionAST(baseClass, AST, filename, imports = "") {
   });
 }
 
-generateNodeAST("Node", NodeAST, "nodes");
-generateAST(
+generateNodeAST("KNode", NodeAST, "nodes");
+generateExpressionAST(
   "Expr",
   ExpressionAST,
   "expressions",

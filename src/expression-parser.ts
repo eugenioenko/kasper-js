@@ -90,6 +90,27 @@ export class ExpressionParser {
     } while (!this.eof());
   }
 
+  public foreach(): Expr.Expr {
+    const name = this.consume(
+      TokenType.Identifier,
+      `Expected an identifier inside "each" statement`
+    );
+    let key: Token = null;
+    if (this.match(TokenType.With)) {
+      key = this.consume(
+        TokenType.Identifier,
+        `Expected a "key" identifier after "with" keyword in foreach statement`
+      );
+    }
+    this.consume(
+      TokenType.In,
+      `Expected "in" keyword inside foreach statement`
+    );
+    const iterable = this.expression();
+
+    return new Expr.Each(name, key, iterable, name.line);
+  }
+
   private expression(): Expr.Expr {
     const expression: Expr.Expr = this.assignment();
     if (this.match(TokenType.Semicolon)) {

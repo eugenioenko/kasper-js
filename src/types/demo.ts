@@ -6,7 +6,7 @@ export const DemoSource = `
   </header>
   <nav>
     <ul>
-      <li each="hobby of person.hobbies">
+      <li @each="hobby of person.hobbies" class="text-red">
         {{hobby}}
       </li>
     </ul>
