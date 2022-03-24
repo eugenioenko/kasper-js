@@ -4,8 +4,9 @@ export const DemoSource = `
     <h3>{{person.name}}</h3>
     <h4>{{person.profession}}</h4>
     <p @if="person.age > 21">Age is greater then 21</p>
-    <p @if="person.age == 21">Age is equal to 21</p>
-    <p @if="person.age < 21">Age is less then 21</p>
+    <p @elseif="person.age == 21">Age is equal to 21</p>
+    <p @elseif="person.age < 21">Age is less then 21</p>
+    <p @else>Age is impossible</p>
   </header>
   <h4>Hobbies ({{person.hobbies.length}}):</h4>
   <ul>
@@ -22,7 +23,7 @@ export const DemoJson = `
   "person": {
     "name": "John Doe",
     "profession": "Software Developer",
-    "age": 21,
+    "age": 20,
     "hobbies": ["reading", "music", "golf"]
   }
 }
