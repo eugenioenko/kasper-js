@@ -4,6 +4,8 @@ import { Scanner } from "./scanner";
 import { Scope } from "./scope";
 import * as KNode from "./types/nodes";
 
+type IfElseNode = [KNode.Element, KNode.Attribute];
+
 export class Transpiler implements KNode.KNodeVisitor<void> {
   private scanner = new Scanner();
   private parser = new ExpressionParser();
@@ -29,110 +31,16 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const container = document.createElement("kasper");
     this.interpreter.scope.init(entries);
     this.errors = [];
-    for (const node of nodes) {
-      try {
-        this.evaluate(node, container);
-      } catch (e) {
-        console.error(`${e}`);
-      }
+    try {
+      this.createSiblings(nodes, container);
+    } catch (e) {
+      console.error(`${e}`);
     }
     return container;
   }
 
-  private findAttr(node: KNode.Element, name: string): KNode.Attribute | null {
-    const attrib = node.attributes.find(
-      (attr) => (attr as KNode.Attribute).name === name
-    );
-    if (attrib) {
-      return attrib as KNode.Attribute;
-    }
-    return null;
-  }
-
   public visitElementKNode(node: KNode.Element, parent?: Node): void {
-    const each = this.findAttr(node, "@each");
-    if (each) {
-      this.doEach(each, node, parent);
-      return;
-    }
-
-    const iff = this.findAttr(node, "@if");
-    if (iff) {
-      this.doIf(iff, node, parent);
-      return;
-    }
-
-    this.createElementKNode(node, parent);
-  }
-
-  private doIf(iff: KNode.Attribute, node: KNode.Element, parent: Node) {
-    const ifResult = this.execute((iff as KNode.Attribute).value);
-    if (ifResult && ifResult.length && ifResult[0]) {
-      this.createElementKNode(node, parent);
-    }
-  }
-
-  private doEach(each: KNode.Attribute, node: KNode.Element, parent: Node) {
-    const tokens = this.scanner.scan((each as KNode.Attribute).value);
-    const [name, key, iterable] = this.interpreter.evaluate(
-      this.parser.foreach(tokens)
-    );
-    const currentScope = this.interpreter.scope;
-    let index = 0;
-    for (const item of iterable) {
-      const scope: { [key: string]: any } = { [name]: item };
-      if (key) {
-        scope[key] = index;
-      }
-      this.interpreter.scope = new Scope(currentScope, scope);
-      this.createElementKNode(node, parent);
-      index += 1;
-    }
-    this.interpreter.scope = currentScope;
-  }
-
-  private createElementKNode(node: KNode.Element, parent?: Node): void {
-    const element = document.createElement(node.name);
-
-    node.attributes
-      .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
-      .map((attr) => this.evaluate(attr, element));
-
-    if (node.self) {
-      return;
-    }
-
-    node.children.map((elm) => this.evaluate(elm, element));
-
-    if (parent) {
-      parent.appendChild(element);
-    }
-  }
-
-  public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
-    const attr = document.createAttribute(node.name);
-    if (node.value) {
-      attr.value = node.value;
-    }
-
-    if (parent) {
-      (parent as HTMLElement).setAttributeNode(attr);
-    }
-  }
-
-  private templateParse(source: string): string {
-    const tokens = this.scanner.scan(source);
-    const expressions = this.parser.parse(tokens);
-
-    if (this.parser.errors.length) {
-      this.error(`Template string  error: ${this.parser.errors[0]}`);
-    }
-
-    let result = "";
-    for (const expression of expressions) {
-      result += `${this.interpreter.evaluate(expression)}`;
-    }
-    return result;
+    this.createElement(node, parent);
   }
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
@@ -154,11 +62,153 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
+    const attr = document.createAttribute(node.name);
+    if (node.value) {
+      attr.value = node.value;
+    }
+
+    if (parent) {
+      (parent as HTMLElement).setAttributeNode(attr);
+    }
+  }
+
   public visitCommentKNode(node: KNode.Comment, parent?: Node): void {
     const result = new Comment(node.value);
     if (parent) {
       parent.appendChild(result);
     }
+  }
+
+  private findAttr(
+    node: KNode.Element,
+    ...name: string[]
+  ): KNode.Attribute | null {
+    const attrib = node.attributes.find((attr) =>
+      name.includes((attr as KNode.Attribute).name)
+    );
+    if (attrib) {
+      return attrib as KNode.Attribute;
+    }
+    return null;
+  }
+
+  private doIf(expressions: IfElseNode[], parent: Node): void {
+    const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
+    if ($if && $if.length && $if[0]) {
+      this.createElement(expressions[0][0], parent);
+      return;
+    }
+
+    for (const expression of expressions.slice(1, expressions.length)) {
+      if ((this.findAttr(expression[0] as KNode.Element), "@elseif")) {
+        const $elseif = this.execute((expression[1] as KNode.Attribute).value);
+        if ($elseif && $elseif.length && $elseif[0]) {
+          this.createElement(expression[0], parent);
+          return;
+        } else {
+          continue;
+        }
+      }
+      if ((this.findAttr(expression[0] as KNode.Element), "@else")) {
+        this.createElement(expression[0], parent);
+        return;
+      }
+    }
+  }
+
+  private doEach(each: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const tokens = this.scanner.scan((each as KNode.Attribute).value);
+    const [name, key, iterable] = this.interpreter.evaluate(
+      this.parser.foreach(tokens)
+    );
+    const currentScope = this.interpreter.scope;
+    let index = 0;
+    for (const item of iterable) {
+      const scope: { [key: string]: any } = { [name]: item };
+      if (key) {
+        scope[key] = index;
+      }
+      this.interpreter.scope = new Scope(currentScope, scope);
+      this.createElement(node, parent);
+      index += 1;
+    }
+    this.interpreter.scope = currentScope;
+  }
+
+  private createSiblings(nodes: KNode.KNode[], parent?: Node): void {
+    let current = 0;
+    while (current < nodes.length) {
+      const node = nodes[current++];
+      if (node.type === "element") {
+        const $each = this.findAttr(node as KNode.Element, "@each");
+        if ($each) {
+          this.doEach($each, node as KNode.Element, parent);
+          continue;
+        }
+
+        const $if = this.findAttr(node as KNode.Element, "@if");
+        if ($if) {
+          const expressions: IfElseNode[] = [[node as KNode.Element, $if]];
+          const tag = (node as KNode.Element).name;
+          let found = true;
+
+          while (found) {
+            if (current >= nodes.length) {
+              break;
+            }
+            const attr = this.findAttr(
+              nodes[current] as KNode.Element,
+              "@else",
+              "@elseif"
+            );
+            if ((nodes[current] as KNode.Element).name === tag && attr) {
+              expressions.push([nodes[current] as KNode.Element, attr]);
+              current += 1;
+            } else {
+              found = false;
+            }
+          }
+
+          this.doIf(expressions, parent);
+          continue;
+        }
+      }
+      this.evaluate(node, parent);
+    }
+  }
+
+  private createElement(node: KNode.Element, parent?: Node): void {
+    const element = document.createElement(node.name);
+
+    node.attributes
+      .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
+      .map((attr) => this.evaluate(attr, element));
+
+    if (node.self) {
+      return;
+    }
+
+    this.createSiblings(node.children, element);
+
+    if (parent) {
+      parent.appendChild(element);
+    }
+  }
+
+  private templateParse(source: string): string {
+    const tokens = this.scanner.scan(source);
+    const expressions = this.parser.parse(tokens);
+
+    if (this.parser.errors.length) {
+      this.error(`Template string  error: ${this.parser.errors[0]}`);
+    }
+
+    let result = "";
+    for (const expression of expressions) {
+      result += `${this.interpreter.evaluate(expression)}`;
+    }
+    return result;
   }
 
   public visitDoctypeKNode(node: KNode.Doctype): void {
