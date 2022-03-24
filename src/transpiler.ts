@@ -39,44 +39,56 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return container;
   }
 
-  public visitElementKNode(node: KNode.Element, parent?: Node): void {
-    const each = node.attributes.find(
-      (attr) => (attr as KNode.Attribute).name === "@each"
+  private findAttr(node: KNode.Element, name: string): KNode.Attribute | null {
+    const attrib = node.attributes.find(
+      (attr) => (attr as KNode.Attribute).name === name
     );
+    if (attrib) {
+      return attrib as KNode.Attribute;
+    }
+    return null;
+  }
 
+  public visitElementKNode(node: KNode.Element, parent?: Node): void {
+    const each = this.findAttr(node, "@each");
     if (each) {
-      const tokens = this.scanner.scan((each as KNode.Attribute).value);
-      const [name, key, iterable] = this.interpreter.evaluate(
-        this.parser.foreach(tokens)
-      );
-      const currentScope = this.interpreter.scope;
-      let index = 0;
-      for (const item of iterable) {
-        const scope: { [key: string]: any } = { [name]: item };
-        if (key) {
-          scope[key] = index;
-        }
-        this.interpreter.scope = new Scope(currentScope, scope);
-        this.createElementKNode(node, parent);
-        index += 1;
-      }
-      this.interpreter.scope = currentScope;
+      this.doEach(each, node, parent);
       return;
     }
 
-    const iff = node.attributes.find(
-      (attr) => (attr as KNode.Attribute).name === "@if"
-    );
-
+    const iff = this.findAttr(node, "@if");
     if (iff) {
-      const ifResult = this.execute((iff as KNode.Attribute).value);
-      if (ifResult && ifResult.length && ifResult[0]) {
-        this.createElementKNode(node, parent);
-      }
+      this.doIf(iff, node, parent);
       return;
     }
 
     this.createElementKNode(node, parent);
+  }
+
+  private doIf(iff: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const ifResult = this.execute((iff as KNode.Attribute).value);
+    if (ifResult && ifResult.length && ifResult[0]) {
+      this.createElementKNode(node, parent);
+    }
+  }
+
+  private doEach(each: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const tokens = this.scanner.scan((each as KNode.Attribute).value);
+    const [name, key, iterable] = this.interpreter.evaluate(
+      this.parser.foreach(tokens)
+    );
+    const currentScope = this.interpreter.scope;
+    let index = 0;
+    for (const item of iterable) {
+      const scope: { [key: string]: any } = { [name]: item };
+      if (key) {
+        scope[key] = index;
+      }
+      this.interpreter.scope = new Scope(currentScope, scope);
+      this.createElementKNode(node, parent);
+      index += 1;
+    }
+    this.interpreter.scope = currentScope;
   }
 
   private createElementKNode(node: KNode.Element, parent?: Node): void {
