@@ -3,9 +3,9 @@ export const DemoSource = `
   <header>
     <h3>{{person.name}}</h3>
     <h4>{{person.profession}}</h4>
-    <p @if="person.age > 21">Age is greater then 21</p>
+    <p @if="person.age > 21">Age is greater than 21</p>
     <p @elseif="person.age == 21">Age is equal to 21</p>
-    <p @elseif="person.age < 21">Age is less then 21</p>
+    <p @elseif="person.age < 21">Age is less than 21</p>
     <p @else>Age is impossible</p>
   </header>
   <h4>Hobbies ({{person.hobbies.length}}):</h4>
