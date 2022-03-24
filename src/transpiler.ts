@@ -181,6 +181,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private createElement(node: KNode.Element, parent?: Node): void {
     const element = document.createElement(node.name);
 
+    const events = node.attributes.filter((attr) =>
+      (attr as KNode.Attribute).name.startsWith("@on:")
+    );
+
+    for (const event of events) {
+      this.createEventListener(element, event as KNode.Attribute);
+    }
+
     node.attributes
       .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
       .map((attr) => this.evaluate(attr, element));
@@ -194,6 +202,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (parent) {
       parent.appendChild(element);
     }
+  }
+
+  private createEventListener(element: Node, attr: KNode.Attribute): void {
+    const type = attr.name.split(":")[1];
+    element.addEventListener(type, () => {
+      this.execute(attr.value);
+    });
   }
 
   private templateParse(source: string): string {
