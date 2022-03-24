@@ -15,6 +15,13 @@ export const DemoSource = `
     </li>
   </ul>
   <div>100 + 20 / (10 * (10 -20) + 4) = {{100 + 20 / (10 * (10 -20) + 4)}}</div>
+  <div  class="sdf-v-margin">
+    <button
+      @on:click="alert('Hello World'); console.log(100 / 2.5 + 15)"
+    >
+      CLICK ME
+    </button>
+  </div>
 </div>
 `;
 

@@ -27,6 +27,6 @@ export class Scope {
       return this.parent.get(key);
     }
 
-    return undefined;
+    return window[key];
   }
 }
