@@ -214,21 +214,23 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private createElement(node: KNode.Element, parent?: Node): void {
-    const element = document.createElement(node.name);
+    const isTemplate = node.name === "kvoid";
+    const element = isTemplate ? parent : document.createElement(node.name);
 
-    // event binding
-    const events = node.attributes.filter((attr) =>
-      (attr as KNode.Attribute).name.startsWith("@on:")
-    );
+    if (!isTemplate) {
+      // event binding
+      const events = node.attributes.filter((attr) =>
+        (attr as KNode.Attribute).name.startsWith("@on:")
+      );
 
-    for (const event of events) {
-      this.createEventListener(element, event as KNode.Attribute);
+      for (const event of events) {
+        this.createEventListener(element, event as KNode.Attribute);
+      }
+      // attributes
+      node.attributes
+        .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
+        .map((attr) => this.evaluate(attr, element));
     }
-
-    // attributes
-    node.attributes
-      .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
-      .map((attr) => this.evaluate(attr, element));
 
     if (node.self) {
       return;
@@ -236,7 +238,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
     this.createSiblings(node.children, element);
 
-    if (parent) {
+    if (!isTemplate && parent) {
       parent.appendChild(element);
     }
   }

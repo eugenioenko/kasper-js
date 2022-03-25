@@ -43,6 +43,15 @@ export const DemoSource = `
    </span>
 </span>
 
+<!-- void elements -->
+<div>
+  <kvoid @init="index = 0">
+    <kvoid @while="index < 3">
+      {{index = index + 1}}
+    </kvoid>
+  </kvoid>
+</div>
+
 <!-- complex expressions -->
 {{Math.floor(Math.sqrt(100 + 20 / (10 * (Math.abs(10 -20)) + 4)))}}
 
