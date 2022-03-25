@@ -84,6 +84,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     node: KNode.Element,
     ...name: string[]
   ): KNode.Attribute | null {
+    if (!node || !node.attributes || !node.attributes.length) {
+      return null;
+    }
+
     const attrib = node.attributes.find((attr) =>
       name.includes((attr as KNode.Attribute).name)
     );
