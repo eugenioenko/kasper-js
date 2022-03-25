@@ -36,8 +36,31 @@ export const DemoSource = `
   {{item[0]}}:{{item[1]}},
 </span>
 
+<!-- while loop -->
+<span @init="index = 0">
+   <span @while="index < 3">
+     {{index = index + 1}},
+   </span>
+</span>
+
+<!-- void elements -->
+<div>
+  <kvoid @init="index = 0">
+    <kvoid @while="index < 3">
+      {{index = index + 1}}
+    </kvoid>
+  </kvoid>
+</div>
+
 <!-- complex expressions -->
 {{Math.floor(Math.sqrt(100 + 20 / (10 * (Math.abs(10 -20)) + 4)))}}
+
+<!-- void expression -->
+{{void "this won't be shown"}}
+
+<!-- logging / debugging  -->
+{{debug "expression"}}
+{{void console.log("same as previous just less wordy")}}
 
 `;
 

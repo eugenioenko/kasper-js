@@ -16,12 +16,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     node.accept(this, parent);
   }
 
-  private execute(source: string): any[] {
+  // evaluates expressions and returns the result of the first evaluation
+  private execute(source: string): any {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
-    return expressions.map((expression) =>
+    const result = expressions.map((expression) =>
       this.interpreter.evaluate(expression)
     );
+    return result && result.length ? result[0] : undefined;
   }
 
   public transpile(
@@ -99,7 +101,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private doIf(expressions: IfElseNode[], parent: Node): void {
     const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
-    if ($if && $if.length && $if[0]) {
+    if ($if) {
       this.createElement(expressions[0][0], parent);
       return;
     }
@@ -107,7 +109,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     for (const expression of expressions.slice(1, expressions.length)) {
       if ((this.findAttr(expression[0] as KNode.Element), "@elseif")) {
         const $elseif = this.execute((expression[1] as KNode.Attribute).value);
-        if ($elseif && $elseif.length && $elseif[0]) {
+        if ($elseif) {
           this.createElement(expression[0], parent);
           return;
         } else {
@@ -136,6 +138,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.interpreter.scope = new Scope(originalScope, scope);
       this.createElement(node, parent);
       index += 1;
+    }
+    this.interpreter.scope = originalScope;
+  }
+
+  private doWhile($while: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const originalScope = this.interpreter.scope;
+    this.interpreter.scope = new Scope(originalScope);
+    while (this.execute($while.value)) {
+      this.createElement(node, parent);
     }
     this.interpreter.scope = originalScope;
   }
@@ -186,6 +197,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
 
+        const $while = this.findAttr(node as KNode.Element, "@while");
+        if ($while) {
+          this.doWhile($while, node as KNode.Element, parent);
+          continue;
+        }
+
         const $init = this.findAttr(node as KNode.Element, "@init");
         if ($init) {
           this.doInit($init, node as KNode.Element, parent);
@@ -197,21 +214,23 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private createElement(node: KNode.Element, parent?: Node): void {
-    const element = document.createElement(node.name);
+    const isTemplate = node.name === "kvoid";
+    const element = isTemplate ? parent : document.createElement(node.name);
 
-    // event binding
-    const events = node.attributes.filter((attr) =>
-      (attr as KNode.Attribute).name.startsWith("@on:")
-    );
+    if (!isTemplate) {
+      // event binding
+      const events = node.attributes.filter((attr) =>
+        (attr as KNode.Attribute).name.startsWith("@on:")
+      );
 
-    for (const event of events) {
-      this.createEventListener(element, event as KNode.Attribute);
+      for (const event of events) {
+        this.createEventListener(element, event as KNode.Attribute);
+      }
+      // attributes
+      node.attributes
+        .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
+        .map((attr) => this.evaluate(attr, element));
     }
-
-    // attributes
-    node.attributes
-      .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
-      .map((attr) => this.evaluate(attr, element));
 
     if (node.self) {
       return;
@@ -219,7 +238,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
     this.createSiblings(node.children, element);
 
-    if (parent) {
+    if (!isTemplate && parent) {
       parent.appendChild(element);
     }
   }

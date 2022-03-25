@@ -52,9 +52,9 @@
   <input type="email" @on:input="{{(email) => this.email = $args[0]" />
 
   <!-- rendering child content -->
-  <void @inlet />
+  <kvoid @inlet />
 
   <!-- templates -->
-  <void @outlet="my-template" />
-  <void @template="my-template"> template content </void>
+  <kvoid @outlet="my-template" />
+  <kvoid @template="my-template"> template content </kvoid>
 </void>
