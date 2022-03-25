@@ -36,6 +36,13 @@ export const DemoSource = `
   {{item[0]}}:{{item[1]}},
 </span>
 
+<!-- while loop -->
+<span @init="index = 0">
+   <span @while="index < 3">
+     {{index = index + 1}},
+   </span>
+</span>
+
 <!-- complex expressions -->
 {{Math.floor(Math.sqrt(100 + 20 / (10 * (Math.abs(10 -20)) + 4)))}}
 
