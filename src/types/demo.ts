@@ -14,7 +14,13 @@ export const DemoSource = `
       {{index + 1}}: {{hobby}}
     </li>
   </ul>
-  <div>100 + 20 / (10 * (10 -20) + 4) = {{100 + 20 / (10 * (10 -20) + 4)}}</div>
+  <div>
+    100 + 20 / (10 * (10 -20) + 4) =
+    {{100 + 20 / (10 * (10 -20) + 4)}}
+  </div>
+  <div @init="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
+     {{student.name}}
+  </div>
   <div  class="sdf-v-margin">
     <button
       @on:click="alert('Hello World'); console.log(100 / 2.5 + 15)"

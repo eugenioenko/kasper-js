@@ -122,18 +122,26 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const [name, key, iterable] = this.interpreter.evaluate(
       this.parser.foreach(tokens)
     );
-    const currentScope = this.interpreter.scope;
+    const originalScope = this.interpreter.scope;
     let index = 0;
     for (const item of iterable) {
       const scope: { [key: string]: any } = { [name]: item };
       if (key) {
         scope[key] = index;
       }
-      this.interpreter.scope = new Scope(currentScope, scope);
+      this.interpreter.scope = new Scope(originalScope, scope);
       this.createElement(node, parent);
       index += 1;
     }
-    this.interpreter.scope = currentScope;
+    this.interpreter.scope = originalScope;
+  }
+
+  private doInit(init: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const originalScope = this.interpreter.scope;
+    this.interpreter.scope = new Scope(originalScope);
+    this.execute(init.value);
+    this.createElement(node, parent);
+    this.interpreter.scope = originalScope;
   }
 
   private createSiblings(nodes: KNode.KNode[], parent?: Node): void {
@@ -173,6 +181,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           this.doIf(expressions, parent);
           continue;
         }
+
+        const $init = this.findAttr(node as KNode.Element, "@init");
+        if ($init) {
+          this.doInit($init, node as KNode.Element, parent);
+          continue;
+        }
       }
       this.evaluate(node, parent);
     }
@@ -181,6 +195,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private createElement(node: KNode.Element, parent?: Node): void {
     const element = document.createElement(node.name);
 
+    // event binding
     const events = node.attributes.filter((attr) =>
       (attr as KNode.Attribute).name.startsWith("@on:")
     );
@@ -189,6 +204,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.createEventListener(element, event as KNode.Attribute);
     }
 
+    // attributes
     node.attributes
       .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
       .map((attr) => this.evaluate(attr, element));
