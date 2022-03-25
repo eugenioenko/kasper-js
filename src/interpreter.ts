@@ -255,4 +255,15 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       this.evaluate(expr.iterable),
     ];
   }
+
+  visitVoidExpr(expr: Expr.Void): any {
+    this.evaluate(expr.value);
+    return "";
+  }
+
+  visitDebugExpr(expr: Expr.Void): any {
+    const result = this.evaluate(expr.value);
+    console.log(result);
+    return "";
+  }
 }

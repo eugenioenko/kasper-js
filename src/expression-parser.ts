@@ -389,6 +389,14 @@ export class ExpressionParser {
     if (this.match(TokenType.LeftBracket)) {
       return this.list();
     }
+    if (this.match(TokenType.Void)) {
+      const expr: Expr.Expr = this.expression();
+      return new Expr.Void(expr, this.previous().line);
+    }
+    if (this.match(TokenType.Debug)) {
+      const expr: Expr.Expr = this.expression();
+      return new Expr.Debug(expr, this.previous().line);
+    }
 
     throw this.error(
       this.peek(),

@@ -17,6 +17,7 @@ const ExpressionAST = {
   Assign: ["name: Token", "value: Expr"],
   Binary: ["left: Expr", "operator: Token", "right: Expr"],
   Call: ["callee: Expr", "paren: Token", "args: Expr[]"],
+  Debug: ["value: Expr"],
   Dictionary: ["properties: Expr[]"],
   Each: ["name: Token", "key: Token", "iterable: Expr"],
   Get: ["entity: Expr", "key: Expr", "type: TokenType"],
@@ -34,6 +35,7 @@ const ExpressionAST = {
   Typeof: ["value: Expr"],
   Unary: ["operator: Token", "right: Expr"],
   Variable: ["name: Token"],
+  Void: ["value: Expr"],
 };
 
 function generateNodeAST(baseClass, AST, filename, imports = "") {

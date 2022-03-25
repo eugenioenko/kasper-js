@@ -55,6 +55,13 @@ export const DemoSource = `
 <!-- complex expressions -->
 {{Math.floor(Math.sqrt(100 + 20 / (10 * (Math.abs(10 -20)) + 4)))}}
 
+<!-- void expression -->
+{{void "this won't be shown"}}
+
+<!-- logging / debugging  -->
+{{debug "expression"}}
+{{void console.log("same as previous just less wordy")}}
+
 `;
 
 export const DemoJson = `

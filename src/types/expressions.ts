@@ -13,6 +13,7 @@ export interface ExprVisitor<R> {
     visitAssignExpr(expr: Assign): R;
     visitBinaryExpr(expr: Binary): R;
     visitCallExpr(expr: Call): R;
+    visitDebugExpr(expr: Debug): R;
     visitDictionaryExpr(expr: Dictionary): R;
     visitEachExpr(expr: Each): R;
     visitGetExpr(expr: Get): R;
@@ -30,6 +31,7 @@ export interface ExprVisitor<R> {
     visitTypeofExpr(expr: Typeof): R;
     visitUnaryExpr(expr: Unary): R;
     visitVariableExpr(expr: Variable): R;
+    visitVoidExpr(expr: Void): R;
 }
 
 export class Assign extends Expr {
@@ -93,6 +95,24 @@ export class Call extends Expr {
 
   public toString(): string {
       return 'Expr.Call';
+  }
+}
+
+export class Debug extends Expr {
+    public value: Expr;
+
+    constructor(value: Expr, line: number) {
+        super();
+        this.value = value;
+        this.line = line;
+    }
+
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitDebugExpr(this);
+  }
+
+  public toString(): string {
+      return 'Expr.Debug';
   }
 }
 
@@ -425,6 +445,24 @@ export class Variable extends Expr {
 
   public toString(): string {
       return 'Expr.Variable';
+  }
+}
+
+export class Void extends Expr {
+    public value: Expr;
+
+    constructor(value: Expr, line: number) {
+        super();
+        this.value = value;
+        this.line = line;
+    }
+
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitVoidExpr(this);
+  }
+
+  public toString(): string {
+      return 'Expr.Void';
   }
 }
 
