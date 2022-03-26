@@ -84,7 +84,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private findAttr(
     node: KNode.Element,
-    ...name: string[]
+    name: string[]
   ): KNode.Attribute | null {
     if (!node || !node.attributes || !node.attributes.length) {
       return null;
@@ -107,7 +107,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
 
     for (const expression of expressions.slice(1, expressions.length)) {
-      if ((this.findAttr(expression[0] as KNode.Element), "@elseif")) {
+      if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
         const $elseif = this.execute((expression[1] as KNode.Attribute).value);
         if ($elseif) {
           this.createElement(expression[0], parent);
@@ -116,7 +116,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
       }
-      if ((this.findAttr(expression[0] as KNode.Element), "@else")) {
+      if (this.findAttr(expression[0] as KNode.Element, ["@else"])) {
         this.createElement(expression[0], parent);
         return;
       }
@@ -164,13 +164,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     while (current < nodes.length) {
       const node = nodes[current++];
       if (node.type === "element") {
-        const $each = this.findAttr(node as KNode.Element, "@each");
+        const $each = this.findAttr(node as KNode.Element, ["@each"]);
         if ($each) {
           this.doEach($each, node as KNode.Element, parent);
           continue;
         }
 
-        const $if = this.findAttr(node as KNode.Element, "@if");
+        const $if = this.findAttr(node as KNode.Element, ["@if"]);
         if ($if) {
           const expressions: IfElseNode[] = [[node as KNode.Element, $if]];
           const tag = (node as KNode.Element).name;
@@ -180,11 +180,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             if (current >= nodes.length) {
               break;
             }
-            const attr = this.findAttr(
-              nodes[current] as KNode.Element,
+            const attr = this.findAttr(nodes[current] as KNode.Element, [
               "@else",
-              "@elseif"
-            );
+              "@elseif",
+            ]);
             if ((nodes[current] as KNode.Element).name === tag && attr) {
               expressions.push([nodes[current] as KNode.Element, attr]);
               current += 1;
@@ -197,13 +196,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
 
-        const $while = this.findAttr(node as KNode.Element, "@while");
+        const $while = this.findAttr(node as KNode.Element, ["@while"]);
         if ($while) {
           this.doWhile($while, node as KNode.Element, parent);
           continue;
         }
 
-        const $init = this.findAttr(node as KNode.Element, "@init");
+        const $init = this.findAttr(node as KNode.Element, ["@init"]);
         if ($init) {
           this.doInit($init, node as KNode.Element, parent);
           continue;
