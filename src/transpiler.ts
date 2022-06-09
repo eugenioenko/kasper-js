@@ -46,7 +46,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
-    const regex = /\{\{.+\}\}/;
+    const regex = /\{\{.+\}\}/ms;
     let text: Text;
     if (regex.test(node.value)) {
       const result = node.value.replace(
