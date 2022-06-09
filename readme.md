@@ -33,10 +33,10 @@ The template language should be cohesive and clean, ideally with no compromises
 
 ```
 <ul>
-    <li @each="item of this.items">
-      <button @on:click="this.open(index)">{{item}}</button>
-    </li>
-  </ul>
+  <li @each="item of this.items">
+    <button @on:click="this.open(index)">{{item}}</button>
+  </li>
+</ul>
 ```
 
 ## Init expression
@@ -52,9 +52,9 @@ Evaluated during element creation
 ## While expression
 
 ```
- <span @while="index < 3">
-     {{index = index + 1}},
-   </span>
+<span @while="index < 3">
+  {{index = index + 1}},
+</span>
 ```
 
 ## Event listener expression
@@ -71,4 +71,39 @@ Evaluates the expression to string and inserts it into the dom as a TextNode
 
 ```
 {{ "Hello" + " " + "World" }}
+```
+
+# Template expression interpreter
+
+Kasper's expression interpreter emulates basic javascript expressions.
+So far it implements the following expressions:
+Assign, Binary, Call, Debug, Dictionary, Each, Get, Grouping, Key, Logical, List, Literal, New, NullCoalescing, Postfix, Set, Template, Ternary, Typeof, Unary, Variable, Void
+
+## Assignment expression
+
+`identifier [operator] expression;`
+Valid operators are: `= += -= *= /=`
+
+```
+number = 22;
+list = [1, 2, "hello"];
+dict = {"green": "#00FF00 };
+text += "Hello World";
+```
+
+## Binary expression
+
+`identifier [operator] expression;`
+Valid operators are: `+ - / *`
+
+```
+text + list[0] * dict.value;
+```
+
+## Function call expression
+
+`identifier(arg*);`
+
+```
+console.log('something');
 ```
