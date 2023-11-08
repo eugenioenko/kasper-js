@@ -213,7 +213,15 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       args.push(this.evaluate(argument));
     }
     // execute function
-    return callee(...args);
+    if (
+      expr.callee instanceof Expr.Get &&
+      (expr.callee.entity instanceof Expr.Variable ||
+        expr.callee.entity instanceof Expr.Grouping)
+    ) {
+      return callee.apply(expr.callee.entity.result, args);
+    } else {
+      return callee(...args);
+    }
   }
 
   public visitNewExpr(expr: Expr.New): any {
