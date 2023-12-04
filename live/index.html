@@ -1,73 +1,78 @@
 <!DOCTYPE html>
-<html ng-app="app">
+<html>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>kasper-js</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="./css/sdf.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
     <script src="../dist/kasper.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          fontFamily: {
+            mono: [
+              "Share Tech Mono",
+              "Consolas",
+              "Liberation Mono",
+              "Courier New",
+            ],
+          },
+        },
+      };
+    </script>
     <style>
-      #container {
-        max-width: 1280px;
-        margin: auto;
+      kasper {
+        color: #374151;
       }
-      #editor,
-      #output,
-      #render {
-        width: 100%;
-        height: 230px;
-        margin-bottom: 30px;
+      kasper h3 {
+        font-size: 28px;
+        margin-bottom: 8px;
       }
-      #json,
-      #editor {
-        width: 100%;
-        height: 235px;
-        margin-bottom: 30px;
-      }
-      #render {
-        border: 1px solid gray;
-        padding: 15px;
-        margin-bottom: 35px;
-        overflow: auto;
-      }
-      #console {
-        height: 150px;
-        overflow-y: auto;
-      }
-      * {
-        box-sizing: border-box;
+      kasper h4 {
+        font-size: 21px;
+        margin-bottom: 8px;
+        margin-top: 8px;
       }
     </style>
   </head>
   <body>
-    <div class="sdf-wrapper sdf-default" id="container">
-      <div class="sdf-grid">
-        <div class="sdf-cell sdf-12 sdf-padding">
-          <h1>kasper-js</h1>
-          <h3>
-            <small
-              ><i>kasper-js</i> is an experimental javascript template
-              parser</small
-            >
-          </h3>
+    <div class="max-w-screen-xl mx-auto px-6 pt-6 pb-12">
+      <h1 class="font-mono text-5xl text-gray-500 pb-1">kasper-js</h1>
+      <h3 class="font-mono text-lg text-gray-500 pb-4">
+        <i>kasper-js</i> is an experimental javascript template parser, renderer
+        and interpreter
+      </h3>
+
+      <div class="py-6 font-header text-gray-500 text-3xl">
+        <h3>Try it out!</h3>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex flex-col gap-6 md:col-span-2">
+          <div id="json" class="w-full h-32"></div>
+          <div id="editor" class="w-full h-64 md:h-96"></div>
         </div>
-        <div class="sdf-cell sdf-12">
-          <h3>Try it out!</h3>
+        <div>
+          <div
+            id="render"
+            class="border border-gray-300 h-64 md:h-full p-6 text-gray-700"
+          >
+            <div class="text-gray-500">Hit RENDER to view template output</div>
+          </div>
         </div>
-        <div class="sdf-cell sdf-12 sdf-sm-6 sdf-padding">
-          <div id="json"></div>
-          <div id="editor"></div>
-        </div>
-        <div class="sdf-cell sdf-12 sdf-sm-6 sdf-padding">
-          <div id="render">Hit execute to view template output</div>
-          <div id="output"></div>
-        </div>
-        <div class="sdf-cell sdf-12 sdf-padding sdf-v-margin">
-          <button class="sdf-button sdf-success" id="execute">EXECUTE</button>
-        </div>
-        <div class="sdf-cell sdf-12 sdf-padding"></div>
+      </div>
+      <div class="flex justify-end py-6">
+        <button
+          class="px-12 py-2 bg-green-600 rounded text-white font-mono hover:bg-green-500"
+          id="execute"
+        >
+          RENDER
+        </button>
       </div>
     </div>
     <a
@@ -115,11 +120,6 @@
 
       const ejson = createEditor("json", kasper.demoJson, "json");
       const editor = createEditor("editor", kasper.demoSourceCode, "html");
-      const output = createEditor(
-        "output",
-        "Hit execute to view nodes",
-        "json"
-      );
 
       document.getElementById("execute").addEventListener("click", () => {
         const source = editor.getValue();
@@ -132,7 +132,7 @@
         document.getElementById("render").innerHTML = "";
         document.getElementById("render").appendChild(node);
 
-        output.setValue(result.split("},{").join("},\n{"));
+        // output.setValue(result.split("},{").join("},\n{"));
       });
     </script>
   </body>

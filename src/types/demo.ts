@@ -1,5 +1,4 @@
-export const DemoSource = `
-<!-- accessing scope elements -->
+export const DemoSource = `<!-- accessing scope elements -->
 <h3>{{person.name}}</h3>
 <h4>{{person.profession}}</h4>
 
@@ -11,15 +10,16 @@ export const DemoSource = `
 
 <!-- iterating over arrays -->
 <h4>Hobbies ({{person.hobbies.length}}):</h4>
-<ul>
+<ul class="list-disc">
   <li @each="const hobby with index of person.hobbies" class="text-red">
     {{index + 1}}: {{hobby}}
   </li>
 </ul>
 
 <!-- event binding -->
-<div  class="sdf-v-margin">
+<div class="my-4">
   <button
+    class="bg-blue-500 rounded px-4 py-2 text-white hover:bg-blue-700"
     @on:click="alert('Hello World'); console.log(100 / 2.5 + 15)"
   >
     CLICK ME
@@ -64,8 +64,7 @@ export const DemoSource = `
 
 `;
 
-export const DemoJson = `
-{
+export const DemoJson = `{
   "person": {
     "name": "John Doe",
     "profession": "Software Developer",

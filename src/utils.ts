@@ -13,9 +13,9 @@ export function isAlphaNumeric(char: string): boolean {
 }
 
 export function capitalize(word: string): string {
-  return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
+  return word.charAt(0).toUpperCase() + word.substring(1).toLowerCase();
 }
 
-export function isKeyword(word: string): boolean {
+export function isKeyword(word: keyof typeof TokenType): boolean {
   return TokenType[word] >= TokenType.And;
 }

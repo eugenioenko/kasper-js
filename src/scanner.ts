@@ -164,7 +164,7 @@ export class Scanner {
     }
 
     const value = this.source.substring(this.start, this.current);
-    const capitalized = Utils.capitalize(value);
+    const capitalized = Utils.capitalize(value) as keyof typeof TokenType;
     if (Utils.isKeyword(capitalized)) {
       this.addToken(TokenType[capitalized], value);
     } else {
