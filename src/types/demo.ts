@@ -1,5 +1,4 @@
-export const DemoSource = `
-<!-- accessing scope elements -->
+export const DemoSource = `<!-- accessing scope elements -->
 <h3>{{person.name}}</h3>
 <h4>{{person.profession}}</h4>
 
@@ -65,8 +64,7 @@ export const DemoSource = `
 
 `;
 
-export const DemoJson = `
-{
+export const DemoJson = `{
   "person": {
     "name": "John Doe",
     "profession": "Software Developer",
