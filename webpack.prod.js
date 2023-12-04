@@ -1,9 +1,8 @@
 const path = require("path");
-const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
   entry: "./src/kasper.ts",
-  devtool: "source-map",
+  devtool: "inline-source-map",
   mode: "production",
   watch: false,
   module: {
@@ -22,11 +21,5 @@ module.exports = {
     filename: "kasper.min.js",
     path: path.resolve(__dirname, "dist"),
     // libraryTarget: "window",
-  },
-  optimization: {
-    namedModules: false,
-    namedChunks: false,
-    nodeEnv: "production",
-    minimizer: [new TerserPlugin()],
   },
 };
