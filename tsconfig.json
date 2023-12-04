@@ -13,7 +13,6 @@
     "paths": {
       "@kasper/*": ["src/*"]
     },
-    "esModuleInterop": true,
-    "suppressImplicitAnyIndexErrors": true
+    "esModuleInterop": true
   }
 }

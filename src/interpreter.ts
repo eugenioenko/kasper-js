@@ -243,7 +243,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   }
 
   public visitDictionaryExpr(expr: Expr.Dictionary): any {
-    const dict = {};
+    const dict: any = {};
     for (const property of expr.properties) {
       const key = this.evaluate((property as Expr.Set).key);
       const value = this.evaluate((property as Expr.Set).value);
