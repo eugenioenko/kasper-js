@@ -1,4 +1,4 @@
-# Kasper-js
+# Kasper-js 1.0.1
 
 This is a work in progress of a javascript template parser and renderer
 
