@@ -159,7 +159,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     this.interpreter.scope = originalScope;
   }
 
-  private doInit(init: KNode.Attribute, node: KNode.Element, parent: Node) {
+  private doLet(init: KNode.Attribute, node: KNode.Element, parent: Node) {
     const originalScope = this.interpreter.scope;
     this.interpreter.scope = new Scope(originalScope);
     this.execute(init.value);
@@ -210,9 +210,9 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
 
-        const $init = this.findAttr(node as KNode.Element, ["@init"]);
-        if ($init) {
-          this.doInit($init, node as KNode.Element, parent);
+        const $let = this.findAttr(node as KNode.Element, ["@let"]);
+        if ($let) {
+          this.doLet($let, node as KNode.Element, parent);
           continue;
         }
       }
