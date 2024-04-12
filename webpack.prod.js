@@ -2,7 +2,6 @@ const path = require("path");
 
 module.exports = {
   entry: "./src/kasper.ts",
-  devtool: "inline-source-map",
   mode: "production",
   watch: false,
   module: {

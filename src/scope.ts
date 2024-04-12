@@ -1,27 +1,23 @@
 export class Scope {
-  public values: Map<string, any>;
+  public values: Record<string, any>;
   public parent: Scope;
 
-  constructor(parent?: Scope, entries?: { [key: string]: any }) {
+  constructor(parent?: Scope, entries?: Record<string, any>) {
     this.parent = parent ? parent : null;
-    this.init(entries);
+    this.values = entries ? entries : {};
   }
 
-  public init(entries?: { [key: string]: any }): void {
-    if (entries) {
-      this.values = new Map(Object.entries(entries));
-    } else {
-      this.values = new Map();
-    }
+  public init(entries?: Record<string, any>): void {
+    this.values = entries ? entries : {};
   }
 
   public set(name: string, value: any) {
-    this.values.set(name, value);
+    this.values[name] = value;
   }
 
   public get(key: string): any {
-    if (this.values.has(key)) {
-      return this.values.get(key);
+    if (typeof this.values[key] !== "undefined") {
+      return this.values[key];
     }
     if (this.parent !== null) {
       return this.parent.get(key);
