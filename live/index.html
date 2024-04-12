@@ -57,7 +57,7 @@
 </div>
 
 <!-- evaluating code on element creation -->
-<div @init="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
+<div @let="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
     {{student.name}}
 </div>
 
@@ -67,7 +67,7 @@
 </span>
 
 <!-- while loop -->
-<span @init="index = 0">
+<span @let="index = 0">
    <span @while="index < 3">
      {{index = index + 1}},
    </span>
@@ -75,7 +75,7 @@
 
 <!-- void elements -->
 <div>
-  <kvoid @init="index = 0">
+  <kvoid @let="index = 0">
     <kvoid @while="index < 3">
       {{index = index + 1}}
     </kvoid>

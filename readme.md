@@ -22,6 +22,35 @@ The template language should be cohesive and clean, ideally with no compromises
 - html parser
 - javascript like syntax parser and interpreter
 - template renderer
+- re-render on state update
+
+## Getting started
+
+To use kasper you will need to:
+
+- Include the `kasper.js`.
+- Add a `<template>` element
+- Add a class that extends from `KasperApp`
+- Render the app by calling `Kasper`
+
+```
+<html>
+  <head>
+    <script src="kasper.min.js"></script>
+  </head>
+  <body>
+    <template>
+      <div>{{myAppName}}</div>
+    </template>
+    <script>
+      class MyApp extends KasperApp {
+        myAppName = "MyAppName"
+      }
+      Kasper(MyApp);
+    </script>
+  </body>
+</html>
+```
 
 ## Conditional expression
 
@@ -41,12 +70,12 @@ The template language should be cohesive and clean, ideally with no compromises
 </ul>
 ```
 
-## Init expression
+## Let expression
 
 Evaluated during element creation
 
 ```
-<div @init="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
+<div @let="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
     {{student.name}}
 </div>
 ```
