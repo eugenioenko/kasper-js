@@ -4,6 +4,8 @@ This is a work in progress of a javascript template parser and renderer
 
 ### > [Try it out in playground!](https://eugenioenko.github.io/kasper-js/live/)
 
+### > [Basic reactive app demo](https://eugenioenko.github.io/kasper-js/live/demo.html)
+
 ## Project goals
 
 > Create a full modern javascript framework

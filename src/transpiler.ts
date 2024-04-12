@@ -17,20 +17,28 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   // evaluates expressions and returns the result of the first evaluation
-  private execute(source: string): any {
+  private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
+
+    const restoreScope = this.interpreter.scope;
+    if (overrideScope) {
+      this.interpreter.scope = overrideScope;
+    }
     const result = expressions.map((expression) =>
       this.interpreter.evaluate(expression)
     );
+    this.interpreter.scope = restoreScope;
     return result && result.length ? result[0] : undefined;
   }
 
   public transpile(
     nodes: KNode.KNode[],
-    entries?: { [key: string]: any }
+    entries?: object,
+    container?: HTMLElement
   ): Node {
-    const container = document.createElement("kasper");
+    container = container || document.createElement("kasper");
+    container.innerHTML = "";
     this.interpreter.scope.init(entries);
     this.errors = [];
     try {
@@ -244,8 +252,9 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private createEventListener(element: Node, attr: KNode.Attribute): void {
     const type = attr.name.split(":")[1];
+    const currentScope = this.interpreter.scope;
     element.addEventListener(type, () => {
-      this.execute(attr.value);
+      this.execute(attr.value, currentScope);
     });
   }
 
