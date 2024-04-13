@@ -1,12 +1,8 @@
 import { TemplateParser } from "./template-parser";
-import { ExpressionParser } from "./expression-parser";
-import { Interpreter } from "./interpreter";
 import { Transpiler } from "./transpiler";
-import { Viewer } from "./viewer";
-import { Scanner } from "./scanner";
 import { State } from "./state";
 
-function execute(source: string): string {
+export function execute(source: string): string {
   const parser = new TemplateParser();
   const nodes = parser.parse(source);
   if (parser.errors.length) {
@@ -16,7 +12,7 @@ function execute(source: string): string {
   return result;
 }
 
-function transpile(
+export function transpile(
   source: string,
   entity?: { [key: string]: any },
   container?: HTMLElement
@@ -28,7 +24,7 @@ function transpile(
   return result;
 }
 
-function render(entity: any): void {
+export function render(entity: any): void {
   if (typeof window === "undefined") {
     console.error("kasper requires a browser environment to render templates.");
     return;
@@ -73,28 +69,10 @@ export class KasperApp {
   $onChanges = () => {};
 }
 
-function Kasper(initializer: any) {
+export function Kasper(initializer: any) {
   const entity = new initializer();
   entity.$doRender();
   if (typeof entity.$onInit === "function") {
     entity.$onInit();
   }
-}
-
-if (typeof window !== "undefined") {
-  ((window as any) || {}).kasper = {
-    execute,
-    transpile,
-  };
-  (window as any)["Kasper"] = Kasper;
-  (window as any)["KasperApp"] = KasperApp;
-} else if (typeof exports !== "undefined") {
-  exports.kasper = {
-    ExpressionParser,
-    Interpreter,
-    Scanner,
-    TemplateParser,
-    Transpiler,
-    Viewer,
-  };
 }
