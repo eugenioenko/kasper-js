@@ -1,6 +1,5 @@
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
-import { State } from "./state";
 
 export function execute(source: string): string {
   const parser = new TemplateParser();
@@ -44,34 +43,71 @@ export function render(entity: any): void {
 }
 
 export class KasperApp {
-  $state = (initial: any) => new State(initial, this);
-  $changes = 1;
-  $dirty = false;
-  $doRender = () => {
-    if (typeof this.$onChanges === "function") {
-      this.$onChanges();
-    }
-    if (this.$changes > 0 && !this.$dirty) {
-      this.$dirty = true;
-      queueMicrotask(() => {
-        render(this);
-        // console.log(this.$changes);
-        if (typeof this.$onRender === "function") {
-          this.$onRender();
-        }
-        this.$dirty = false;
-        this.$changes = 0;
-      });
-    }
-  };
   $onInit = () => {};
   $onRender = () => {};
   $onChanges = () => {};
 }
 
-export function Kasper(initializer: any) {
-  const entity = new initializer();
-  entity.$doRender();
+export class KasperRenderer {
+  entity?: KasperApp = undefined;
+  changes = 1;
+  dirty = false;
+
+  render = () => {
+    this.changes += 1;
+    if (!this.entity) {
+      // do not render if entity is not set
+      return;
+    }
+    if (typeof this.entity?.$onChanges === "function") {
+      this.entity.$onChanges();
+    }
+    if (this.changes > 0 && !this.dirty) {
+      this.dirty = true;
+      queueMicrotask(() => {
+        render(this.entity);
+        // console.log(this.changes);
+        if (typeof this.entity?.$onRender === "function") {
+          this.entity.$onRender();
+        }
+        this.dirty = false;
+        this.changes = 0;
+      });
+    }
+  };
+}
+
+let renderer = new KasperRenderer();
+
+export class KasperState {
+  _value: any;
+
+  constructor(initial: any) {
+    this._value = initial;
+  }
+
+  get value(): any {
+    return this._value;
+  }
+
+  set(value: any) {
+    this._value = value;
+    renderer.render();
+  }
+
+  toString() {
+    return this._value.toString();
+  }
+}
+
+export function kasperState(initial: any): KasperState {
+  return new KasperState(initial);
+}
+
+export function Kasper(Component: any) {
+  const entity = new Component();
+  renderer.entity = entity;
+  renderer.render();
   if (typeof entity.$onInit === "function") {
     entity.$onInit();
   }
