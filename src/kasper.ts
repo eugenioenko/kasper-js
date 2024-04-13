@@ -108,6 +108,7 @@ export function Kasper(Component: any) {
   const entity = new Component();
   renderer.entity = entity;
   renderer.render();
+  entity.$doRender();
   if (typeof entity.$onInit === "function") {
     entity.$onInit();
   }
