@@ -6,7 +6,7 @@ This is a work in progress of a javascript template parser and renderer
 
 Here you can find a small demo of Kanban board done with kasper-js
 
-### > [Try it out in playground!](https://eugenioenko.github.io/kasper-js/live/demo.html)
+### > [KasperJS Kanban board demo](https://eugenioenko.github.io/kasper-js/live/demo.html)
 
 ## Project goals
 
