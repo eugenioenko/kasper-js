@@ -2,13 +2,13 @@ export class Scope {
   public values: Record<string, any>;
   public parent: Scope;
 
-  constructor(parent?: Scope, entries?: Record<string, any>) {
+  constructor(parent?: Scope, entity?: Record<string, any>) {
     this.parent = parent ? parent : null;
-    this.values = entries ? entries : {};
+    this.values = entity ? entity : {};
   }
 
-  public init(entries?: Record<string, any>): void {
-    this.values = entries ? entries : {};
+  public init(entity?: Record<string, any>): void {
+    this.values = entity ? entity : {};
   }
 
   public set(name: string, value: any) {

@@ -1,3 +1,4 @@
+import { Component, ComponentRegistry } from "./component";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 
@@ -34,7 +35,7 @@ export function render(entity: any): void {
     return;
   }
 
-  const container = document.getElementsByTagName("kasper");
+  const container = document.getElementsByTagName("kasper-app");
   if (container.length) {
     document.body.removeChild(container[0]);
   }
@@ -42,14 +43,8 @@ export function render(entity: any): void {
   document.body.appendChild(node);
 }
 
-export class KasperApp {
-  $onInit = () => {};
-  $onRender = () => {};
-  $onChanges = () => {};
-}
-
 export class KasperRenderer {
-  entity?: KasperApp = undefined;
+  entity?: Component = undefined;
   changes = 1;
   dirty = false;
 
@@ -112,4 +107,45 @@ export function Kasper(Component: any) {
   if (typeof entity.$onInit === "function") {
     entity.$onInit();
   }
+}
+
+interface AppConfig {
+  root?: string;
+  entry?: string;
+  registry: ComponentRegistry;
+}
+
+function createComponent(
+  transpiler: Transpiler,
+  tag: string,
+  registry: ComponentRegistry
+) {
+  const element = document.createElement(tag);
+  const component = new registry[tag].component();
+  const nodes = registry[tag].nodes;
+  return transpiler.transpile(nodes, component, element);
+}
+
+function normalizeRegistry(
+  registry: ComponentRegistry,
+  parser: TemplateParser
+) {
+  const result = { ...registry };
+  for (const key of Object.keys(registry)) {
+    const entry = registry[key];
+    entry.template = document.querySelector(entry.selector);
+    entry.nodes = parser.parse(entry.template.innerHTML);
+  }
+  return result;
+}
+
+export function KasperInit(config: AppConfig) {
+  const parser = new TemplateParser();
+  const root = document.querySelector(config.root || "body");
+  const registry = normalizeRegistry(config.registry, parser);
+  const transpiler = new Transpiler({ registry });
+  const entryTag = config.entry || "kasper-app";
+  const htmlNodes = createComponent(transpiler, entryTag, registry);
+
+  root.appendChild(htmlNodes);
 }

@@ -43,17 +43,17 @@
         </div>
         <div class="flex-grow bg-gray-700 p-6">
           <div @if="post.value && user.value">
-            <kvoid @let="u = user.value">
+            <void @let="u = user.value">
               <div class="text-lg">Author</div>
               <div class="flex flex-col pb-4">
                 <div class="text-lg font-bold">{{u.name}}</div>
                 <div class="text-sm text-gray-400">{{u.email}}</div>
               </div>
-            </kvoid>
-            <kvoid @let="p = post.value">
+            </void>
+            <void @let="p = post.value">
               <div class="text-2xl font-bold">{{p.title}}</div>
               <div class="text-sm text-gray-400">{{p.body}}</div>
-            </kvoid>
+            </void>
           </div>
         </div>
       </div>
