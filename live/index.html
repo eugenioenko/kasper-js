@@ -205,11 +205,11 @@
         entries.alert = function (value) {
           alert(value);
         };
-        const node = kasper.transpile(source, entries);
-        document.getElementById("render").innerHTML = "";
-        document.getElementById("render").appendChild(node);
-
-        // output.setValue(result.split("},{").join("},\n{"));
+        const node = kasper.transpile(
+          source,
+          entries,
+          document.getElementById("render")
+        );
       });
     </script>
   </body>
