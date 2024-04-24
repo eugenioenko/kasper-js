@@ -95,11 +95,6 @@ export class ExpressionParser {
     this.tokens = tokens;
     this.errors = [];
 
-    this.consume(
-      TokenType.Const,
-      `Expected const definition starting "each" statement`
-    );
-
     const name = this.consume(
       TokenType.Identifier,
       `Expected an identifier inside "each" statement`
