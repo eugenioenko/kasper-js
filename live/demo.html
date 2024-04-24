@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Blog with KasperJs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="../dist/kasper.min.js"></script>
+    <script src="../dist/kasper.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -23,7 +23,8 @@
     </script>
   </head>
   <body>
-    <template>
+    <kasper-app></kasper-app>
+    <template id="kasper-app">
       <div class="w-dvw h-dvh flex text-gray-50">
         <div class="w-96 flex-none bg-gray-900 p-6 h-full overflow-y-scroll">
           <div class="flex flex-col gap-4">
@@ -80,7 +81,7 @@
         return await response.json();
       }
 
-      class MyTodoApp extends KasperApp {
+      class TodoApp extends Component {
         posts = $state([]);
         user = $state(null);
         post = $state(null);
@@ -88,6 +89,7 @@
         $onInit = async () => {
           const posts = await fetchPosts();
           this.posts.set(posts);
+          console.log(this.posts);
         };
 
         onOpenPost = async (post) => {
@@ -96,7 +98,8 @@
           this.user.set(user);
         };
       }
-      Kasper(MyTodoApp);
+
+      Kasper(TodoApp);
     </script>
   </body>
 </html>

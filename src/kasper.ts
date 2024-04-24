@@ -25,6 +25,7 @@ export function transpile(
 }
 
 export function render(entity: any): void {
+  debugger;
   if (typeof window === "undefined") {
     console.error("kasper requires a browser environment to render templates.");
     return;
@@ -36,10 +37,11 @@ export function render(entity: any): void {
   }
 
   const container = document.getElementsByTagName("kasper-app");
-  if (container.length) {
-    document.body.removeChild(container[0]);
-  }
-  const node = transpile(template.innerHTML, entity);
+  const node = transpile(
+    template.innerHTML,
+    entity,
+    container[0] as HTMLElement
+  );
   document.body.appendChild(node);
 }
 
@@ -122,6 +124,7 @@ function createComponent(
 ) {
   const element = document.createElement(tag);
   const component = new registry[tag].component();
+  component.$onInit();
   const nodes = registry[tag].nodes;
   return transpiler.transpile(nodes, component, element);
 }
