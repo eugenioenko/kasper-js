@@ -9,7 +9,7 @@
       href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
       rel="stylesheet"
     />
-    <script src="../dist/kasper.js"></script>
+    <script src="../dist/kasper.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -41,7 +41,7 @@
 <!-- iterating over arrays -->
 <h4>Hobbies ({{person.hobbies.length}}):</h4>
 <ul class="list-disc">
-  <li @each="const hobby with index of person.hobbies" class="text-red">
+  <li @each="hobby with index of person.hobbies" class="text-red">
     {{index + 1}}: {{hobby}}
   </li>
 </ul>
@@ -62,7 +62,7 @@
 </div>
 
 <!-- foreach loop with objects -->
-<span @each="const item of Object.entries({a: 1, b: 2, c: 3 })">
+<span @each="item of Object.entries({a: 1, b: 2, c: 3 })">
   {{item[0]}}:{{item[1]}},
 </span>
 
@@ -75,11 +75,11 @@
 
 <!-- void elements -->
 <div>
-  <kvoid @let="index = 0">
-    <kvoid @while="index < 3">
+  <void @let="index = 0">
+    <void @while="index < 3">
       {{index = index + 1}}
-    </kvoid>
-  </kvoid>
+    </void>
+  </void>
 </div>
 
 <!-- complex expressions -->
@@ -205,11 +205,11 @@
         entries.alert = function (value) {
           alert(value);
         };
-        const node = kasper.transpile(source, entries);
-        document.getElementById("render").innerHTML = "";
-        document.getElementById("render").appendChild(node);
-
-        // output.setValue(result.split("},{").join("},\n{"));
+        const node = kasper.transpile(
+          source,
+          entries,
+          document.getElementById("render")
+        );
       });
     </script>
   </body>

@@ -1,3 +1,4 @@
+import { Component, ComponentRegistry } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
@@ -11,6 +12,16 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private parser = new ExpressionParser();
   private interpreter = new Interpreter();
   public errors: string[] = [];
+  private registry: ComponentRegistry = {};
+
+  constructor(options?: { registry: ComponentRegistry }) {
+    if (!options) {
+      return;
+    }
+    if (options.registry) {
+      this.registry = options.registry;
+    }
+  }
 
   private evaluate(node: KNode.KNode, parent?: Node): void {
     node.accept(this, parent);
@@ -34,12 +45,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   public transpile(
     nodes: KNode.KNode[],
-    entries?: object,
-    container?: HTMLElement
+    entity: object,
+    container: Element
   ): Node {
-    container = container || document.createElement("kasper");
     container.innerHTML = "";
-    this.interpreter.scope.init(entries);
+    this.interpreter.scope.init(entity);
     this.errors = [];
     try {
       this.createSiblings(nodes, container);
@@ -54,19 +64,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
-    const regex = /\{\{.+\}\}/ms;
-    let text: Text;
-    if (regex.test(node.value)) {
-      const result = node.value.replace(
-        /\{\{([\s\S]+?)\}\}/g,
-        (m, placeholder) => {
-          return this.templateParse(placeholder);
-        }
-      );
-      text = document.createTextNode(result);
-    } else {
-      text = document.createTextNode(node.value);
-    }
+    const content = this.evaluateTemplateString(node.value);
+    const text = document.createTextNode(content);
     if (parent) {
       parent.appendChild(text);
     }
@@ -75,7 +74,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
     const attr = document.createAttribute(node.name);
     if (node.value) {
-      attr.value = node.value;
+      attr.value = this.evaluateTemplateString(node.value);
     }
 
     if (parent) {
@@ -221,10 +220,33 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private createElement(node: KNode.Element, parent?: Node): void {
-    const isTemplate = node.name === "kvoid";
-    const element = isTemplate ? parent : document.createElement(node.name);
+    const isVoid = node.name === "void";
+    const isComponent = !!this.registry[node.name];
+    const element = isVoid ? parent : document.createElement(node.name);
+    const restoreScope = this.interpreter.scope;
 
-    if (!isTemplate) {
+    if (isComponent) {
+      // create a new instance of the component and set it as the current scope
+      let component: any = {};
+      const argsAttr = node.attributes.filter((attr) =>
+        (attr as KNode.Attribute).name.startsWith("@:")
+      );
+      const args = this.createComponentArgs(argsAttr as KNode.Attribute[]);
+      if (this.registry[node.name]?.component) {
+        const ref = element;
+        const transpiler = this;
+        component = new this.registry[node.name].component({
+          args,
+          ref,
+          transpiler,
+        });
+      }
+      this.interpreter.scope = new Scope(restoreScope, component);
+      // create the children of the component
+      this.createSiblings(this.registry[node.name].nodes, element);
+    }
+
+    if (!isVoid) {
       // event binding
       const events = node.attributes.filter((attr) =>
         (attr as KNode.Attribute).name.startsWith("@on:")
@@ -233,10 +255,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       for (const event of events) {
         this.createEventListener(element, event as KNode.Attribute);
       }
+
       // attributes
-      node.attributes
-        .filter((attr) => !(attr as KNode.Attribute).name.startsWith("@"))
-        .map((attr) => this.evaluate(attr, element));
+      const attributes = node.attributes.filter(
+        (attr) => !(attr as KNode.Attribute).name.startsWith("@")
+      );
+
+      for (const attr of attributes) {
+        this.evaluate(attr, element);
+      }
     }
 
     if (node.self) {
@@ -244,10 +271,23 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
 
     this.createSiblings(node.children, element);
+    this.interpreter.scope = restoreScope;
 
-    if (!isTemplate && parent) {
+    if (!isVoid && parent) {
       parent.appendChild(element);
     }
+  }
+
+  private createComponentArgs(args: KNode.Attribute[]): Record<string, any> {
+    if (!args.length) {
+      return {};
+    }
+    const result: Record<string, any> = {};
+    for (const arg of args) {
+      const key = arg.name.split(":")[1];
+      result[key] = this.evaluateTemplateString(arg.value);
+    }
+    return result;
   }
 
   private createEventListener(element: Node, attr: KNode.Attribute): void {
@@ -258,7 +298,20 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     });
   }
 
-  private templateParse(source: string): string {
+  private evaluateTemplateString(text: string): string {
+    if (!text) {
+      return text;
+    }
+    const regex = /\{\{.+\}\}/ms;
+    if (regex.test(text)) {
+      return text.replace(/\{\{([\s\S]+?)\}\}/g, (m, placeholder) => {
+        return this.evaluateExpression(placeholder);
+      });
+    }
+    return text;
+  }
+
+  private evaluateExpression(source: string): string {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
 

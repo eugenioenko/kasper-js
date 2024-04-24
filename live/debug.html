@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Debug KasperJs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="../dist/kasper.js"></script>
+  </head>
+  <body>
+    <template id="kasper-app">
+      <h1 class="title" data-title="{{attr}}-something-{{appTitle}}">
+        {{appTitle}}
+      </h1>
+      <app-menu>{{menuTitle}}</app-menu>
+      <app-content @:title="hello">
+        <app-template-only></app-template-only>
+      </app-content>
+    </template>
+    <template id="app-menu"> app menu </template>
+    <template id="app-content">
+      <h2>{{args.title}}</h2>
+      <div>{{"app-content"}}</div>
+      <button @on:click="onClick()">click me</button><span>{{counter}}</span>
+    </template>
+    <template id="app-template-only">
+      <div>template only</div>
+      template only no class {{22 + 33}}
+    </template>
+    <script>
+      class AppMain extends Component {
+        appTitle = "Title of the App";
+        attr = "attrib";
+      }
+
+      class AppMenu extends Component {
+        menuTitle = "Title of the Menu";
+      }
+
+      class AppContent extends Component {
+        counter = $state(1);
+        constructor({ args, ref }) {
+          super({ args, ref });
+          console.log(args, ref);
+        }
+        onClick = () => {
+          this.counter.set(this.counter.value + 1);
+        };
+      }
+
+      const registry = {
+        "kasper-app": {
+          selector: "template#kasper-app",
+          component: AppMain,
+        },
+        "app-menu": {
+          selector: "template#app-menu",
+          component: AppMenu,
+        },
+        "app-content": {
+          selector: "template#app-content",
+          component: AppContent,
+        },
+        "app-template-only": {
+          selector: "template#app-template-only",
+        },
+      };
+      kasper.App({
+        registry,
+        root: "body",
+      });
+    </script>
+  </body>
+</html>

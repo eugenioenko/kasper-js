@@ -136,3 +136,7 @@ text + list[0] * dict.value;
 ```
 console.log('something');
 ```
+
+## Todo
+
+- fix state re-render

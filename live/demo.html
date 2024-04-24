@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Blog with KasperJs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="../dist/kasper.min.js"></script>
+    <script src="../dist/kasper.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -23,7 +23,8 @@
     </script>
   </head>
   <body>
-    <template>
+    <kasper-app></kasper-app>
+    <template id="kasper-app">
       <div class="w-dvw h-dvh flex text-gray-50">
         <div class="w-96 flex-none bg-gray-900 p-6 h-full overflow-y-scroll">
           <div class="flex flex-col gap-4">
@@ -43,17 +44,17 @@
         </div>
         <div class="flex-grow bg-gray-700 p-6">
           <div @if="post.value && user.value">
-            <kvoid @let="u = user.value">
+            <void @let="u = user.value">
               <div class="text-lg">Author</div>
               <div class="flex flex-col pb-4">
                 <div class="text-lg font-bold">{{u.name}}</div>
                 <div class="text-sm text-gray-400">{{u.email}}</div>
               </div>
-            </kvoid>
-            <kvoid @let="p = post.value">
+            </void>
+            <void @let="p = post.value">
               <div class="text-2xl font-bold">{{p.title}}</div>
               <div class="text-sm text-gray-400">{{p.body}}</div>
-            </kvoid>
+            </void>
           </div>
         </div>
       </div>
@@ -80,7 +81,7 @@
         return await response.json();
       }
 
-      class MyTodoApp extends KasperApp {
+      class TodoApp extends Component {
         posts = $state([]);
         user = $state(null);
         post = $state(null);
@@ -88,6 +89,7 @@
         $onInit = async () => {
           const posts = await fetchPosts();
           this.posts.set(posts);
+          console.log(this.posts);
         };
 
         onOpenPost = async (post) => {
@@ -96,7 +98,8 @@
           this.user.set(user);
         };
       }
-      Kasper(MyTodoApp);
+
+      Kasper(TodoApp);
     </script>
   </body>
 </html>
