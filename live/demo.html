@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Blog with KasperJs</title>
+    <title>KasperJS Kanban</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
       rel="stylesheet"
@@ -16,43 +16,95 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" type="text/css" href="./css/style.css" />
-    <script src="../dist/kasper.js"></script>
+    <script src="./js/todos.js"></script>
+    <script src="../dist/kasper.min.js"></script>
   </head>
   <body>
     <template>
       <nav>KasperJS Kanban</nav>
       <main>
-        <div class="column" @each="const category of categories.value">
-          <div class="title">{{category.title}}</div>
-          <div class="todos">
-            <div class="card" @each="const todo of todos.value[category.name]">
-              <div class="tags">
-                <void @each="const tag of todo.tags">
-                  <div class="{{tag}}">{{tag}}</div>
-                </void>
+        <void @if="loading.value">
+          <div class="fixed">
+            <div class="loading"></div>
+          </div>
+        </void>
+        <void @else>
+          <div class="column" @each="category of categories.value">
+            <div class="title">{{category.title}}</div>
+            <div
+              class="todos"
+              @on:dragover="onDragover($event)"
+              @on:drop="onDrop(category.name, $event)"
+            >
+              <div
+                class="card"
+                draggable="true"
+                data-todo-id="{{todo.id}}"
+                @each="todo of todos.value[category.name]"
+                @on:dragstart="onDragStart(todo.id, category.name, $event)"
+              >
+                <div class="tags">
+                  <div @each="tag of todo.tags" class="tag {{tag}}"></div>
+                </div>
+                <div>{{todo.task}}</div>
               </div>
-              <div>{{todo.task}}</div>
+              <button type="button" @on:click="onAddCard()">
+                + Add a card
+              </button>
             </div>
           </div>
-        </div>
+        </void>
       </main>
     </template>
+    <kasper-app></kasper-app>
     <script>
       async function fetchTodos() {
-        const res = await fetch("./js/todos.json");
-        return await res.json();
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(TODOS);
+          }, 500);
+        });
       }
 
       class TodoApp extends Component {
         loading = $state(true);
         todos = $state({});
         categories = $state([]);
+        editing = $state(null);
 
         $onInit = async () => {
           const data = await fetchTodos();
           this.todos.set(data.todos);
           this.categories.set(data.categories);
           this.loading.set(false);
+        };
+
+        onAddCard = () => {
+          alert("TODO");
+        };
+
+        onDragStart = (todoId, category, event) => {
+          event.dataTransfer.dropEffect = "move";
+          event.dataTransfer.setData(
+            "text/plain",
+            JSON.stringify({ todoId, category })
+          );
+          event.srcElement.setAttribute("dragged", true);
+        };
+
+        onDragover = (event) => {
+          event.preventDefault();
+        };
+
+        onDrop = (newCategory, event) => {
+          event.preventDefault();
+          const data = event.dataTransfer.getData("text/plain");
+          const { todoId, category } = JSON.parse(data);
+          const todos = this.todos.value;
+          const todo = todos[category].find((t) => t.id === todoId);
+          todos[category] = todos[category].filter((t) => t.id !== todo.id);
+          todos[newCategory] = [...todos[newCategory], todo];
+          this.todos.set(todos);
         };
       }
 

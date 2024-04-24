@@ -202,9 +202,6 @@ export class Scanner {
       case "^":
         this.addToken(TokenType.Caret, null);
         break;
-      case "$":
-        this.addToken(TokenType.Dollar, null);
-        break;
       case "#":
         this.addToken(TokenType.Hash, null);
         break;

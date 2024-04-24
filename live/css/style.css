@@ -3,6 +3,7 @@
   --background: rgba(0, 0, 0, 0.5);
   --short-padding: 10px;
   --radius: 10px;
+  --text: #f0f0f0;
 }
 html,
 body {
@@ -16,7 +17,7 @@ html {
   font-family: "IBM Plex Sans", sans-serif;
   font-weight: 300;
   font-style: normal;
-  color: #f0f0f0;
+  color: var(--text);
   background-image: url("../img/bg.jpg");
   background-position: center center;
   background-size: cover;
@@ -24,7 +25,7 @@ html {
   line-height: 1.25;
 }
 
-kasper {
+kasper-app {
   display: block;
   height: 100%;
   overflow: hidden;
@@ -40,6 +41,7 @@ nav {
 }
 
 main {
+  position: relative;
   padding: var(--short-padding);
   display: grid;
   grid-gap: 10px;
@@ -48,6 +50,33 @@ main {
   height: 100%;
   overflow: hidden;
   align-items: start;
+}
+
+button,
+textarea {
+  background-color: var(--background);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--short-padding);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+textarea {
+  height: 120px;
+}
+
+button:hover {
+  background-color: black;
+}
+
+.fixed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .column {
@@ -78,6 +107,9 @@ main {
   border-radius: var(--radius);
   padding: var(--short-padding);
 }
+.card[dragged="true"]:hover {
+  background-color: black;
+}
 
 .column > .title {
   background: black;
@@ -86,69 +118,61 @@ main {
   border-top-right-radius: var(--radius);
 }
 
-HTML CSS JSResult Skip Results Iframe
-/* Absolute Center Spinner */
-.loading {
-  position: fixed;
-  z-index: 999;
-  height: 2em;
-  width: 2em;
-  overflow: visible;
-  margin: auto;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
+.tags {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 10px;
 }
 
-/* Transparent Overlay */
+.tags > .tag {
+  width: 30px;
+  height: 10px;
+  border-radius: var(--radius);
+}
+
+.tag.red {
+  background-color: rgba(255, 0, 0, 0.5);
+}
+
+.tag.blue {
+  background-color: rgba(0, 0, 255, 0.5);
+}
+
+.tag.yellow {
+  background-color: rgba(255, 255, 0, 0.5);
+}
+
+.tag.green {
+  background-color: rgba(0, 255, 0, 0.5);
+}
+
+.tag.gray {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
 .loading:before {
   content: "";
   display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.3);
 }
 
-/* :not(:required) hides these rules from IE9 and below */
-.loading:not(:required) {
-  /* hide "loading..." text */
-  font: 0/0 a;
-  color: transparent;
-  text-shadow: none;
-  background-color: transparent;
-  border: 0;
-}
-
-.loading:not(:required):after {
+.loading:after {
   content: "";
   display: block;
   font-size: 10px;
-  width: 1em;
-  height: 1em;
+  width: 5px;
+  height: 5px;
   margin-top: -0.5em;
   -webkit-animation: spinner 1500ms infinite linear;
-  -moz-animation: spinner 1500ms infinite linear;
-  -ms-animation: spinner 1500ms infinite linear;
-  -o-animation: spinner 1500ms infinite linear;
   animation: spinner 1500ms infinite linear;
   border-radius: 0.5em;
-  -webkit-box-shadow: rgba(0, 0, 0, 0.75) 1.5em 0 0 0,
-    rgba(0, 0, 0, 0.75) 1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) 0 1.5em 0 0,
-    rgba(0, 0, 0, 0.75) -1.1em 1.1em 0 0, rgba(0, 0, 0, 0.5) -1.5em 0 0 0,
-    rgba(0, 0, 0, 0.5) -1.1em -1.1em 0 0, rgba(0, 0, 0, 0.75) 0 -1.5em 0 0,
-    rgba(0, 0, 0, 0.75) 1.1em -1.1em 0 0;
-  box-shadow: rgba(0, 0, 0, 0.75) 1.5em 0 0 0,
-    rgba(0, 0, 0, 0.75) 1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) 0 1.5em 0 0,
-    rgba(0, 0, 0, 0.75) -1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) -1.5em 0 0 0,
-    rgba(0, 0, 0, 0.75) -1.1em -1.1em 0 0, rgba(0, 0, 0, 0.75) 0 -1.5em 0 0,
-    rgba(0, 0, 0, 0.75) 1.1em -1.1em 0 0;
+  box-shadow: var(--text) 1.5em 0 0 0, var(--text) 1.1em 1.1em 0 0,
+    var(--text) 0 1.5em 0 0, var(--text) -1.1em 1.1em 0 0,
+    var(--text) -1.5em 0 0 0, var(--text) -1.1em -1.1em 0 0,
+    var(--text) 0 -1.5em 0 0, var(--text) 1.1em -1.1em 0 0;
 }
-
-/* Animation */
 
 @-webkit-keyframes spinner {
   0% {
@@ -158,22 +182,7 @@ HTML CSS JSResult Skip Results Iframe
     transform: rotate(360deg);
   }
 }
-@-moz-keyframes spinner {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-@-o-keyframes spinner {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
+
 @keyframes spinner {
   0% {
     transform: rotate(0deg);
