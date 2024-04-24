@@ -81,9 +81,9 @@
       }
 
       class MyTodoApp extends KasperApp {
-        posts = this.$state([]);
-        user = this.$state(null);
-        post = this.$state(null);
+        posts = $state([]);
+        user = $state(null);
+        post = $state(null);
 
         $onInit = async () => {
           const posts = await fetchPosts();

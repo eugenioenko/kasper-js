@@ -1,7 +1,7 @@
 const path = require("path");
 
 module.exports = {
-  entry: "./src/kasper.ts",
+  entry: "./src/index.ts",
   mode: "production",
   watch: false,
   module: {
@@ -20,5 +20,8 @@ module.exports = {
     filename: "kasper.min.js",
     path: path.resolve(__dirname, "dist"),
     // libraryTarget: "window",
+  },
+  optimization: {
+    minimize: true,
   },
 };
