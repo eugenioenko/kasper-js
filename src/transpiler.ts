@@ -292,9 +292,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private createEventListener(element: Node, attr: KNode.Attribute): void {
     const type = attr.name.split(":")[1];
-    const currentScope = this.interpreter.scope;
-    element.addEventListener(type, () => {
-      this.execute(attr.value, currentScope);
+    const listenerScope = new Scope(this.interpreter.scope);
+    element.addEventListener(type, (event) => {
+      listenerScope.set("$event", event);
+      this.execute(attr.value, listenerScope);
     });
   }
 

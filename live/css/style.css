@@ -1,0 +1,193 @@
+:root {
+  --normal-padding: 10px 20px;
+  --background: rgba(0, 0, 0, 0.5);
+  --short-padding: 10px;
+  --radius: 10px;
+  --text: #f0f0f0;
+}
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-weight: 300;
+  font-style: normal;
+  color: var(--text);
+  background-image: url("../img/bg.jpg");
+  background-position: center center;
+  background-size: cover;
+  background-color: #9d3cae;
+  line-height: 1.25;
+}
+
+kasper-app {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+nav {
+  padding: var(--normal-padding);
+  background-color: var(--background);
+  backdrop-filter: blur(10px);
+  font-size: 32px;
+}
+
+main {
+  position: relative;
+  padding: var(--short-padding);
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-auto-columns: 1fr;
+  height: 100%;
+  overflow: hidden;
+  align-items: start;
+}
+
+button,
+textarea {
+  background-color: var(--background);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--short-padding);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+textarea {
+  height: 120px;
+}
+
+button:hover {
+  background-color: black;
+}
+
+.fixed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.column {
+  background-color: var(--background);
+  border-radius: var(--radius);
+  padding: 0;
+  backdrop-filter: blur(10px);
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.todos {
+  overflow-y: auto;
+  padding: var(--short-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+  -webkit-transform: translate3d(0, 0, 0);
+  scrollbar-color: rgba(255, 255, 255, 0.6) var(--background);
+  scrollbar-width: thin;
+}
+
+.card {
+  background-color: var(--background);
+  border-radius: var(--radius);
+  padding: var(--short-padding);
+}
+.card[dragged="true"]:hover {
+  background-color: black;
+}
+
+.column > .title {
+  background: black;
+  padding: var(--normal-padding);
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+.tags {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.tags > .tag {
+  width: 30px;
+  height: 10px;
+  border-radius: var(--radius);
+}
+
+.tag.red {
+  background-color: rgba(255, 0, 0, 0.5);
+}
+
+.tag.blue {
+  background-color: rgba(0, 0, 255, 0.5);
+}
+
+.tag.yellow {
+  background-color: rgba(255, 255, 0, 0.5);
+}
+
+.tag.green {
+  background-color: rgba(0, 255, 0, 0.5);
+}
+
+.tag.gray {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.loading:before {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.loading:after {
+  content: "";
+  display: block;
+  font-size: 10px;
+  width: 5px;
+  height: 5px;
+  margin-top: -0.5em;
+  -webkit-animation: spinner 1500ms infinite linear;
+  animation: spinner 1500ms infinite linear;
+  border-radius: 0.5em;
+  box-shadow: var(--text) 1.5em 0 0 0, var(--text) 1.1em 1.1em 0 0,
+    var(--text) 0 1.5em 0 0, var(--text) -1.1em 1.1em 0 0,
+    var(--text) -1.5em 0 0 0, var(--text) -1.1em -1.1em 0 0,
+    var(--text) 0 -1.5em 0 0, var(--text) 1.1em -1.1em 0 0;
+}
+
+@-webkit-keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

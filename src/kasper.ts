@@ -25,7 +25,6 @@ export function transpile(
 }
 
 export function render(entity: any): void {
-  debugger;
   if (typeof window === "undefined") {
     console.error("kasper requires a browser environment to render templates.");
     return;
@@ -105,7 +104,7 @@ export function Kasper(Component: any) {
   const entity = new Component();
   renderer.entity = entity;
   renderer.render();
-  entity.$doRender();
+  // entity.$doRender();
   if (typeof entity.$onInit === "function") {
     entity.$onInit();
   }
