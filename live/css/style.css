@@ -64,7 +64,8 @@ textarea {
 }
 
 textarea {
-  height: 120px;
+  height: 76px;
+  min-height: 76px;
 }
 
 button:hover {
