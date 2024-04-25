@@ -255,12 +255,15 @@ export class Scanner {
         );
         break;
       case "=":
+        if (this.match("=")) {
+          this.addToken(
+            this.match("=") ? TokenType.EqualEqual : TokenType.EqualEqual,
+            null
+          );
+          break;
+        }
         this.addToken(
-          this.match("=")
-            ? TokenType.EqualEqual
-            : this.match(">")
-            ? TokenType.Arrow
-            : TokenType.Equal,
+          this.match(">") ? TokenType.Arrow : TokenType.Equal,
           null
         );
         break;

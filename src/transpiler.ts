@@ -161,8 +161,9 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private doLet(init: KNode.Attribute, node: KNode.Element, parent: Node) {
     const originalScope = this.interpreter.scope;
     this.interpreter.scope = new Scope(originalScope);
+    const element = this.createElement(node, parent);
+    this.interpreter.scope.set("$ref", element);
     this.execute(init.value);
-    this.createElement(node, parent);
     this.interpreter.scope = originalScope;
   }
 
@@ -219,7 +220,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
-  private createElement(node: KNode.Element, parent?: Node): void {
+  private createElement(node: KNode.Element, parent?: Node): Node | undefined {
     const isVoid = node.name === "void";
     const isComponent = !!this.registry[node.name];
     const element = isVoid ? parent : document.createElement(node.name);
@@ -267,7 +268,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
 
     if (node.self) {
-      return;
+      return element;
     }
 
     this.createSiblings(node.children, element);
@@ -276,6 +277,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (!isVoid && parent) {
       parent.appendChild(element);
     }
+    return element;
   }
 
   private createComponentArgs(args: KNode.Attribute[]): Record<string, any> {

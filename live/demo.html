@@ -48,7 +48,16 @@
                 </div>
                 <div>{{todo.task}}</div>
               </div>
-              <button type="button" @on:click="onAddCard()">
+              <void @if="editing.value === category.name">
+                <textarea
+                  @let="onInputRef($ref)"
+                  @on:change="onCardChange($event, category.name)"
+                  tabindex="0"
+                  name="task"
+                  placeholder="Enter a task"
+                ></textarea>
+              </void>
+              <button type="button" @on:click="onAddCard(category.name)">
                 + Add a card
               </button>
             </div>
@@ -79,8 +88,28 @@
           this.loading.set(false);
         };
 
-        onAddCard = () => {
-          alert("TODO");
+        onAddCard = (category) => {
+          this.editing.set(category);
+          setTimeout(() => {
+            if (this.textarea) {
+              this.textarea.focus();
+            }
+          }, 1);
+        };
+
+        onInputRef = (ref) => {
+          this.textarea = ref;
+        };
+
+        onCardChange = (event, category) => {
+          const todo = {
+            task: event.target.value,
+            id: new Date().getTime(),
+            tags: ["green"],
+          };
+          this.todos.value[category].push(todo);
+          this.editing.set(null);
+          this.todos.set(this.todos.value);
         };
 
         onDragStart = (todoId, category, event) => {
