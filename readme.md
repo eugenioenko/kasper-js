@@ -1,6 +1,6 @@
 # Kasper-js 1.0.1
 
-This is a work in progress of a javascript template parser and renderer
+This is a work in progress of a javascript html template parser and renderer
 
 ## > [Try it out in playground!](https://eugenioenko.github.io/kasper-js/live/)
 
