@@ -1,6 +1,6 @@
 # Kasper-js 1.0.1
 
-This is a work in progress of a javascript html template parser and renderer
+**Kasper-js** is a work-in-progress JavaScript HTML template parser and renderer designed to help create and learn core mechanics of modern JavaScript frameworks.
 
 ## > [Try it out in playground!](https://eugenioenko.github.io/kasper-js/live/)
 
@@ -8,32 +8,44 @@ Here you can find a small demo of Kanban board done with kasper-js
 
 ### > [KasperJS Kanban board demo](https://eugenioenko.github.io/kasper-js/live/demo.html)
 
-## Project goals
+## Project Vision
 
-> Create a full modern javascript framework
+Kasper-js aims to bridge the gap between simple templating engines and full-fledged JavaScript frameworks by providing a lightweight, extensible solution that emphasizes performance and developer experience. As web applications continue to evolve, the need for flexible and efficient frameworks has never been greater.
 
-Realistic goal is to write a javascript template parser and use it later to create a base for a javascript framework (components, dependency injection, build, etc..) and learn, research and understand the complexity of the task.
+## Project Goals
+The primary goal of Kasper-js is to create a comprehensive modern JavaScript framework. This includes:
+
+- Developing a JavaScript HTML template parser and view renderer engine.
+- Establishing a base for a full JavaScript framework, including components, dependency injection, and build tools.
+- Gaining insights into the complexities of framework development through research and practical implementation.
+
 
 ## Template syntax goals
 
-Kasper's template syntax should always be a valid html syntax. Any html editor should work correctly with it.
-The template language should be cohesive and clean, ideally with no compromises
+Kasper's template syntax aims to maintain valid HTML syntax, ensuring compatibility with any HTML editor. The syntax is designed to be:
 
-## Implemented so far
+- Cohesive and clean.
+- Intuitive with minimal compromises.
 
-- html parser
-- javascript like syntax parser and interpreter
-- template renderer
-- re-render on state update
+## Best Practices
 
-## Getting started
+The framework adheres to the following best practices:
+- **Modular Design**: Each component is encapsulated, promoting reusability.
+- **Separation of Concerns**: Logic is separated from presentation, enhancing readability and maintainability.
 
-To use kasper you will need to:
+## Features Implemented So Far
 
-- Include the `kasper.js`.
-- Add a `<template>` element
-- Add a class that extends from `KasperApp`
-- Render the app by calling `Kasper`
+- HTML parser
+- JavaScript-like syntax parser and interpreter
+- Template renderer
+- Re-rendering on state updates
+
+To use Kasper, follow these steps:
+
+1. Include the `kasper.js` script in your HTML file.
+2. Create a `<template>` element for your UI.
+3. Extend the `KasperApp` class to create your application.
+4. Render the app by calling `Kasper`.
 
 ```
 <html>
@@ -53,6 +65,7 @@ To use kasper you will need to:
   </body>
 </html>
 ```
+
 
 ## Conditional expression
 
@@ -106,40 +119,45 @@ Evaluates the expression to string and inserts it into the dom as a TextNode
 {{ "Hello" + " " + "World" }}
 ```
 
-# Template expression interpreter
+## Template Expression Interpreter
 
-Kasper's expression interpreter emulates basic javascript expressions.
-So far it implements the following expressions:
-Assign, Binary, Call, Debug, Dictionary, Each, Get, Grouping, Key, Logical, List, Literal, New, NullCoalescing, Postfix, Set, Template, Ternary, Typeof, Unary, Variable, Void
+The **Kasper** expression interpreter is designed to emulate basic JavaScript expressions, providing a versatile framework for template rendering and dynamic content management. It allows developers to use familiar JavaScript syntax and constructs, enhancing the functionality and flexibility of the templates.
 
-## Assignment expression
 
-`identifier [operator] expression;`
-Valid operators are: `= += -= *= /=`
+## Supported JavaScript Expressions
 
-```
-number = 22;
-list = [1, 2, "hello"];
-dict = {"green": "#00FF00 };
-text += "Hello World";
-```
+Currently, the interpreter supports the following expressions:
 
-## Binary expression
+- **Assign**: Assigns a value to a variable.
+- **Binary**: Performs binary operations (e.g., addition, subtraction).
+- **Call**: Invokes a function or method.
+- **Debug**: Outputs debug information.
+- **Dictionary**: Creates and manages key-value pairs.
+- **Each**: Iterates over a collection or array.
+- **Get**: Retrieves a value from an object or array.
+- **Grouping**: Groups expressions for evaluation.
+- **Key**: Accesses object properties using keys.
+- **Logical**: Performs logical operations (e.g., AND, OR).
+- **List**: Represents a list of values.
+- **Literal**: Represents a fixed value (e.g., strings, numbers).
+- **New**: Creates new instances of objects or arrays.
+- **Null Coalescing**: Returns the first non-null value.
+- **Postfix**: Applies operations after the value.
+- **Set**: Sets a value to a variable.
+- **Template**: Processes template literals for rendering.
+- **Ternary**: Implements conditional expressions (ternary operator).
+- **Typeof**: Returns the type of a variable or expression.
+- **Unary**: Applies unary operations (e.g., negation).
+- **Variable**: Represents a variable that can store values.
+- **Void**: Represents an expression that does not return a value.
 
-`identifier [operator] expression;`
-Valid operators are: `+ - / *`
+### Future Enhancements
 
-```
-text + list[0] * dict.value;
-```
+Future updates will focus on expanding the capabilities of the expression interpreter, incorporating additional expressions and features to enhance the framework's power and usability.
 
-## Function call expression
+## Testing
 
-`identifier(arg*);`
-
-```
-console.log('something');
-```
+Kasper-js employs **Jasmine** for unit testing to ensure code reliability and maintainability. The tests are organized in the `/specs` folder, allowing for easy navigation and management of test cases. However, the current test coverage needs improvement, and additional tests are encouraged to enhance the robustness of the framework.
 
 ## Todo
 
