@@ -26,16 +26,19 @@ More info: https://github.com/eugenioenko/kasper-js
 <h4>{{person.profession}}</h4>
 
 <!-- conditional element creation -->
-<p @if="person.age > 21">Age is greater than 21</p>
-<p @elseif="person.age == 21">Age is equal to 21</p>
+<p @if="person.age > 21">21+ years old</p>
+<p @elseif="person.age == 21">21 years old</p>
 <p @elseif="person.age < 21">Age is less than 21</p>
 <p @else>Age is impossible</p>
 
 <!-- iterating over arrays -->
-<h4>Hobbies ({{person.hobbies.length}}):</h4>
-<ul class="list-disc">
-  <li @each="hobby with index of person.hobbies" class="text-red">
-    {{index + 1}}: {{hobby}}
+<h4>Hobbies ({{person.hobbies.length}})</h4>
+<ul class="hobbies">
+  <li
+    @each="hobby of person.hobbies"
+    @on:click="alert(person.name + ' ' + 'likes ' + hobby)"
+  >
+    {{hobby}}
   </li>
 </ul>
 
@@ -43,14 +46,14 @@ More info: https://github.com/eugenioenko/kasper-js
 <div class="my-4">
   <button
     class="bg-blue-500 rounded px-4 py-2 text-white hover:bg-blue-700"
-    @on:click="alert('Hello World'); console.log(100 / 2.5 + 15)"
+    @on:click="onClick()"
   >
     CLICK ME
   </button>
 </div>
 
 <!-- evaluating code on element creation -->
-<div @let="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
+<div @let="student = {name: person.name, degree: 'Masters'}">
     {{student.name}}
 </div>
 
@@ -86,20 +89,44 @@ More info: https://github.com/eugenioenko/kasper-js
 {{void console.log("same as previous just less wordy")}}
 `;
 
-const DemoJson = `
-{
-  "person": {
-    "name": "John Doe",
-    "profession": "Software Developer",
-    "age": 20,
-    "hobbies": ["reading", "music", "golf"]
-  }
+const DemoScript = `
+var person = {
+  name: "John Doe",
+  profession: "Composer and Photographer",
+  age: 28,
+  hobbies: ["Reading", "Music", "Golf"]
 }
 
+function onClick() {
+  alert("Hello World");
+}
+`;
 
+const DemoStyle = `
+h3 {
+  font-size: 72px;
+  line-height: 1;
+}
 
+h4 {
+  font-size: 21px;
+  margin-bottom: 8px;
+  margin-top: 8px;
+}
 
+.hobbies {
+  display: flex;
+  gap: 10px;
+}
 
-
-
+.hobbies > li {
+  flex: auto;
+  text-align: center;
+  padding: 5px 10px;
+  background-color: #ddd;
+  color: #111;
+  font-size: 21px;
+  border-radius: 5px;
+  cursor: pointer;
+}
 `;

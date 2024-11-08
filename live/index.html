@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>kasper-js</title>
+    <title>Kasper.js</title>
+    <meta
+      name="description"
+      content="Kasper-JS is a work-in-progress of a JavaScript HTML template parser and renderer designed to help create and learn core mechanics of modern JavaScript frameworks."
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
       href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
@@ -11,7 +15,6 @@
     />
     <script src="../dist/kasper.min.js"></script>
     <script src="./js/demo.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,27 +31,13 @@
         },
       };
     </script>
-    <script></script>
     <style>
-      kasper {
-        color: #374151;
-      }
-      kasper h3 {
-        font-size: 28px;
-        margin-bottom: 8px;
-      }
-      kasper h4 {
-        font-size: 21px;
-        margin-bottom: 8px;
-        margin-top: 8px;
-      }
-
       .app {
         width: 100dvw;
         height: 100dvh;
         display: grid;
         grid-template-rows: 1fr;
-        grid-template-columns: minmax(724px, 1024px) minmax(120px, 1fr);
+        grid-template-columns: minmax(724px, 804px) minmax(120px, 1fr);
       }
 
       ::-webkit-scrollbar {
@@ -67,16 +56,48 @@
       ::-webkit-scrollbar-thumb:window-inactive {
         background: rgba(255, 255, 255, 0.4);
       }
+
+      button[role="tab"] {
+        background-color: #191a1d;
+        color: #bbbbbb;
+      }
+
+      button[aria-selected="true"] {
+        background-color: #26282c;
+        color: #ffffff;
+        border-color: #aaaaaa;
+      }
     </style>
   </head>
   <body>
     <div class="app w-dvw h-dvh">
       <div class="flex flex-col bg-[#1d1f21]">
-        <div class="border-b border-gray-500 px-4 pt-4 flex justify-between">
-          <div
-            class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-32 text-center"
-          >
-            App.kasper
+        <div class="border-b border-gray-500 px-4 pt-4 flex">
+          <div class="flex-grow flex gap-2">
+            <button
+              role="tab"
+              aria-selected="true"
+              aria-controls="htmlSource"
+              class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-28 text-center"
+            >
+              App.html
+            </button>
+            <button
+              role="tab"
+              aria-selected="false"
+              aria-controls="scriptSource"
+              class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-28 text-center"
+            >
+              App.js
+            </button>
+            <button
+              role="tab"
+              aria-selected="false"
+              aria-controls="stylesSource"
+              class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-28 text-center"
+            >
+              App.css
+            </button>
           </div>
           <button
             class="px-8 py-1 bg-green-600 rounded text-white font-mono hover:bg-green-500 relative -top-2"
@@ -86,25 +107,23 @@
           </button>
         </div>
         <div id="editor" class="flex-grow w-full"></div>
-        <div class="border-b border-gray-500 pt-6 pl-2">
-          <div
-            class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-32 text-center"
-          >
-            Data.kasper
-          </div>
-        </div>
-        <div id="json" class="w-full h-64"></div>
       </div>
-      <div class="bg-gray-100">
-        <div id="render" class="w-full h-full p-6">
+      <div class="text-white bg-gray-700 flex flex-col">
+        <div id="script" class="hidden"></div>
+        <div id="render" class="flex-grow p-6">
           <div
-            class="w-full h-full flex items-center justify-center p-4 text-gray-500 text-center text-xl"
+            class="w-full h-full flex items-center justify-center p-4 text-gray-300 text-center text-xl"
           >
-            Hit RENDER to view template output
+            Press RENDER to render!
           </div>
         </div>
+        <div
+          class="text-sm px-4 py-2 border-t border-gray-500"
+          id="status"
+        ></div>
       </div>
     </div>
+    <script src="./js/playground.js"></script>
     <a
       href="https://github.com/eugenioenko/kasper-js"
       title="View source on GitHub"
@@ -135,35 +154,5 @@
         ></path>
       </svg>
     </a>
-    <script>
-      function createEditor(id, source, mode) {
-        let editor = ace.edit(id);
-        editor.session.setMode(`ace/mode/${mode || "javascript"}`);
-        editor.getSession().setUseWorker(false);
-        editor.setTheme("ace/theme/tomorrow_night");
-        editor.setFontSize(15);
-        editor.setValue(source);
-        editor.selection.moveCursorToPosition({ row: 1, column: 0 });
-        editor.selection.selectLine();
-        return editor;
-      }
-
-      const ejson = createEditor("json", DemoJson, "json");
-      const editor = createEditor("editor", DemoSourceCode, "html");
-
-      document.getElementById("execute").addEventListener("click", () => {
-        const source = editor.getValue();
-        const result = kasper.execute(source);
-        const entries = JSON.parse(ejson.getValue());
-        entries.alert = function (value) {
-          alert(value);
-        };
-        const node = kasper.transpile(
-          source,
-          entries,
-          document.getElementById("render")
-        );
-      });
-    </script>
   </body>
 </html>
