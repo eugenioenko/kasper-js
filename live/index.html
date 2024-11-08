@@ -10,6 +10,8 @@
       rel="stylesheet"
     />
     <script src="../dist/kasper.min.js"></script>
+    <script src="./js/demo.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -26,83 +28,7 @@
         },
       };
     </script>
-    <script>
-      const DemoSourceCode = `
-<!-- accessing scope elements -->
-<h3>{{person.name}}</h3>
-<h4>{{person.profession}}</h4>
-
-<!-- conditional element creation -->
-<p @if="person.age > 21">Age is greater than 21</p>
-<p @elseif="person.age == 21">Age is equal to 21</p>
-<p @elseif="person.age < 21">Age is less than 21</p>
-<p @else>Age is impossible</p>
-
-<!-- iterating over arrays -->
-<h4>Hobbies ({{person.hobbies.length}}):</h4>
-<ul class="list-disc">
-  <li @each="hobby with index of person.hobbies" class="text-red">
-    {{index + 1}}: {{hobby}}
-  </li>
-</ul>
-
-<!-- event binding -->
-<div class="my-4">
-  <button
-    class="bg-blue-500 rounded px-4 py-2 text-white hover:bg-blue-700"
-    @on:click="alert('Hello World'); console.log(100 / 2.5 + 15)"
-  >
-    CLICK ME
-  </button>
-</div>
-
-<!-- evaluating code on element creation -->
-<div @let="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
-    {{student.name}}
-</div>
-
-<!-- foreach loop with objects -->
-<span @each="item of Object.entries({a: 1, b: 2, c: 3 })">
-  {{item[0]}}:{{item[1]}},
-</span>
-
-<!-- while loop -->
-<span @let="index = 0">
-   <span @while="index < 3">
-     {{index = index + 1}},
-   </span>
-</span>
-
-<!-- void elements -->
-<div>
-  <void @let="index = 0">
-    <void @while="index < 3">
-      {{index = index + 1}}
-    </void>
-  </void>
-</div>
-
-<!-- complex expressions -->
-{{Math.floor(Math.sqrt(100 + 20 / (10 * (Math.abs(10 -20)) + 4)))}}
-
-<!-- void expression -->
-{{void "this won't be shown"}}
-
-<!-- logging / debugging  -->
-{{debug "expression"}}
-{{void console.log("same as previous just less wordy")}}
-`;
-
-      const DemoJson = `{
-  "person": {
-    "name": "John Doe",
-    "profession": "Software Developer",
-    "age": 20,
-    "hobbies": ["reading", "music", "golf"]
-  }
-}
-`;
-    </script>
+    <script></script>
     <style>
       kasper {
         color: #374151;
@@ -116,40 +42,67 @@
         margin-bottom: 8px;
         margin-top: 8px;
       }
+
+      .app {
+        width: 100dvw;
+        height: 100dvh;
+        display: grid;
+        grid-template-rows: 1fr;
+        grid-template-columns: minmax(724px, 1024px) minmax(120px, 1fr);
+      }
+
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      ::-webkit-scrollbar-track {
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      ::-webkit-scrollbar-corner,
+      ::-webkit-scrollbar-thumb:window-inactive {
+        background: rgba(255, 255, 255, 0.4);
+      }
     </style>
   </head>
   <body>
-    <div class="max-w-screen-xl mx-auto px-6 pt-6 pb-12">
-      <h1 class="font-mono text-5xl text-gray-500 pb-1">kasper-js</h1>
-      <h3 class="font-mono text-lg text-gray-500 pb-4">
-        <i>kasper-js</i> is an experimental javascript template parser, renderer
-        and interpreter
-      </h3>
-
-      <div class="py-6 font-header text-gray-500 text-3xl">
-        <h3>Try it out!</h3>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="flex flex-col gap-6 md:col-span-2">
-          <div id="json" class="w-full h-32"></div>
-          <div id="editor" class="w-full h-64 md:h-96"></div>
-        </div>
-        <div>
+    <div class="app w-dvw h-dvh">
+      <div class="flex flex-col bg-[#1d1f21]">
+        <div class="border-b border-gray-500 px-4 pt-4 flex justify-between">
           <div
-            id="render"
-            class="border border-gray-300 h-64 md:h-full p-6 text-gray-700"
+            class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-32 text-center"
           >
-            <div class="text-gray-500">Hit RENDER to view template output</div>
+            App.kasper
+          </div>
+          <button
+            class="px-8 py-1 bg-green-600 rounded text-white font-mono hover:bg-green-500 relative -top-2"
+            id="execute"
+          >
+            RENDER
+          </button>
+        </div>
+        <div id="editor" class="flex-grow w-full"></div>
+        <div class="border-b border-gray-500 pt-6 pl-2">
+          <div
+            class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-32 text-center"
+          >
+            Data.kasper
           </div>
         </div>
+        <div id="json" class="w-full h-64"></div>
       </div>
-      <div class="flex justify-end py-6">
-        <button
-          class="px-12 py-2 bg-green-600 rounded text-white font-mono hover:bg-green-500"
-          id="execute"
-        >
-          RENDER
-        </button>
+      <div class="bg-gray-100">
+        <div id="render" class="w-full h-full p-6">
+          <div
+            class="w-full h-full flex items-center justify-center p-4 text-gray-500 text-center text-xl"
+          >
+            Hit RENDER to view template output
+          </div>
+        </div>
       </div>
     </div>
     <a
@@ -187,7 +140,7 @@
         let editor = ace.edit(id);
         editor.session.setMode(`ace/mode/${mode || "javascript"}`);
         editor.getSession().setUseWorker(false);
-        editor.setTheme("ace/theme/monokai");
+        editor.setTheme("ace/theme/tomorrow_night");
         editor.setFontSize(15);
         editor.setValue(source);
         editor.selection.moveCursorToPosition({ row: 1, column: 0 });
