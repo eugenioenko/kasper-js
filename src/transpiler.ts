@@ -158,13 +158,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     this.interpreter.scope = originalScope;
   }
 
+  // executes initialization in the current scope
   private doLet(init: KNode.Attribute, node: KNode.Element, parent: Node) {
-    const originalScope = this.interpreter.scope;
-    this.interpreter.scope = new Scope(originalScope);
+    this.execute(init.value);
     const element = this.createElement(node, parent);
     this.interpreter.scope.set("$ref", element);
-    this.execute(init.value);
-    this.interpreter.scope = originalScope;
   }
 
   private createSiblings(nodes: KNode.KNode[], parent?: Node): void {
