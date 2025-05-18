@@ -1,164 +1,245 @@
-# Kasper-js 1.0.1
+# 🚀 Kasper-js
 
-**Kasper-js** is a work-in-progress JavaScript HTML template parser and renderer designed to help create and learn core mechanics of modern JavaScript frameworks.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](package.json)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#) <!-- Placeholder -->
+[![Test Coverage](https://img.shields.io/badge/coverage-pending-lightgrey.svg)](#testing) <!-- Placeholder -->
 
-## > [Try it out in playground!](https://eugenioenko.github.io/kasper-js/live/)
+**Kasper-js is a lightweight, work-in-progress JavaScript HTML template parser and renderer. It's designed to help developers create dynamic web UIs with a simple, intuitive syntax while offering insights into the core mechanics of modern JavaScript frameworks.**
 
-Here you can find a small demo of Kanban board done with kasper-js
+## 🌐 Live Demos
 
-### > [KasperJS Kanban board demo](https://eugenioenko.github.io/kasper-js/live/demo.html)
+- **🧪 Playground**: [Try Kasper-js out in the playground!](https://eugenioenko.github.io/kasper-js/live/)
+- **🗂️ Kanban Board Demo**: [View a Kanban board built with Kasper-js.](https://eugenioenko.github.io/kasper-js/live/demo.html)
 
-## Project Vision
+## ✨ Features
 
-Kasper-js aims to bridge the gap between simple templating engines and full-fledged JavaScript frameworks by providing a lightweight, extensible solution that emphasizes performance and developer experience. As web applications continue to evolve, the need for flexible and efficient frameworks has never been greater.
+- 📝 **HTML Parser**: Efficiently parses HTML templates.
+- 🧮 **JavaScript-like Expression Parser & Interpreter**: Supports a range of JavaScript-like expressions within templates.
+- 🖼️ **Template Renderer**: Dynamically renders templates to the DOM.
+- 🔄 **Re-rendering on State Updates**: Automatically updates the UI when underlying data changes.
+- 🧩 **Component-Based Architecture**: Encourages modular design and reusability.
+- ✅ **Valid HTML Syntax**: Kasper's template syntax remains valid HTML, ensuring compatibility with standard HTML editors and tooling.
 
-## Project Goals
-The primary goal of Kasper-js is to create a comprehensive modern JavaScript framework. This includes:
+## 🎯 Project Vision
 
-- Developing a JavaScript HTML template parser and view renderer engine.
-- Establishing a base for a full JavaScript framework, including components, dependency injection, and build tools.
-- Gaining insights into the complexities of framework development through research and practical implementation.
+Kasper-js aims to bridge the gap between simple templating engines and full-fledged JavaScript frameworks by providing a lightweight, extensible solution that emphasizes performance and developer experience.
 
+## 🏆 Project Goals
 
-## Template syntax goals
+- Develop a robust JavaScript HTML template parser and view renderer engine.
+- Establish a foundation for a more comprehensive JavaScript framework, potentially including features like advanced component models, dependency injection, and build tools.
+- Serve as a learning tool for understanding the complexities of modern framework development.
 
-Kasper's template syntax aims to maintain valid HTML syntax, ensuring compatibility with any HTML editor. The syntax is designed to be:
+## ⚙️ Installation
 
-- Cohesive and clean.
-- Intuitive with minimal compromises.
+1.  Include the `kasper.min.js` script in your HTML file:
 
-## Best Practices
+    ```html
+    <script src="path/to/kasper.min.js"></script>
+    ```
 
-The framework adheres to the following best practices:
-- **Modular Design**: Each component is encapsulated, promoting reusability.
-- **Separation of Concerns**: Logic is separated from presentation, enhancing readability and maintainability.
+    (Or use a CDN if available in the future).
 
-## Features Implemented So Far
+2.  Alternatively, for development, you can build the project from the source:
+    ```bash
+    npm install
+    npm run build
+    ```
+    This will generate `kasper.min.js` in the `dist` folder.
 
-- HTML parser
-- JavaScript-like syntax parser and interpreter
-- Template renderer
-- Re-rendering on state updates
+## 📦 Usage Example
 
-To use Kasper, follow these steps:
-
-1. Include the `kasper.js` script in your HTML file.
-2. Create a `<template>` element for your UI.
-3. Extend the `KasperApp` class to create your application.
-4. Render the app by calling `Kasper`.
-
-```
+```html
+<!DOCTYPE html>
 <html>
   <head>
-    <script src="kasper.min.js"></script>
+    <title>My Kasper App</title>
+    <script src="dist/kasper.min.js"></script>
+    <!-- Adjust path as needed -->
   </head>
   <body>
-    <template>
-      <div>{{myAppName}}</div>
+    <template id="myAppTemplate">
+      <div>Hello, {{this.appName}}!</div>
+      <button @on:click="this.updateName()">Change Name</button>
     </template>
+
+    <div id="app-root"></div>
+
     <script>
-      class MyApp extends KasperApp {
-        myAppName = "MyAppName"
+      class MyApp extends kasper.Component {
+        appName = $state("Kasper App"); // Use $state for reactive properties
+
+        constructor() {
+          super({
+            selector: "template#myAppTemplate", // Define the template to use
+          });
+        }
+
+        updateName() {
+          this.appName.set("Kasper App Updated!");
+        }
       }
-      Kasper(MyApp);
+
+      // Initialize and render the application
+      kasper.App({
+        registry: {
+          "my-app": MyApp,
+        },
+        root: "#app-root", // Specify the root element to render into
+        main: "<my-app></my-app>", // Specify the main component to render
+      });
     </script>
   </body>
 </html>
 ```
 
+## 🏗️ Architecture Overview
 
-## Conditional expression
+Kasper-js is built with a modular architecture:
 
+- **Scanner (Lexer)**: Tokenizes the input HTML and template syntax.
+- **HTML Parser**: Parses HTML content into a DOM-like structure.
+- **Expression Parser**: Parses Kasper's JavaScript-like expressions within the templates.
+- **Interpreter**: Evaluates the parsed expressions, handling logic, data binding, and event handling.
+- **Renderer/Viewer**: Manages the rendering of templates to the actual DOM and updates the view when state changes.
+- **Component System**: Provides a base `Component` class for creating reusable UI elements with their own logic and state.
+
+### 💡 Design Decisions & Rationale
+
+- **Valid HTML Syntax**: A core design goal is to ensure that Kasper's template syntax (`@if`, `@each`, `{{expression}}`, etc.) is embedded in a way that keeps the overall HTML structure valid. This allows developers to use standard HTML tools and linters.
+- **Separation of Concerns**: While Kasper-js allows inline expressions for convenience, the component-based structure encourages separating template logic (in classes) from the presentation (in HTML templates).
+- **Lightweight Core**: The focus is on providing essential templating and rendering capabilities without the overhead of a larger framework, making it suitable for smaller projects or for learning purposes.
+
+### 🛠️ Tech Stack
+
+- **TypeScript**: Used for its strong typing capabilities, improving code quality and maintainability.
+- **Webpack**: Utilized for bundling the project into distributable files.
+- **Jasmine**: Employed for unit testing.
+
+## 📝 Template Syntax Highlights
+
+Kasper's template syntax is designed to be intuitive and integrate seamlessly with HTML.
+
+### 🔀 Conditional Rendering
+
+```html
+<div @if="this.user.isLoggedIn">Welcome, {{this.user.name}}!</div>
+<div @elseif="this.isLoading">Loading...</div>
+<div @else>Please log in.</div>
 ```
-  <div @if="this.something > 20">less 20</div>
-  <div @elseif="this.something === 30">its 30</div>
-  <div @else>other</div>
-```
 
-## Foreach expression
+### 📋 List Rendering (`@each`)
 
-```
+```html
 <ul>
-  <li @each="item of this.items">
-    <button @on:click="this.open(index)">{{item}}</button>
-  </li>
+  <li @each="item of this.items">{{item.name}} (Index: {{index}})</li>
 </ul>
 ```
 
-## Let expression
+### 🏷️ Local Variables (`@let`)
 
-Evaluated during element creation
+Evaluated during element creation, useful for aliasing or pre-calculating values.
 
-```
-<div @let="student = {name: person.name, degree: 'Masters'}; console.log(student.name)">
-    {{student.name}}
+```html
+<div
+  @let="fullName = this.user.firstName + ' ' + this.user.lastName; isActive = this.user.status === 'active'"
+>
+  User: {{fullName}}, Status: {{isActive ? 'Active' : 'Inactive'}}
 </div>
 ```
 
-## While expression
+### 🔁 While Loops (`@while`)
 
-```
-<span @while="index < 3">
-  {{index = index + 1}},
-</span>
-```
-
-## Event listener expression
-
-```
-<button @on:click="alert('Hello World')">
-  Button
-</button>
+```html
+<div @let:counter="0">
+  <span @while="counter < 3">
+    Iteration: {{counter}} {{ void (counter = counter + 1) }}
+    <!-- Use void for expressions without output -->
+  </span>
+</div>
 ```
 
-## Template string expression
+### 🖱️ Event Handling (`@on:event`)
 
-Evaluates the expression to string and inserts it into the dom as a TextNode
-
+```html
+<button @on:click="this.handleClick($event)">Click Me</button>
+<input @on:input="this.onInputChange($event.target.value)" />
 ```
-{{ "Hello" + " " + "World" }}
+
+### 🧩 Text Interpolation (`{{expression}}`)
+
+Evaluates the expression and inserts the result as a text node.
+
+```html
+<div>Current count: {{this.count}}</div>
+<div>Full Name: {{this.user.firstName + " " + this.user.lastName}}</div>
 ```
 
-## Template Expression Interpreter
+### 🏷️ Attribute Binding (`@attr:name="expression"`)
 
-The **Kasper** expression interpreter is designed to emulate basic JavaScript expressions, providing a versatile framework for template rendering and dynamic content management. It allows developers to use familiar JavaScript syntax and constructs, enhancing the functionality and flexibility of the templates.
+Dynamically sets HTML attributes.
 
+```html
+<a @attr:href="this.url">Visit Site</a>
+<img @attr:src="this.imageUrl" @attr:alt="this.imageAltText" />
+<div @attr:class="this.isActive ? 'active-class' : 'inactive-class'">
+  Dynamic Class
+</div>
+```
 
-## Supported JavaScript Expressions
+## 🧮 Supported JavaScript Expressions
 
-Currently, the interpreter supports the following expressions:
+The Kasper expression interpreter supports a subset of JavaScript expressions, enabling dynamic template rendering:
 
-- **Assign**: Assigns a value to a variable.
-- **Binary**: Performs binary operations (e.g., addition, subtraction).
-- **Call**: Invokes a function or method.
-- **Debug**: Outputs debug information.
-- **Dictionary**: Creates and manages key-value pairs.
-- **Each**: Iterates over a collection or array.
-- **Get**: Retrieves a value from an object or array.
-- **Grouping**: Groups expressions for evaluation.
-- **Key**: Accesses object properties using keys.
-- **Logical**: Performs logical operations (e.g., AND, OR).
-- **List**: Represents a list of values.
-- **Literal**: Represents a fixed value (e.g., strings, numbers).
-- **New**: Creates new instances of objects or arrays.
-- **Null Coalescing**: Returns the first non-null value.
-- **Postfix**: Applies operations after the value.
-- **Set**: Sets a value to a variable.
-- **Template**: Processes template literals for rendering.
-- **Ternary**: Implements conditional expressions (ternary operator).
-- **Typeof**: Returns the type of a variable or expression.
-- **Unary**: Applies unary operations (e.g., negation).
-- **Variable**: Represents a variable that can store values.
-- **Void**: Represents an expression that does not return a value.
+- **Assign**: `variable = value`
+- **Binary**: `a + b`, `a > b`, etc.
+- **Call**: `this.myFunction(arg1, arg2)`
+- **Dictionary (Object Literals)**: `{ key: 'value', anotherKey: this.data }`
+- **Get (Property Access)**: `this.object.property`, `this.array[0]`
+- **Grouping**: `(a + b) * c`
+- **Key (Object Keys in Literals)**: `{ [this.dynamicKey]: 'value' }` (Note: Support level may vary)
+- **Logical**: `a && b`, `a || b`
+- **List (Array Literals)**: `[1, 'string', this.value]`
+- **Literal**: `"string"`, `123`, `true`, `false`, `null`, `undefined`
+- **New**: `new Date()` (Limited to globally accessible constructors or those imported/available in scope)
+- **Null Coalescing**: `this.value ?? 'default'`
+- **Postfix**: `i++`, `i--` (Primarily within loop constructs or specific contexts)
+- **Set (Property Assignment)**: `this.object.property = value`
+- **Template (String Interpolation in Expressions)**: `` `Hello, ${this.name}` `` (Note: This is distinct from the `{{ }}` template interpolation)
+- **Ternary**: `condition ? valueIfTrue : valueIfFalse`
+- **Typeof**: `typeof this.variable`
+- **Unary**: `!this.isTrue`, `-this.value`
+- **Variable**: `this.myVariable`
+- **Void**: `void this.doSomething()` (Used when an expression's return value should not be rendered)
 
-### Future Enhancements
+### 🚧 Future Enhancements for Expressions
 
-Future updates will focus on expanding the capabilities of the expression interpreter, incorporating additional expressions and features to enhance the framework's power and usability.
+Future development aims to expand the capabilities of the expression interpreter, potentially including more advanced JavaScript features and better error handling.
 
-## Testing
+## 🧪 Testing
 
-Kasper-js employs **Jasmine** for unit testing to ensure code reliability and maintainability. The tests are organized in the `/specs` folder, allowing for easy navigation and management of test cases. However, the current test coverage needs improvement, and additional tests are encouraged to enhance the robustness of the framework.
+- Kasper-js uses **Jasmine** for unit testing.
+- Test files are located in the `/spec` folder.
+- Current test coverage needs improvement. Contributions in this area are highly welcome to enhance the framework's robustness.
+  ```bash
+  npm test
+  ```
 
-## Todo
+## 🤝 Contributing
 
-- fix state re-render
+Contributions are welcome! As a work-in-progress, there are many areas for improvement and new features.
+Please provide clear descriptions for your changes.
+
+## 🗺️ To-Do / Future Roadmap
+
+- Improve state re-rendering efficiency and granularity.
+- Enhance the component lifecycle hooks.
+- Expand test coverage significantly.
+- Develop more comprehensive documentation.
+- Explore possibilities for server-side rendering (SSR).
+- Investigate advanced features like routing and global state management.
+
+## 📄 License
+
+Kasper-js is licensed under the [MIT License](LICENSE).
