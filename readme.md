@@ -14,12 +14,12 @@
 
 ## ✨ Features
 
-- 📝 **HTML Parser**: Efficiently parses HTML templates.
-- 🧮 **JavaScript-like Expression Parser & Interpreter**: Supports a range of JavaScript-like expressions within templates.
-- 🖼️ **Template Renderer**: Dynamically renders templates to the DOM.
-- 🔄 **Re-rendering on State Updates**: Automatically updates the UI when underlying data changes.
-- 🧩 **Component-Based Architecture**: Encourages modular design and reusability.
-- ✅ **Valid HTML Syntax**: Kasper's template syntax remains valid HTML, ensuring compatibility with standard HTML editors and tooling.
+- **HTML Parser**: Efficiently parses HTML templates.
+- **JavaScript-like Expression Parser & Interpreter**: Supports a range of JavaScript-like expressions within templates.
+- **Template Renderer**: Dynamically renders templates to the DOM.
+- **Re-rendering on State Updates**: Automatically updates the UI when underlying data changes.
+- **Component-Based Architecture**: Encourages modular design and reusability.
+- **Valid HTML Syntax**: Kasper's template syntax remains valid HTML, ensuring compatibility with standard HTML editors and tooling.
 
 ## 🎯 Project Vision
 
