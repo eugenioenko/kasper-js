@@ -14,7 +14,7 @@
     "alwaysStrict": true,
     "baseUrl": ".",
     "paths": {
-      "@kasper/*": ["src/*"]
+      "@src/*": ["src/*"]
     },
     "esModuleInterop": true,
 
@@ -31,5 +31,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }

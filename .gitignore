@@ -63,3 +63,8 @@ typings/
 .vs/VSWorkspaceState.json
 .vs/interpreter/v15/.suo
 .vs/VSWorkspaceState.json
+
+
+# Tests output
+__screenshots__/
+tests/__screenshots__/

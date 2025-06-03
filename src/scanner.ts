@@ -17,6 +17,9 @@ export class Scanner {
   /** current column of the character being tokenized */
   private col: number;
 
+  /** maximum number of errors before exiting */
+  private readonly maxErrorcount = 7;
+
   public scan(source: string): Token[] {
     this.source = source;
     this.tokens = [];
@@ -32,7 +35,7 @@ export class Scanner {
         this.getToken();
       } catch (e) {
         this.errors.push(`${e}`);
-        if (this.errors.length > 100) {
+        if (this.errors.length > this.maxErrorcount) {
           this.errors.push("Error limit exceeded");
           return this.tokens;
         }

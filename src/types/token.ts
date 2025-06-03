@@ -30,6 +30,7 @@ export enum TokenType {
   Colon,
   Equal,
   EqualEqual,
+  EqualEqualEqual,
   Greater,
   GreaterEqual,
   Less,
