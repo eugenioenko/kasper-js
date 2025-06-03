@@ -81,7 +81,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   public visitTemplateExpr(expr: Expr.Template): any {
     const result = expr.value.replace(
       /\{\{([\s\S]+?)\}\}/g,
-      (m, placeholder) => {
+      (_, placeholder) => {
         return this.templateParse(placeholder);
       }
     );

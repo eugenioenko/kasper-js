@@ -3,9 +3,9 @@ import * as Expr from "./types/expressions";
 import { Token, TokenType } from "./types/token";
 
 export class ExpressionParser {
-  private current: number;
-  private tokens: Token[];
-  public errors: string[];
+  private current: number = 0;
+  private tokens: Token[] = [];
+  public errors: string[] = [];
   public errorLevel = 1;
 
   public parse(tokens: Token[]): Expr.Expr[] {

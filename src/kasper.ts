@@ -1,4 +1,4 @@
-import { Component, ComponentRegistry } from "./component";
+import { Component, type ComponentRegistry } from "./component";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 

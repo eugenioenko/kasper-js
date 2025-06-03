@@ -1,4 +1,4 @@
-import { Component, ComponentRegistry } from "./component";
+import { type ComponentRegistry } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
@@ -305,7 +305,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
     const regex = /\{\{.+\}\}/ms;
     if (regex.test(text)) {
-      return text.replace(/\{\{([\s\S]+?)\}\}/g, (m, placeholder) => {
+      return text.replace(/\{\{([\s\S]+?)\}\}/g, (_, placeholder) => {
         return this.evaluateExpression(placeholder);
       });
     }
@@ -327,8 +327,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return result;
   }
 
-  public visitDoctypeKNode(node: KNode.Doctype): void {
-    return;
+  public visitDoctypeKNode(_: KNode.Doctype): void {
+    throw "Doctype nodes are not supported in the transpiler.";
     // return document.implementation.createDocumentType("html", "", "");
   }
 

@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
       rel="stylesheet"
     />
-    <script src="../dist/kasper.min.js"></script>
+    <script src="../dist/kasper.js"></script>
     <script src="./js/demo.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,6 +30,10 @@
           },
         },
       };
+    </script>
+    <script type="module">
+      import { InitKasper } from "../dist/kasper.js";
+      InitKasper();
     </script>
     <style>
       .app {
