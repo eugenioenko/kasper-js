@@ -56,9 +56,10 @@ export class TemplateParser {
     if (!this.eof()) {
       if (this.check("\n")) {
         this.line += 1;
-        this.col = 0;
+        this.col = 1;
+      } else {
+        this.col += 1;
       }
-      this.col += 1;
       this.current++;
     } else {
       this.error(`Unexpected end of file. ${eofError}`);
@@ -79,7 +80,7 @@ export class TemplateParser {
   }
 
   private eof(): boolean {
-    return this.current > this.source.length;
+    return this.current >= this.source.length;
   }
 
   private error(message: string): any {
@@ -110,18 +111,24 @@ export class TemplateParser {
 
   private comment(): Node.KNode {
     const start = this.current;
-    do {
+    while (!this.match(`-->`)) {
+      if (this.eof()) {
+        this.error("Unterminated comment: expected closing '-->'");
+      }
       this.advance("Expected comment closing '-->'");
-    } while (!this.match(`-->`));
+    }
     const comment = this.source.slice(start, this.current - 3);
     return new Node.Comment(comment, this.line);
   }
 
   private doctype(): Node.KNode {
     const start = this.current;
-    do {
+    while (!this.match(`>`)) {
+      if (this.eof()) {
+        this.error("Unterminated doctype: expected closing '>'");
+      }
       this.advance("Expected closing doctype");
-    } while (!this.match(`>`));
+    }
     const doctype = this.source.slice(start, this.current - 1).trim();
     return new Node.Doctype(doctype, this.line);
   }
@@ -238,6 +245,10 @@ export class TemplateParser {
     this.whitespace();
     const start = this.current;
     while (!this.peek(...WhiteSpaces, ...closing)) {
+      if (this.eof()) {
+        const closingTags = closing.map((c) => `'${c}'`).join(", ");
+        this.error(`Unterminated tag: expected ${closingTags}`);
+      }
       this.advance(`Expected closing ${closing}`);
     }
     const end = this.current;
@@ -248,6 +259,9 @@ export class TemplateParser {
   private string(closing: string): string {
     const start = this.current;
     while (!this.match(closing)) {
+      if (this.eof()) {
+        this.error(`Unterminated string: expected closing ${closing}`);
+      }
       this.advance(`Expected closing ${closing}`);
     }
     return this.source.slice(start, this.current - 1);

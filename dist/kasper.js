@@ -12,7 +12,7 @@ class q {
     return this.value.toString();
   }
 }
-var i = /* @__PURE__ */ ((r) => (r[r.Eof = 0] = "Eof", r[r.Panic = 1] = "Panic", r[r.Ampersand = 2] = "Ampersand", r[r.AtSign = 3] = "AtSign", r[r.Caret = 4] = "Caret", r[r.Comma = 5] = "Comma", r[r.Dollar = 6] = "Dollar", r[r.Dot = 7] = "Dot", r[r.Hash = 8] = "Hash", r[r.LeftBrace = 9] = "LeftBrace", r[r.LeftBracket = 10] = "LeftBracket", r[r.LeftParen = 11] = "LeftParen", r[r.Percent = 12] = "Percent", r[r.Pipe = 13] = "Pipe", r[r.RightBrace = 14] = "RightBrace", r[r.RightBracket = 15] = "RightBracket", r[r.RightParen = 16] = "RightParen", r[r.Semicolon = 17] = "Semicolon", r[r.Slash = 18] = "Slash", r[r.Star = 19] = "Star", r[r.Arrow = 20] = "Arrow", r[r.Bang = 21] = "Bang", r[r.BangEqual = 22] = "BangEqual", r[r.Colon = 23] = "Colon", r[r.Equal = 24] = "Equal", r[r.EqualEqual = 25] = "EqualEqual", r[r.Greater = 26] = "Greater", r[r.GreaterEqual = 27] = "GreaterEqual", r[r.Less = 28] = "Less", r[r.LessEqual = 29] = "LessEqual", r[r.Minus = 30] = "Minus", r[r.MinusEqual = 31] = "MinusEqual", r[r.MinusMinus = 32] = "MinusMinus", r[r.PercentEqual = 33] = "PercentEqual", r[r.Plus = 34] = "Plus", r[r.PlusEqual = 35] = "PlusEqual", r[r.PlusPlus = 36] = "PlusPlus", r[r.Question = 37] = "Question", r[r.QuestionDot = 38] = "QuestionDot", r[r.QuestionQuestion = 39] = "QuestionQuestion", r[r.SlashEqual = 40] = "SlashEqual", r[r.StarEqual = 41] = "StarEqual", r[r.DotDot = 42] = "DotDot", r[r.DotDotDot = 43] = "DotDotDot", r[r.LessEqualGreater = 44] = "LessEqualGreater", r[r.Identifier = 45] = "Identifier", r[r.Template = 46] = "Template", r[r.String = 47] = "String", r[r.Number = 48] = "Number", r[r.And = 49] = "And", r[r.Const = 50] = "Const", r[r.Debug = 51] = "Debug", r[r.False = 52] = "False", r[r.Instanceof = 53] = "Instanceof", r[r.New = 54] = "New", r[r.Null = 55] = "Null", r[r.Undefined = 56] = "Undefined", r[r.Of = 57] = "Of", r[r.Or = 58] = "Or", r[r.True = 59] = "True", r[r.Typeof = 60] = "Typeof", r[r.Void = 61] = "Void", r[r.With = 62] = "With", r))(i || {});
+var i = /* @__PURE__ */ ((r) => (r[r.Eof = 0] = "Eof", r[r.Panic = 1] = "Panic", r[r.Ampersand = 2] = "Ampersand", r[r.AtSign = 3] = "AtSign", r[r.Caret = 4] = "Caret", r[r.Comma = 5] = "Comma", r[r.Dollar = 6] = "Dollar", r[r.Dot = 7] = "Dot", r[r.Hash = 8] = "Hash", r[r.LeftBrace = 9] = "LeftBrace", r[r.LeftBracket = 10] = "LeftBracket", r[r.LeftParen = 11] = "LeftParen", r[r.Percent = 12] = "Percent", r[r.Pipe = 13] = "Pipe", r[r.RightBrace = 14] = "RightBrace", r[r.RightBracket = 15] = "RightBracket", r[r.RightParen = 16] = "RightParen", r[r.Semicolon = 17] = "Semicolon", r[r.Slash = 18] = "Slash", r[r.Star = 19] = "Star", r[r.Arrow = 20] = "Arrow", r[r.Bang = 21] = "Bang", r[r.BangEqual = 22] = "BangEqual", r[r.Colon = 23] = "Colon", r[r.Equal = 24] = "Equal", r[r.EqualEqual = 25] = "EqualEqual", r[r.EqualEqualEqual = 26] = "EqualEqualEqual", r[r.Greater = 27] = "Greater", r[r.GreaterEqual = 28] = "GreaterEqual", r[r.Less = 29] = "Less", r[r.LessEqual = 30] = "LessEqual", r[r.Minus = 31] = "Minus", r[r.MinusEqual = 32] = "MinusEqual", r[r.MinusMinus = 33] = "MinusMinus", r[r.PercentEqual = 34] = "PercentEqual", r[r.Plus = 35] = "Plus", r[r.PlusEqual = 36] = "PlusEqual", r[r.PlusPlus = 37] = "PlusPlus", r[r.Question = 38] = "Question", r[r.QuestionDot = 39] = "QuestionDot", r[r.QuestionQuestion = 40] = "QuestionQuestion", r[r.SlashEqual = 41] = "SlashEqual", r[r.StarEqual = 42] = "StarEqual", r[r.DotDot = 43] = "DotDot", r[r.DotDotDot = 44] = "DotDotDot", r[r.LessEqualGreater = 45] = "LessEqualGreater", r[r.Identifier = 46] = "Identifier", r[r.Template = 47] = "Template", r[r.String = 48] = "String", r[r.Number = 49] = "Number", r[r.And = 50] = "And", r[r.Const = 51] = "Const", r[r.Debug = 52] = "Debug", r[r.False = 53] = "False", r[r.Instanceof = 54] = "Instanceof", r[r.New = 55] = "New", r[r.Null = 56] = "Null", r[r.Undefined = 57] = "Undefined", r[r.Of = 58] = "Of", r[r.Or = 59] = "Or", r[r.True = 60] = "True", r[r.Typeof = 61] = "Typeof", r[r.Void = 62] = "Void", r[r.With = 63] = "With", r))(i || {});
 class N {
   constructor(t, e, s, n, h) {
     a(this, "name");
@@ -27,7 +27,7 @@ class N {
     return `[(${this.line}):"${this.lexeme}"]`;
   }
 }
-const k = [" ", `
+const y = [" ", `
 `, "	", "\r"], O = [
   "area",
   "base",
@@ -65,7 +65,7 @@ class W extends c {
     return "Expr.Assign";
   }
 }
-class m extends c {
+class v extends c {
   constructor(e, s, n, h) {
     super();
     a(this, "left");
@@ -164,7 +164,7 @@ class M extends c {
     return "Expr.Grouping";
   }
 }
-class P extends c {
+class k extends c {
   constructor(e, s) {
     super();
     a(this, "name");
@@ -205,7 +205,7 @@ class D extends c {
     return "Expr.List";
   }
 }
-class v extends c {
+class g extends c {
   constructor(e, s) {
     super();
     a(this, "value");
@@ -453,14 +453,14 @@ class R {
       let s = this.assignment();
       if (t instanceof x) {
         const n = t.name;
-        return e.type !== i.Equal && (s = new m(
+        return e.type !== i.Equal && (s = new v(
           new x(n, n.line),
           e,
           s,
           e.line
         )), new W(n, s, n.line);
       } else if (t instanceof E)
-        return e.type !== i.Equal && (s = new m(
+        return e.type !== i.Equal && (s = new v(
           new E(t.entity, t.key, t.type, t.line),
           e,
           s,
@@ -515,7 +515,7 @@ class R {
       i.LessEqual
     ); ) {
       const e = this.previous(), s = this.addition();
-      t = new m(t, e, s, e.line);
+      t = new v(t, e, s, e.line);
     }
     return t;
   }
@@ -523,7 +523,7 @@ class R {
     let t = this.modulus();
     for (; this.match(i.Minus, i.Plus); ) {
       const e = this.previous(), s = this.modulus();
-      t = new m(t, e, s, e.line);
+      t = new v(t, e, s, e.line);
     }
     return t;
   }
@@ -531,7 +531,7 @@ class R {
     let t = this.multiplication();
     for (; this.match(i.Percent); ) {
       const e = this.previous(), s = this.multiplication();
-      t = new m(t, e, s, e.line);
+      t = new v(t, e, s, e.line);
     }
     return t;
   }
@@ -539,7 +539,7 @@ class R {
     let t = this.typeof();
     for (; this.match(i.Slash, i.Star); ) {
       const e = this.previous(), s = this.typeof();
-      t = new m(t, e, s, e.line);
+      t = new v(t, e, s, e.line);
     }
     return t;
   }
@@ -596,7 +596,7 @@ class R {
     const s = this.consume(
       i.Identifier,
       "Expect property name after '.'"
-    ), n = new P(s, s.line);
+    ), n = new k(s, s.line);
     return new E(t, n, e.type, s.line);
   }
   bracketGet(t, e) {
@@ -605,15 +605,15 @@ class R {
   }
   primary() {
     if (this.match(i.False))
-      return new v(!1, this.previous().line);
+      return new g(!1, this.previous().line);
     if (this.match(i.True))
-      return new v(!0, this.previous().line);
+      return new g(!0, this.previous().line);
     if (this.match(i.Null))
-      return new v(null, this.previous().line);
+      return new g(null, this.previous().line);
     if (this.match(i.Undefined))
-      return new v(void 0, this.previous().line);
+      return new g(void 0, this.previous().line);
     if (this.match(i.Number) || this.match(i.String))
-      return new v(this.previous().literal, this.previous().line);
+      return new g(this.previous().literal, this.previous().line);
     if (this.match(i.Template))
       return new Y(this.previous().literal, this.previous().line);
     if (this.match(i.Identifier)) {
@@ -652,12 +652,12 @@ class R {
         if (this.match(i.Colon)) {
           const n = this.expression();
           e.push(
-            new $(null, new P(s, s.line), n, s.line)
+            new $(null, new k(s, s.line), n, s.line)
           );
         } else {
           const n = new x(s, s.line);
           e.push(
-            new $(null, new P(s, s.line), n, s.line)
+            new $(null, new k(s, s.line), n, s.line)
           );
         }
       } else
@@ -681,14 +681,14 @@ class R {
     ), new D(t, e.line);
   }
 }
-function g(r) {
+function m(r) {
   return r >= "0" && r <= "9";
 }
 function G(r) {
   return r >= "a" && r <= "z" || r >= "A" && r <= "Z" || r === "$";
 }
 function et(r) {
-  return G(r) || g(r);
+  return G(r) || m(r);
 }
 function st(r) {
   return r.charAt(0).toUpperCase() + r.substring(1).toLowerCase();
@@ -712,6 +712,8 @@ class I {
     a(this, "line");
     /** current column of the character being tokenized */
     a(this, "col");
+    /** maximum number of errors before exiting */
+    a(this, "maxErrorcount", 7);
   }
   scan(t) {
     for (this.source = t, this.tokens = [], this.errors = [], this.current = 0, this.start = 0, this.line = 1, this.col = 1; !this.eof(); ) {
@@ -719,7 +721,7 @@ class I {
       try {
         this.getToken();
       } catch (e) {
-        if (this.errors.push(`${e}`), this.errors.length > 100)
+        if (this.errors.push(`${e}`), this.errors.length >= this.maxErrorcount)
           return this.errors.push("Error limit exceeded"), this.tokens;
       }
     }
@@ -730,7 +732,7 @@ class I {
   }
   advance() {
     return this.peek() === `
-` && (this.line++, this.col = 0), this.current++, this.col++, this.source.charAt(this.current - 1);
+` && (this.line++, this.col = 1), this.current++, this.col++, this.source.charAt(this.current - 1);
   }
   addToken(t, e) {
     const s = this.source.substring(this.start, this.current);
@@ -767,12 +769,14 @@ class I {
     this.addToken(t !== "`" ? i.String : i.Template, e);
   }
   number() {
-    for (; g(this.peek()); )
+    for (; m(this.peek()); )
       this.advance();
-    for (this.peek() === "." && g(this.peekNext()) && this.advance(); g(this.peek()); )
-      this.advance();
-    for (this.peek().toLowerCase() === "e" && (this.advance(), (this.peek() === "-" || this.peek() === "+") && this.advance()); g(this.peek()); )
-      this.advance();
+    if (this.peek() === "." && m(this.peekNext()))
+      for (this.advance(); m(this.peek()); )
+        this.advance();
+    if (this.peek().toLowerCase() === "e")
+      for (this.advance(), (this.peek() === "-" || this.peek() === "+") && this.advance(), m(this.peek()) || this.error("Invalid number: exponent has no digits"); m(this.peek()); )
+        this.advance();
     const t = this.source.substring(this.start, this.current);
     this.addToken(i.Number, Number(t));
   }
@@ -816,89 +820,50 @@ class I {
         this.addToken(i.Hash, null);
         break;
       case ":":
-        this.addToken(
-          this.match("=") ? i.Arrow : i.Colon,
-          null
-        );
+        this.match("=") ? this.addToken(i.Arrow, null) : this.addToken(i.Colon, null);
         break;
       case "*":
-        this.addToken(
-          this.match("=") ? i.StarEqual : i.Star,
-          null
-        );
+        this.match("=") ? this.addToken(i.StarEqual, null) : this.addToken(i.Star, null);
         break;
       case "%":
-        this.addToken(
-          this.match("=") ? i.PercentEqual : i.Percent,
-          null
-        );
+        this.match("=") ? this.addToken(i.PercentEqual, null) : this.addToken(i.Percent, null);
         break;
       case "|":
-        this.addToken(this.match("|") ? i.Or : i.Pipe, null);
+        this.match("|") ? this.addToken(i.Or, null) : this.addToken(i.Pipe, null);
         break;
       case "&":
-        this.addToken(
-          this.match("&") ? i.And : i.Ampersand,
-          null
-        );
+        this.match("&") ? this.addToken(i.And, null) : this.addToken(i.Ampersand, null);
         break;
       case ">":
-        this.addToken(
-          this.match("=") ? i.GreaterEqual : i.Greater,
-          null
-        );
+        this.match("=") ? this.addToken(i.GreaterEqual, null) : this.addToken(i.Greater, null);
         break;
       case "!":
-        this.addToken(
-          this.match("=") ? i.BangEqual : i.Bang,
-          null
-        );
+        this.match("=") ? this.addToken(i.BangEqual, null) : this.addToken(i.Bang, null);
         break;
       case "?":
-        this.addToken(
-          this.match("?") ? i.QuestionQuestion : this.match(".") ? i.QuestionDot : i.Question,
-          null
-        );
+        this.match("?") ? this.addToken(i.QuestionQuestion, null) : this.match(".") ? this.addToken(i.QuestionDot, null) : this.addToken(i.Question, null);
         break;
       case "=":
         if (this.match("=")) {
-          this.addToken(
-            (this.match("="), i.EqualEqual),
-            null
-          );
+          this.match("=") ? this.addToken(i.EqualEqualEqual, null) : this.addToken(i.EqualEqual, null);
           break;
         }
-        this.addToken(
-          this.match(">") ? i.Arrow : i.Equal,
-          null
-        );
+        this.match(">") ? this.addToken(i.Arrow, null) : this.addToken(i.Equal, null);
         break;
       case "+":
-        this.addToken(
-          this.match("+") ? i.PlusPlus : this.match("=") ? i.PlusEqual : i.Plus,
-          null
-        );
+        this.match("+") ? this.addToken(i.PlusPlus, null) : this.match("=") ? this.addToken(i.PlusEqual, null) : this.addToken(i.Plus, null);
         break;
       case "-":
-        this.addToken(
-          this.match("-") ? i.MinusMinus : this.match("=") ? i.MinusEqual : i.Minus,
-          null
-        );
+        this.match("-") ? this.addToken(i.MinusMinus, null) : this.match("=") ? this.addToken(i.MinusEqual, null) : this.addToken(i.Minus, null);
         break;
       case "<":
-        this.addToken(
-          this.match("=") ? this.match(">") ? i.LessEqualGreater : i.LessEqual : i.Less,
-          null
-        );
+        this.match("=") ? this.match(">") ? this.addToken(i.LessEqualGreater, null) : this.addToken(i.LessEqual, null) : this.addToken(i.Less, null);
         break;
       case ".":
         this.match(".") ? this.match(".") ? this.addToken(i.DotDotDot, null) : this.addToken(i.DotDot, null) : this.addToken(i.Dot, null);
         break;
       case "/":
-        this.match("/") ? this.comment() : this.match("*") ? this.multilineComment() : this.addToken(
-          this.match("=") ? i.SlashEqual : i.Slash,
-          null
-        );
+        this.match("/") ? this.comment() : this.match("*") ? this.multilineComment() : this.match("=") ? this.addToken(i.SlashEqual, null) : this.addToken(i.Slash, null);
         break;
       case "'":
       case '"':
@@ -914,7 +879,7 @@ class I {
         break;
       // complex cases
       default:
-        g(t) ? this.number() : G(t) ? this.identifier() : this.error(`Unexpected character '${t}'`);
+        m(t) ? this.number() : G(t) ? this.identifier() : this.error(`Unexpected character '${t}'`);
         break;
     }
   }
@@ -1072,7 +1037,7 @@ class it {
           const n = new $(
             t.right.entity,
             t.right.key,
-            new v(s, t.line),
+            new g(s, t.line),
             t.line
           );
           this.evaluate(n);
@@ -1204,7 +1169,7 @@ class ct extends b {
     return "KNode.Doctype";
   }
 }
-class Q {
+class U {
   constructor(t) {
     a(this, "scanner", new I());
     a(this, "parser", new R());
@@ -1221,7 +1186,7 @@ class Q {
     const s = this.scanner.scan(t), n = this.parser.parse(s), h = this.interpreter.scope;
     e && (this.interpreter.scope = e);
     const l = n.map(
-      (p) => this.interpreter.evaluate(p)
+      (f) => this.interpreter.evaluate(f)
     );
     return this.interpreter.scope = h, l && l.length ? l[0] : void 0;
   }
@@ -1276,13 +1241,13 @@ class Q {
     }
   }
   doEach(t, e, s) {
-    const n = this.scanner.scan(t.value), [h, l, p] = this.interpreter.evaluate(
+    const n = this.scanner.scan(t.value), [h, l, f] = this.interpreter.evaluate(
       this.parser.foreach(n)
     ), u = this.interpreter.scope;
-    let f = 0;
-    for (const o of p) {
+    let p = 0;
+    for (const o of f) {
       const d = { [h]: o };
-      l && (d[l] = f), this.interpreter.scope = new w(u, d), this.createElement(e, s), f += 1;
+      l && (d[l] = p), this.interpreter.scope = new w(u, d), this.createElement(e, s), p += 1;
     }
     this.interpreter.scope = u;
   }
@@ -1310,21 +1275,21 @@ class Q {
         }
         const l = this.findAttr(n, ["@if"]);
         if (l) {
-          const f = [[n, l]], o = n.name;
+          const p = [[n, l]], o = n.name;
           let d = !0;
           for (; d && !(s >= t.length); ) {
             const S = this.findAttr(t[s], [
               "@else",
               "@elseif"
             ]);
-            t[s].name === o && S ? (f.push([t[s], S]), s += 1) : d = !1;
+            t[s].name === o && S ? (p.push([t[s], S]), s += 1) : d = !1;
           }
-          this.doIf(f, e);
+          this.doIf(p, e);
           continue;
         }
-        const p = this.findAttr(n, ["@while"]);
-        if (p) {
-          this.doWhile(p, n, e);
+        const f = this.findAttr(n, ["@while"]);
+        if (f) {
+          this.doWhile(f, n, e);
           continue;
         }
         const u = this.findAttr(n, ["@let"]);
@@ -1337,14 +1302,14 @@ class Q {
     }
   }
   createElement(t, e) {
-    var p;
+    var f;
     const s = t.name === "void", n = !!this.registry[t.name], h = s ? e : document.createElement(t.name), l = this.interpreter.scope;
     if (n) {
       let u = {};
-      const f = t.attributes.filter(
+      const p = t.attributes.filter(
         (d) => d.name.startsWith("@:")
-      ), o = this.createComponentArgs(f);
-      if ((p = this.registry[t.name]) != null && p.component) {
+      ), o = this.createComponentArgs(p);
+      if ((f = this.registry[t.name]) != null && f.component) {
         const d = h, S = this;
         u = new this.registry[t.name].component({
           args: o,
@@ -1360,10 +1325,10 @@ class Q {
       );
       for (const o of u)
         this.createEventListener(h, o);
-      const f = t.attributes.filter(
+      const p = t.attributes.filter(
         (o) => !o.name.startsWith("@")
       );
-      for (const o of f)
+      for (const o of p)
         this.evaluate(o, h);
     }
     return t.self || (this.createSiblings(t.children, h), this.interpreter.scope = l, !s && e && e.appendChild(h)), h;
@@ -1425,7 +1390,7 @@ class lt {
     this.transpiler;
   }
 }
-class y {
+class C {
   constructor() {
     a(this, "current");
     a(this, "line");
@@ -1458,7 +1423,7 @@ class y {
   }
   advance(t = "") {
     this.eof() ? this.error(`Unexpected end of file. ${t}`) : (this.check(`
-`) && (this.line += 1, this.col = 0), this.col += 1, this.current++);
+`) ? (this.line += 1, this.col = 1) : this.col += 1, this.current++);
   }
   peek(...t) {
     for (const e of t)
@@ -1470,7 +1435,7 @@ class y {
     return this.source.slice(this.current, this.current + t.length) === t;
   }
   eof() {
-    return this.current > this.source.length;
+    return this.current >= this.source.length;
   }
   error(t) {
     throw new q(t, this.line, this.col);
@@ -1482,17 +1447,15 @@ class y {
   }
   comment() {
     const t = this.current;
-    do
-      this.advance("Expected comment closing '-->'");
-    while (!this.match("-->"));
+    for (; !this.match("-->"); )
+      this.eof() && this.error("Unterminated comment: expected closing '-->'"), this.advance("Expected comment closing '-->'");
     const e = this.source.slice(t, this.current - 3);
     return new ht(e, this.line);
   }
   doctype() {
     const t = this.current;
-    do
-      this.advance("Expected closing doctype");
-    while (!this.match(">"));
+    for (; !this.match(">"); )
+      this.eof() && this.error("Unterminated doctype: expected closing '>'"), this.advance("Expected closing doctype");
     const e = this.source.slice(t, this.current - 1).trim();
     return new ct(e, this.line);
   }
@@ -1538,32 +1501,32 @@ class y {
   }
   whitespace() {
     let t = 0;
-    for (; this.peek(...k) && !this.eof(); )
+    for (; this.peek(...y) && !this.eof(); )
       t += 1, this.advance();
     return t;
   }
   identifier(...t) {
     this.whitespace();
     const e = this.current;
-    for (; !this.peek(...k, ...t); )
-      this.advance(`Expected closing ${t}`);
+    for (; !this.peek(...y, ...t); )
+      this.eof() && this.error(`Unterminated identifier: expected closing ${t}`), this.advance(`Expected closing ${t}`);
     const s = this.current;
     return this.whitespace(), this.source.slice(e, s).trim();
   }
   string(t) {
     const e = this.current;
     for (; !this.match(t); )
-      this.advance(`Expected closing ${t}`);
+      this.eof() && this.error(`Unterminated string: expected closing ${t}`), this.advance(`Expected closing ${t}`);
     return this.source.slice(e, this.current - 1);
   }
 }
 function ot(r) {
-  const t = new y(), e = t.parse(r);
+  const t = new C(), e = t.parse(r);
   return t.errors.length ? JSON.stringify(t.errors) : JSON.stringify(e);
 }
-function U(r, t, e) {
-  const n = new y().parse(r);
-  return new Q().transpile(n, t, e);
+function Q(r, t, e) {
+  const n = new C().parse(r);
+  return new U().transpile(n, t, e);
 }
 function ut(r) {
   if (typeof window > "u") {
@@ -1575,14 +1538,14 @@ function ut(r) {
     console.error("No template found in the document.");
     return;
   }
-  const e = document.getElementsByTagName("kasper-app"), s = U(
+  const e = document.getElementsByTagName("kasper-app"), s = Q(
     t.innerHTML,
     r,
     e[0]
   );
   document.body.appendChild(s);
 }
-class pt {
+class ft {
   constructor() {
     a(this, "entity");
     a(this, "changes", 1);
@@ -1596,8 +1559,8 @@ class pt {
     });
   }
 }
-let C = new pt();
-class ft {
+let P = new ft();
+class pt {
   constructor(t) {
     a(this, "_value");
     this._value = t;
@@ -1606,18 +1569,18 @@ class ft {
     return this._value;
   }
   set(t) {
-    this._value = t, C.render();
+    this._value = t, P.render();
   }
   toString() {
     return this._value.toString();
   }
 }
 function dt(r) {
-  return new ft(r);
+  return new pt(r);
 }
 function mt(r) {
   const t = new r();
-  C.entity = t, C.render(), typeof t.$onInit == "function" && t.$onInit();
+  P.entity = t, P.render(), typeof t.$onInit == "function" && t.$onInit();
 }
 function vt(r, t, e) {
   const s = document.createElement(t), n = new e[t].component();
@@ -1634,7 +1597,7 @@ function gt(r, t) {
   return e;
 }
 function Et(r) {
-  const t = new y(), e = document.querySelector(r.root || "body"), s = gt(r.registry, t), n = new Q({ registry: s }), h = r.entry || "kasper-app", l = vt(n, h, s);
+  const t = new C(), e = document.querySelector(r.root || "body"), s = gt(r.registry, t), n = new U({ registry: s }), h = r.entry || "kasper-app", l = vt(n, h, s);
   e.appendChild(l);
 }
 class bt {
@@ -1682,7 +1645,7 @@ class bt {
 function St() {
   (window || {}).kasper = {
     execute: ot,
-    transpile: U,
+    transpile: Q,
     App: Et
   }, window.Kasper = mt, window.Component = lt, window.$state = dt;
 }
@@ -1691,7 +1654,7 @@ export {
   St as InitKasper,
   it as Interpreter,
   I as Scanner,
-  y as TemplateParser,
-  Q as Transpiler,
+  C as TemplateParser,
+  U as Transpiler,
   bt as Viewer
 };

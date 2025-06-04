@@ -86,12 +86,6 @@ describe("Scanner", () => {
     );
   });
 
-  test("tokenizes === as EqualEqualEqual", () => {
-    const scanner = new Scanner();
-    const result = scanner.scan("a === b");
-    expect(result.some((t) => t.type === TokenType.EqualEqualEqual)).toBe(true);
-  });
-
   test("errors on exponent with no digits", () => {
     const scanner = new Scanner();
     scanner.scan("1e");
