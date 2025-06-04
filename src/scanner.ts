@@ -35,7 +35,7 @@ export class Scanner {
         this.getToken();
       } catch (e) {
         this.errors.push(`${e}`);
-        if (this.errors.length > this.maxErrorcount) {
+        if (this.errors.length >= this.maxErrorcount) {
           this.errors.push("Error limit exceeded");
           return this.tokens;
         }
@@ -52,7 +52,7 @@ export class Scanner {
   private advance(): string {
     if (this.peek() === "\n") {
       this.line++;
-      this.col = 0;
+      this.col = 1; // fix: column should reset to 1, not 0
     }
     this.current++;
     this.col++;
@@ -137,12 +137,11 @@ export class Scanner {
 
     // checks for fraction
     if (this.peek() === "." && Utils.isDigit(this.peekNext())) {
-      this.advance();
-    }
-
-    // gets fraction part
-    while (Utils.isDigit(this.peek())) {
-      this.advance();
+      this.advance(); // consume '.'
+      while (Utils.isDigit(this.peek())) {
+        // fix: parse all digits after '.'
+        this.advance();
+      }
     }
 
     // checks for exponent
@@ -151,10 +150,13 @@ export class Scanner {
       if (this.peek() === "-" || this.peek() === "+") {
         this.advance();
       }
-    }
-
-    while (Utils.isDigit(this.peek())) {
-      this.advance();
+      if (!Utils.isDigit(this.peek())) {
+        // fix: require at least one digit after exponent
+        this.error("Invalid number: exponent has no digits");
+      }
+      while (Utils.isDigit(this.peek())) {
+        this.advance();
+      }
     }
 
     const value = this.source.substring(this.start, this.current);
@@ -209,96 +211,106 @@ export class Scanner {
         this.addToken(TokenType.Hash, null);
         break;
       case ":":
-        this.addToken(
-          this.match("=") ? TokenType.Arrow : TokenType.Colon,
-          null
-        );
+        if (this.match("=")) {
+          this.addToken(TokenType.Arrow, null);
+        } else {
+          this.addToken(TokenType.Colon, null);
+        }
         break;
       case "*":
-        this.addToken(
-          this.match("=") ? TokenType.StarEqual : TokenType.Star,
-          null
-        );
+        if (this.match("=")) {
+          this.addToken(TokenType.StarEqual, null);
+        } else {
+          this.addToken(TokenType.Star, null);
+        }
         break;
       case "%":
-        this.addToken(
-          this.match("=") ? TokenType.PercentEqual : TokenType.Percent,
-          null
-        );
+        if (this.match("=")) {
+          this.addToken(TokenType.PercentEqual, null);
+        } else {
+          this.addToken(TokenType.Percent, null);
+        }
         break;
       case "|":
-        this.addToken(this.match("|") ? TokenType.Or : TokenType.Pipe, null);
+        if (this.match("|")) {
+          this.addToken(TokenType.Or, null);
+        } else {
+          this.addToken(TokenType.Pipe, null);
+        }
         break;
       case "&":
-        this.addToken(
-          this.match("&") ? TokenType.And : TokenType.Ampersand,
-          null
-        );
+        if (this.match("&")) {
+          this.addToken(TokenType.And, null);
+        } else {
+          this.addToken(TokenType.Ampersand, null);
+        }
         break;
       case ">":
-        this.addToken(
-          this.match("=") ? TokenType.GreaterEqual : TokenType.Greater,
-          null
-        );
+        if (this.match("=")) {
+          this.addToken(TokenType.GreaterEqual, null);
+        } else {
+          this.addToken(TokenType.Greater, null);
+        }
         break;
       case "!":
-        this.addToken(
-          this.match("=") ? TokenType.BangEqual : TokenType.Bang,
-          null
-        );
+        if (this.match("=")) {
+          this.addToken(TokenType.BangEqual, null);
+        } else {
+          this.addToken(TokenType.Bang, null);
+        }
         break;
       case "?":
-        this.addToken(
-          this.match("?")
-            ? TokenType.QuestionQuestion
-            : this.match(".")
-            ? TokenType.QuestionDot
-            : TokenType.Question,
-          null
-        );
+        if (this.match("?")) {
+          this.addToken(TokenType.QuestionQuestion, null);
+        } else if (this.match(".")) {
+          this.addToken(TokenType.QuestionDot, null);
+        } else {
+          this.addToken(TokenType.Question, null);
+        }
         break;
       case "=":
         if (this.match("=")) {
-          this.addToken(
-            this.match("=") ? TokenType.EqualEqual : TokenType.EqualEqual,
-            null
-          );
+          if (this.match("=")) {
+            this.addToken(TokenType.EqualEqualEqual, null); // fix: handle ===
+          } else {
+            this.addToken(TokenType.EqualEqual, null);
+          }
           break;
         }
-        this.addToken(
-          this.match(">") ? TokenType.Arrow : TokenType.Equal,
-          null
-        );
+        if (this.match(">")) {
+          this.addToken(TokenType.Arrow, null);
+        } else {
+          this.addToken(TokenType.Equal, null);
+        }
         break;
       case "+":
-        this.addToken(
-          this.match("+")
-            ? TokenType.PlusPlus
-            : this.match("=")
-            ? TokenType.PlusEqual
-            : TokenType.Plus,
-          null
-        );
+        if (this.match("+")) {
+          this.addToken(TokenType.PlusPlus, null);
+        } else if (this.match("=")) {
+          this.addToken(TokenType.PlusEqual, null);
+        } else {
+          this.addToken(TokenType.Plus, null);
+        }
         break;
       case "-":
-        this.addToken(
-          this.match("-")
-            ? TokenType.MinusMinus
-            : this.match("=")
-            ? TokenType.MinusEqual
-            : TokenType.Minus,
-          null
-        );
+        if (this.match("-")) {
+          this.addToken(TokenType.MinusMinus, null);
+        } else if (this.match("=")) {
+          this.addToken(TokenType.MinusEqual, null);
+        } else {
+          this.addToken(TokenType.Minus, null);
+        }
         break;
       case "<":
-        this.addToken(
-          this.match("=")
-            ? this.match(">")
-              ? TokenType.LessEqualGreater
-              : TokenType.LessEqual
-            : TokenType.Less,
-          null
-        );
+        if (this.match("=")) {
+          if (this.match(">")) {
+            this.addToken(TokenType.LessEqualGreater, null);
+          } else {
+            this.addToken(TokenType.LessEqual, null);
+          }
+        } else {
+          this.addToken(TokenType.Less, null);
+        }
         break;
       case ".":
         if (this.match(".")) {
@@ -316,11 +328,10 @@ export class Scanner {
           this.comment();
         } else if (this.match("*")) {
           this.multilineComment();
+        } else if (this.match("=")) {
+          this.addToken(TokenType.SlashEqual, null);
         } else {
-          this.addToken(
-            this.match("=") ? TokenType.SlashEqual : TokenType.Slash,
-            null
-          );
+          this.addToken(TokenType.Slash, null);
         }
         break;
       case `'`:
