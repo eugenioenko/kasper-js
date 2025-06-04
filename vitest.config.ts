@@ -4,13 +4,13 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [],
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     globals: true,
     browser: {
       provider: "playwright",
-      enabled: true,
+      enabled: false,
       instances: [{ browser: "chromium" }],
-      viewport: { width: 640, height: 480 },
+      viewport: { width: 320, height: 240 },
     },
     setupFiles: ["./tests/setup-tests.ts"],
   },
