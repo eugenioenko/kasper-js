@@ -8,8 +8,9 @@ describe("TemplateParser", () => {
     const nodes = parser.parse("<div></div>");
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toBeInstanceOf(Node.Element);
-    expect(nodes[0].name).toBe("div");
-    expect(nodes[0].children).toHaveLength(0);
+    const el = nodes[0] as Node.Element;
+    expect(el.name).toBe("div");
+    expect(el.children).toHaveLength(0);
   });
 
   test("parses text node", () => {
@@ -17,7 +18,7 @@ describe("TemplateParser", () => {
     const nodes = parser.parse("hello world");
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toBeInstanceOf(Node.Text);
-    expect(nodes[0].value).toBe("hello world");
+    expect((nodes[0] as Node.Text).value).toBe("hello world");
   });
 
   test("parses comment node", () => {
@@ -25,7 +26,7 @@ describe("TemplateParser", () => {
     const nodes = parser.parse("<!-- comment -->");
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toBeInstanceOf(Node.Comment);
-    expect(nodes[0].value).toBe(" comment ");
+    expect((nodes[0] as Node.Comment).value).toBe(" comment ");
   });
 
   test("parses doctype node", () => {
@@ -33,7 +34,7 @@ describe("TemplateParser", () => {
     const nodes = parser.parse("<!DOCTYPE html>");
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toBeInstanceOf(Node.Doctype);
-    expect(nodes[0].value.toLowerCase()).toBe("html");
+    expect((nodes[0] as Node.Doctype).value.toLowerCase()).toBe("html");
   });
 
   test("parses self-closing tag", () => {
@@ -41,7 +42,8 @@ describe("TemplateParser", () => {
     const nodes = parser.parse("<img/>");
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toBeInstanceOf(Node.Element);
-    expect(nodes[0].self).toBe(true);
+    const el = nodes[0] as Node.Element;
+    expect(el.self).toBe(true);
   });
 
   test("parses br element as self-closing", () => {
@@ -49,32 +51,36 @@ describe("TemplateParser", () => {
     const nodes = parser.parse("<br>");
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toBeInstanceOf(Node.Element);
-    expect(nodes[0].self).toBe(true);
+    const el = nodes[0] as Node.Element;
+    expect(el.self).toBe(true);
   });
 
   test("parses nested elements", () => {
     const parser = new TemplateParser();
     const nodes = parser.parse("<div><span>text</span></div>");
     expect(nodes).toHaveLength(1);
-    const div = nodes[0];
+    const div = nodes[0] as Node.Element;
     expect(div.children).toHaveLength(1);
-    expect(div.children[0]).toBeInstanceOf(Node.Element);
-    expect(div.children[0].name).toBe("span");
-    expect(div.children[0].children[0]).toBeInstanceOf(Node.Text);
+    const span = div.children[0] as Node.Element;
+    expect(span).toBeInstanceOf(Node.Element);
+    expect(span.name).toBe("span");
+    expect(span.children[0] as Node.Text).toBeInstanceOf(Node.Text);
   });
 
   test("parses multiple root nodes", () => {
     const parser = new TemplateParser();
     const nodes = parser.parse("<a></a><b></b>");
     expect(nodes).toHaveLength(2);
-    expect(nodes[0].name).toBe("a");
-    expect(nodes[1].name).toBe("b");
+    const a = nodes[0] as Node.Element;
+    const b = nodes[1] as Node.Element;
+    expect(a.name).toBe("a");
+    expect(b.name).toBe("b");
   });
 
   test("parses attributes (quoted, unquoted, empty)", () => {
     const parser = new TemplateParser();
     const nodes = parser.parse('<input type="text" value=foo empty >');
-    const input = nodes[0];
+    const input = nodes[0] as Node.Element;
     expect(input.attributes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: "type", value: "text" }),
@@ -87,9 +93,15 @@ describe("TemplateParser", () => {
   test("parses attributes with single and double quotes", () => {
     const parser = new TemplateParser();
     const nodes = parser.parse("<div a='1' b=\"2\"></div>");
-    const attrs = nodes[0].attributes;
-    expect(attrs.find((a) => a.name === "a").value).toBe("1");
-    expect(attrs.find((a) => a.name === "b").value).toBe("2");
+    const attrs = (nodes[0] as Node.Element).attributes;
+    expect(
+      (attrs.find((a) => (a as Node.Attribute).name === "a") as Node.Attribute)
+        ?.value
+    ).toBe("1");
+    expect(
+      (attrs.find((a) => (a as Node.Attribute).name === "b") as Node.Attribute)
+        ?.value
+    ).toBe("2");
   });
 
   test("parses text between elements", () => {
@@ -98,14 +110,15 @@ describe("TemplateParser", () => {
     expect(nodes).toHaveLength(2);
     expect(nodes[0]).toBeInstanceOf(Node.Element);
     expect(nodes[1]).toBeInstanceOf(Node.Text);
-    expect(nodes[1].value).toBe("bar");
+    expect((nodes[1] as Node.Text).value).toBe("bar");
   });
 
   test("handles whitespace and newlines", () => {
     const parser = new TemplateParser();
     const nodes = parser.parse("  <div>\n  <span>hi</span>\n</div>  ");
     expect(nodes).toHaveLength(1);
-    expect(nodes[0].children[0]).toBeInstanceOf(Node.Element);
+    const div = nodes[0] as Node.Element;
+    expect(div.children[0]).toBeInstanceOf(Node.Element);
   });
 
   test("throws on unterminated comment", () => {

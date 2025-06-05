@@ -295,7 +295,6 @@ describe("Scanner", () => {
     ];
     const result = scanner.scan(input);
     expected.forEach((type, i) => {
-      console.log(result[i].lexeme, type);
       expect(result[i].type).toBe(type);
     });
   });

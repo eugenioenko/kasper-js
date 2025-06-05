@@ -1,10 +1,10 @@
 export class Scope {
   public values: Record<string, any>;
-  public parent: Scope;
+  public parent: Scope | null;
 
-  constructor(parent?: Scope, entity?: Record<string, any>) {
-    this.parent = parent ? parent : null;
-    this.values = entity ? entity : {};
+  constructor(parent?: Scope | null, entity?: Record<string, any>) {
+    this.parent = parent ?? null;
+    this.values = entity ?? {};
   }
 
   public init(entity?: Record<string, any>): void {
@@ -16,13 +16,15 @@ export class Scope {
   }
 
   public get(key: string): any {
-    if (typeof this.values[key] !== "undefined") {
+    if (Object.prototype.hasOwnProperty.call(this.values, key)) {
       return this.values[key];
     }
     if (this.parent !== null) {
       return this.parent.get(key);
     }
-
-    return window[key as keyof typeof window];
+    if (typeof window !== "undefined") {
+      return window[key as keyof typeof window];
+    }
+    return undefined;
   }
 }
