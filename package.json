@@ -8,11 +8,13 @@
     "build": "tsc && vite build",
     "test": "npx vitest --run",
     "test:ui": "npx vitest --browser",
+    "coverage": "npx vitest --coverage --run",
     "bench": "npx vitest bench --run"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",
     "@vitest/browser": "^3.2.0",
+    "@vitest/coverage-v8": "3.2.0",
     "happy-dom": "^17.6.1",
     "playwright": "^1.52.0",
     "typescript": "~5.8.3",

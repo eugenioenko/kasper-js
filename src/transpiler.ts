@@ -5,13 +5,22 @@ import { Scanner } from "./scanner";
 import { Scope } from "./scope";
 import * as KNode from "./types/nodes";
 
+// Type alias for a tuple representing an if/else-if/else node and its attribute
+// [ElementNode, AttributeNode]
 type IfElseNode = [KNode.Element, KNode.Attribute];
 
+// The Transpiler class is responsible for traversing the KNode AST and generating DOM nodes.
+// It handles custom directives like @if, @each, @while, @let, and component instantiation.
 export class Transpiler implements KNode.KNodeVisitor<void> {
+  // Scanner for tokenizing expressions
   private scanner = new Scanner();
+  // Parser for parsing expressions
   private parser = new ExpressionParser();
+  // Interpreter for evaluating parsed expressions
   private interpreter = new Interpreter();
+  // Stores runtime errors encountered during transpilation
   public errors: string[] = [];
+  // Registry of custom components
   private registry: ComponentRegistry = {};
 
   constructor(options?: { registry: ComponentRegistry }) {
@@ -23,11 +32,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Evaluates a KNode and appends the result to the parent node
   private evaluate(node: KNode.KNode, parent?: Node): void {
     node.accept(this, parent);
   }
 
-  // evaluates expressions and returns the result of the first evaluation
+  // Evaluates a string expression in the current or overridden scope
+  // Returns the result of the first evaluation
   private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
@@ -43,6 +54,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return result && result.length ? result[0] : undefined;
   }
 
+  // Main entry point: transpiles a list of KNodes into DOM nodes inside the container
   public transpile(
     nodes: KNode.KNode[],
     entity: object,
@@ -59,10 +71,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return container;
   }
 
+  // Visitor for element nodes
   public visitElementKNode(node: KNode.Element, parent?: Node): void {
     this.createElement(node, parent);
   }
 
+  // Visitor for text nodes; evaluates template strings
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
     const content = this.evaluateTemplateString(node.value);
     const text = document.createTextNode(content);
@@ -71,6 +85,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Visitor for attribute nodes; evaluates template strings in attribute values
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
     const attr = document.createAttribute(node.name);
     if (node.value) {
@@ -82,6 +97,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Visitor for comment nodes
   public visitCommentKNode(node: KNode.Comment, parent?: Node): void {
     const result = new Comment(node.value);
     if (parent) {
@@ -89,6 +105,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Finds the first attribute in a node matching any of the provided names
   private findAttr(
     node: KNode.Element,
     name: string[]
@@ -106,6 +123,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return null;
   }
 
+  // Handles @if, @elseif, and @else logic for conditional rendering
   private doIf(expressions: IfElseNode[], parent: Node): void {
     const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
     if ($if) {
@@ -130,6 +148,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Handles @each directive for iterating over collections
   private doEach(each: KNode.Attribute, node: KNode.Element, parent: Node) {
     const tokens = this.scanner.scan((each as KNode.Attribute).value);
     const [name, key, iterable] = this.interpreter.evaluate(
@@ -138,6 +157,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const originalScope = this.interpreter.scope;
     let index = 0;
     for (const item of iterable) {
+      // Create a new scope for each iteration
       const scope: { [key: string]: any } = { [name]: item };
       if (key) {
         scope[key] = index;
@@ -149,6 +169,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     this.interpreter.scope = originalScope;
   }
 
+  // Handles @while directive for looping while a condition is true
   private doWhile($while: KNode.Attribute, node: KNode.Element, parent: Node) {
     const originalScope = this.interpreter.scope;
     this.interpreter.scope = new Scope(originalScope);
@@ -158,13 +179,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     this.interpreter.scope = originalScope;
   }
 
-  // executes initialization in the current scope
+  // Handles @let directive for variable initialization in the current scope
   private doLet(init: KNode.Attribute, node: KNode.Element, parent: Node) {
     this.execute(init.value);
     const element = this.createElement(node, parent);
+    // Store a reference to the created element in the scope
     this.interpreter.scope.set("$ref", element);
   }
 
+  // Recursively creates sibling nodes, handling control flow directives
   private createSiblings(nodes: KNode.KNode[], parent?: Node): void {
     let current = 0;
     while (current < nodes.length) {
@@ -178,6 +201,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
         const $if = this.findAttr(node as KNode.Element, ["@if"]);
         if ($if) {
+          // Collects all related if/elseif/else nodes for the same tag
           const expressions: IfElseNode[] = [[node as KNode.Element, $if]];
           const tag = (node as KNode.Element).name;
           let found = true;
@@ -218,6 +242,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Creates a DOM element or component instance from a KNode.Element
   private createElement(node: KNode.Element, parent?: Node): Node | undefined {
     const isVoid = node.name === "void";
     const isComponent = !!this.registry[node.name];
@@ -225,7 +250,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const restoreScope = this.interpreter.scope;
 
     if (isComponent) {
-      // create a new instance of the component and set it as the current scope
+      // Instantiate the component and set up its scope
       let component: any = {};
       const argsAttr = node.attributes.filter((attr) =>
         (attr as KNode.Attribute).name.startsWith("@:")
@@ -241,12 +266,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         });
       }
       this.interpreter.scope = new Scope(restoreScope, component);
-      // create the children of the component
+      // Render the component's children
       this.createSiblings(this.registry[node.name].nodes, element);
     }
 
     if (!isVoid) {
-      // event binding
+      // Bind event listeners for @on: directives
       const events = node.attributes.filter((attr) =>
         (attr as KNode.Attribute).name.startsWith("@on:")
       );
@@ -255,7 +280,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         this.createEventListener(element, event as KNode.Attribute);
       }
 
-      // attributes
+      // Set regular attributes (not directives)
       const attributes = node.attributes.filter(
         (attr) => !(attr as KNode.Attribute).name.startsWith("@")
       );
@@ -269,6 +294,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       return element;
     }
 
+    // Recursively create child nodes
     this.createSiblings(node.children, element);
     this.interpreter.scope = restoreScope;
 
@@ -278,6 +304,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return element;
   }
 
+  // Extracts component arguments from @: attributes
   private createComponentArgs(args: KNode.Attribute[]): Record<string, any> {
     if (!args.length) {
       return {};
@@ -290,6 +317,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return result;
   }
 
+  // Binds an event listener to a DOM element for @on: directives
   private createEventListener(element: Node, attr: KNode.Attribute): void {
     const type = attr.name.split(":")[1];
     const listenerScope = new Scope(this.interpreter.scope);
@@ -299,6 +327,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     });
   }
 
+  // Evaluates template strings like 'Hello {{name}}!'
   private evaluateTemplateString(text: string): string {
     if (!text) {
       return text;
@@ -312,6 +341,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return text;
   }
 
+  // Evaluates a single expression and returns its string representation
   private evaluateExpression(source: string): string {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
@@ -327,11 +357,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return result;
   }
 
+  // Throws for unsupported doctype nodes
   public visitDoctypeKNode(_: KNode.Doctype): void {
     throw "Doctype nodes are not supported in the transpiler.";
     // return document.implementation.createDocumentType("html", "", "");
   }
 
+  // Throws a runtime error and halts transpilation
   public error(message: string): void {
     throw new Error(`Runtime Error => ${message}`);
   }
