@@ -3,11 +3,23 @@ import * as Expr from "./types/expressions";
 import { Token, TokenType } from "./types/token";
 
 export class ExpressionParser {
+  // The current index in the tokens array
   private current: number = 0;
+  // The list of tokens to parse
   private tokens: Token[] = [];
-  public errors: string[] = [];
+  // Accumulated parse errors
+  public errors: KasperError[] = [];
+  // Error reporting level (not currently used for branching)
   public errorLevel = 1;
+  // The maximum number of errors before stopping parsing
+  private readonly maxErrorCount = 7;
 
+  /**
+   * Parses a list of tokens into an array of expressions.
+   * On error, attempts to synchronize and continue parsing.
+   * @param tokens The tokens to parse
+   * @returns Array of parsed expressions
+   */
   public parse(tokens: Token[]): Expr.Expr[] {
     this.current = 0;
     this.tokens = tokens;
@@ -15,14 +27,28 @@ export class ExpressionParser {
     const expressions: Expr.Expr[] = [];
     while (!this.eof()) {
       try {
+        // Parse a single expression
         expressions.push(this.expression());
       } catch (e) {
+        // Catch and record errors, then synchronize to next statement
         if (e instanceof KasperError) {
-          this.errors.push(`Parse Error (${e.line}:${e.col}) => ${e.value}`);
+          this.errors.push(e);
         } else {
-          this.errors.push(`${e}`);
-          if (this.errors.length > 100) {
-            this.errors.push("Parse Error limit exceeded");
+          this.errors.push(
+            new KasperError(
+              `Parse Error  => ${e}`,
+              this.peek().line,
+              this.peek().col
+            )
+          );
+          if (this.errors.length > this.maxErrorCount) {
+            this.errors.push(
+              new KasperError(
+                `Parse Error limit exceeded, stopping parsing.`,
+                this.peek().line,
+                this.peek().col
+              )
+            );
             return expressions;
           }
         }
@@ -32,6 +58,10 @@ export class ExpressionParser {
     return expressions;
   }
 
+  /**
+   * Checks if the next token matches any of the given types and advances if so.
+   * @param types Token types to match
+   */
   private match(...types: TokenType[]): boolean {
     for (const type of types) {
       if (this.check(type)) {
@@ -42,6 +72,10 @@ export class ExpressionParser {
     return false;
   }
 
+  /**
+   * Advances to the next token and returns the previous one.
+   * @returns The previous token
+   */
   private advance(): Token {
     if (!this.eof()) {
       this.current++;
@@ -49,37 +83,65 @@ export class ExpressionParser {
     return this.previous();
   }
 
+  /**
+   * Returns the current token without advancing.
+   */
   private peek(): Token {
     return this.tokens[this.current];
   }
 
+  /**
+   * Returns the previous token.
+   */
   private previous(): Token {
     return this.tokens[this.current - 1];
   }
 
+  /**
+   * Checks if the current token matches the given type.
+   * @param type Token type to check
+   */
   private check(type: TokenType): boolean {
+    // Fix: Prevent out-of-bounds access if at end of tokens
+    if (this.current >= this.tokens.length) return false;
     return this.peek().type === type;
   }
 
+  /**
+   * Returns true if the current token is EOF.
+   */
   private eof(): boolean {
-    return this.check(TokenType.Eof);
+    // Fix: Prevent crash if tokens is empty
+    return this.tokens.length === 0 || this.check(TokenType.Eof);
   }
 
+  /**
+   * Consumes a token of the given type, or throws an error with the given message.
+   * @param type Token type to consume
+   * @param message Error message if not found
+   */
   private consume(type: TokenType, message: string): Token {
     if (this.check(type)) {
       return this.advance();
     }
-
     return this.error(
       this.peek(),
       message + `, unexpected token "${this.peek().lexeme}"`
     );
   }
 
+  /**
+   * Throws a KasperError for parse errors.
+   * @param token The token where the error occurred
+   * @param message The error message
+   */
   private error(token: Token, message: string): any {
     throw new KasperError(message, token.line, token.col);
   }
 
+  /**
+   * Synchronizes the parser after an error by advancing to the next likely statement boundary.
+   */
   private synchronize(): void {
     do {
       if (this.check(TokenType.Semicolon) || this.check(TokenType.RightBrace)) {
@@ -90,6 +152,10 @@ export class ExpressionParser {
     } while (!this.eof());
   }
 
+  /**
+   * Parses a foreach/each expression. Used for template iteration.
+   * @param tokens The tokens to parse
+   */
   public foreach(tokens: Token[]): Expr.Expr {
     this.current = 0;
     this.tokens = tokens;
@@ -117,6 +183,9 @@ export class ExpressionParser {
     return new Expr.Each(name, key, iterable, name.line);
   }
 
+  /**
+   * Parses an expression, consuming trailing semicolons.
+   */
   private expression(): Expr.Expr {
     const expression: Expr.Expr = this.assignment();
     if (this.match(TokenType.Semicolon)) {
@@ -127,6 +196,9 @@ export class ExpressionParser {
     return expression;
   }
 
+  /**
+   * Parses assignment expressions, including compound assignments.
+   */
   private assignment(): Expr.Expr {
     const expr: Expr.Expr = this.ternary();
     if (
@@ -143,6 +215,7 @@ export class ExpressionParser {
       if (expr instanceof Expr.Variable) {
         const name: Token = expr.name;
         if (operator.type !== TokenType.Equal) {
+          // Compound assignment: a += b => a = a + b
           value = new Expr.Binary(
             new Expr.Variable(name, name.line),
             operator,
@@ -167,6 +240,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses ternary (?:) expressions.
+   */
   private ternary(): Expr.Expr {
     const expr = this.nullCoalescing();
     if (this.match(TokenType.Question)) {
@@ -178,6 +254,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses null-coalescing (??) expressions.
+   */
   private nullCoalescing(): Expr.Expr {
     const expr = this.logicalOr();
     if (this.match(TokenType.QuestionQuestion)) {
@@ -187,6 +266,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses logical OR (||) expressions.
+   */
   private logicalOr(): Expr.Expr {
     let expr = this.logicalAnd();
     while (this.match(TokenType.Or)) {
@@ -197,6 +279,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses logical AND (&&) expressions.
+   */
   private logicalAnd(): Expr.Expr {
     let expr = this.equality();
     while (this.match(TokenType.And)) {
@@ -207,6 +292,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses equality and comparison expressions.
+   */
   private equality(): Expr.Expr {
     let expr: Expr.Expr = this.addition();
     while (
@@ -226,6 +314,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses addition and subtraction expressions.
+   */
   private addition(): Expr.Expr {
     let expr: Expr.Expr = this.modulus();
     while (this.match(TokenType.Minus, TokenType.Plus)) {
@@ -236,6 +327,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses modulus (%) expressions.
+   */
   private modulus(): Expr.Expr {
     let expr: Expr.Expr = this.multiplication();
     while (this.match(TokenType.Percent)) {
@@ -246,6 +340,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses multiplication and division expressions.
+   */
   private multiplication(): Expr.Expr {
     let expr: Expr.Expr = this.typeof();
     while (this.match(TokenType.Slash, TokenType.Star)) {
@@ -256,6 +353,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses typeof expressions.
+   */
   private typeof(): Expr.Expr {
     if (this.match(TokenType.Typeof)) {
       const operator: Token = this.previous();
@@ -265,6 +365,9 @@ export class ExpressionParser {
     return this.unary();
   }
 
+  /**
+   * Parses unary expressions (negation, logical not, etc).
+   */
   private unary(): Expr.Expr {
     if (
       this.match(
@@ -282,6 +385,9 @@ export class ExpressionParser {
     return this.newKeyword();
   }
 
+  /**
+   * Parses 'new' keyword expressions.
+   */
   private newKeyword(): Expr.Expr {
     if (this.match(TokenType.New)) {
       const keyword = this.previous();
@@ -291,6 +397,10 @@ export class ExpressionParser {
     return this.call();
   }
 
+  /**
+   * Parses function calls, property access, and array indexing.
+   * Handles nested calls and chaining.
+   */
   private call(): Expr.Expr {
     let expr: Expr.Expr = this.primary();
     let consumed = true;
@@ -324,6 +434,9 @@ export class ExpressionParser {
     return expr;
   }
 
+  /**
+   * Parses property access via dot or optional chaining.
+   */
   private dotGet(expr: Expr.Expr, operator: Token): Expr.Expr {
     const name: Token = this.consume(
       TokenType.Identifier,
@@ -333,6 +446,9 @@ export class ExpressionParser {
     return new Expr.Get(expr, key, operator.type, name.line);
   }
 
+  /**
+   * Parses property access via brackets (indexing).
+   */
   private bracketGet(expr: Expr.Expr, operator: Token): Expr.Expr {
     let key: Expr.Expr = null;
 
@@ -344,6 +460,10 @@ export class ExpressionParser {
     return new Expr.Get(expr, key, operator.type, operator.line);
   }
 
+  /**
+   * Parses literals, identifiers, grouping, arrays, objects, and special keywords.
+   * Throws if no valid primary expression is found.
+   */
   private primary(): Expr.Expr {
     if (this.match(TokenType.False)) {
       return new Expr.Literal(false, this.previous().line);
@@ -393,14 +513,19 @@ export class ExpressionParser {
       return new Expr.Debug(expr, this.previous().line);
     }
 
+    // Critical: If no valid primary expression, throw a parse error
     throw this.error(
       this.peek(),
       `Expected expression, unexpected token "${this.peek().lexeme}"`
     );
-    // unreacheable code
-    return new Expr.Literal(null, 0);
+    // unreachable code
+    // return new Expr.Literal(null, 0);
   }
 
+  /**
+   * Parses a dictionary/object literal.
+   * @returns Expr.Dictionary
+   */
   public dictionary(): Expr.Expr {
     const leftBrace = this.previous();
     if (this.match(TokenType.RightBrace)) {
@@ -418,6 +543,7 @@ export class ExpressionParser {
             new Expr.Set(null, new Expr.Key(key, key.line), value, key.line)
           );
         } else {
+          // Allow shorthand property: { foo }
           const value = new Expr.Variable(key, key.line);
           properties.push(
             new Expr.Set(null, new Expr.Key(key, key.line), value, key.line)
@@ -437,6 +563,10 @@ export class ExpressionParser {
     return new Expr.Dictionary(properties, leftBrace.line);
   }
 
+  /**
+   * Parses an array/list literal.
+   * @returns Expr.List
+   */
   private list(): Expr.Expr {
     const values: Expr.Expr[] = [];
     const leftBracket = this.previous();
