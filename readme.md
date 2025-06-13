@@ -5,7 +5,7 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#) <!-- Placeholder -->
 [![Test Coverage](https://img.shields.io/badge/coverage-pending-lightgrey.svg)](#testing) <!-- Placeholder -->
 
-**Kasper-js is a lightweight, work-in-progress JavaScript HTML template parser and renderer. It's designed to help developers create dynamic web UIs with a simple, intuitive syntax while offering insights into the core mechanics of modern JavaScript frameworks.**
+**Kasper-js is a lightweight JavaScript HTML template parser and renderer. It's designed to help developers create dynamic web UIs with a simple, intuitive syntax while offering insights into the core mechanics of modern JavaScript frameworks.**
 
 ## 🌐 Live Demos
 
