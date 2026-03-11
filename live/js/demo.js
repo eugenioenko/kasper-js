@@ -9,6 +9,7 @@ Kasper-JS Playground
     <div>
       <h3 class="text-5xl font-mono leading-none tracking-tighter">{{user.name}}</h3>
       <h4 class="text-lg text-blue-400 font-mono mt-1">{{user.role}}</h4>
+      <div class="mt-2 text-[10px] text-gray-600 font-mono uppercase">SESSION_UPTIME: {{uptime.value}}s</div>
     </div>
     <div class="text-right font-mono">
       <div class="text-[10px] text-gray-500 uppercase">Status</div>
@@ -171,6 +172,16 @@ class App extends kasper.Component {
       { label: "Uptime", value: 99.9, unit: "%", status: "healthy" },
       { label: "Storage", value: 45, unit: "GB", status: "warning" }
     ];
+
+    this.uptime = kasper.signal(0);
+    this.timer = setInterval(() => {
+      this.uptime.value++;
+    }, 1000);
+  }
+
+  $onDestroy() {
+    console.log("App component being destroyed, clearing timer...");
+    clearInterval(this.timer);
   }
 
   onClick() {

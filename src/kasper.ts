@@ -25,45 +25,41 @@ export function transpile(
   return result;
 }
 
-export function render(entity: any): void {
-  if (typeof window === "undefined") {
-    console.error("kasper requires a browser environment to render templates.");
-    return;
-  }
-  const template = document.getElementsByTagName("template")[0];
-  if (!template) {
-    console.error("No template found in the document.");
-    return;
-  }
-
-  const container = document.getElementsByTagName("kasper-app");
-  const node = transpile(
-    template.innerHTML,
-    entity,
-    container[0] as HTMLElement
-  );
-  document.body.appendChild(node);
-}
-
 export class KasperRenderer {
-  entity?: Component = undefined;
-  changes = 1;
+  entity?: any = undefined;
+  nodes?: any[] = undefined;
+  container?: HTMLElement = undefined;
+  transpiler?: Transpiler = undefined;
+  changes = 0;
   dirty = false;
+
+  setup(config: {
+    entity: any;
+    nodes: any[];
+    container: HTMLElement;
+    transpiler: Transpiler;
+  }) {
+    this.entity = config.entity;
+    this.nodes = config.nodes;
+    this.container = config.container;
+    this.transpiler = config.transpiler;
+  }
 
   render = () => {
     this.changes += 1;
-    if (!this.entity) {
-      // do not render if entity is not set
+    if (!this.entity || !this.nodes || !this.container || !this.transpiler) {
       return;
     }
-    if (typeof this.entity?.$onChanges === "function") {
-      this.entity.$onChanges();
-    }
+
     if (this.changes > 0 && !this.dirty) {
       this.dirty = true;
       queueMicrotask(() => {
-        render(this.entity);
-        // console.log(this.changes);
+        if (typeof this.entity?.$onChanges === "function") {
+          this.entity.$onChanges();
+        }
+
+        this.transpiler.transpile(this.nodes, this.entity, this.container);
+
         if (typeof this.entity?.$onRender === "function") {
           this.entity.$onRender();
         }
@@ -93,7 +89,7 @@ export class KasperState {
   }
 
   toString() {
-    return this._value.toString();
+    return this._value?.toString() || "";
   }
 }
 
@@ -101,18 +97,23 @@ export function kasperState(initial: any): KasperState {
   return new KasperState(initial);
 }
 
-export function Kasper(Component: any) {
-  const entity = new Component();
-  renderer.entity = entity;
-  renderer.render();
-  // entity.$doRender();
-  if (typeof entity.$onInit === "function") {
-    entity.$onInit();
-  }
+export function Kasper(ComponentClass: any) {
+  KasperInit({
+    root: "kasper-app",
+    entry: "kasper-root",
+    registry: {
+      "kasper-root": {
+        selector: "template",
+        component: ComponentClass,
+        template: null,
+        nodes: [],
+      },
+    },
+  });
 }
 
 interface AppConfig {
-  root?: string;
+  root?: string | HTMLElement;
   entry?: string;
   registry: ComponentRegistry;
 }
@@ -128,13 +129,11 @@ function createComponent(
     transpiler: transpiler,
     args: {},
   });
-  if (typeof component.$onInit === "function") {
-    component.$onInit();
-  }
-  const nodes = registry[tag].nodes;
+
   return {
-    node: transpiler.transpile(nodes, component, element),
+    node: element,
     instance: component,
+    nodes: registry[tag].nodes,
   };
 }
 
@@ -159,17 +158,36 @@ function normalizeRegistry(
 
 export function KasperInit(config: AppConfig) {
   const parser = new TemplateParser();
-  const root = document.querySelector(config.root || "body");
+  const root =
+    typeof config.root === "string"
+      ? document.querySelector(config.root)
+      : config.root || document.body;
+
   const registry = normalizeRegistry(config.registry, parser);
   const transpiler = new Transpiler({ registry: registry });
   const entryTag = config.entry || "kasper-app";
-  const { node, instance } = createComponent(transpiler, entryTag, registry);
+
+  const { node, instance, nodes } = createComponent(
+    transpiler,
+    entryTag,
+    registry
+  );
 
   if (root) {
+    root.innerHTML = "";
     root.appendChild(node);
   }
 
-  if (instance && typeof instance.$onRender === "function") {
+  // Initial render and lifecycle
+  if (typeof instance.$onInit === "function") {
+    instance.$onInit();
+  }
+
+  transpiler.transpile(nodes, instance, node as HTMLElement);
+
+  if (typeof instance.$onRender === "function") {
     instance.$onRender();
   }
+
+  return instance;
 }

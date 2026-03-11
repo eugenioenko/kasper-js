@@ -11,7 +11,6 @@ class Playground extends kasper.Component {
 
   $onRender() {
     if (!this.editor) {
-      // this.ref is the <playground-root> element
       const editorEl = this.ref.querySelector("#editor");
       if (editorEl) {
         this.editor = ace.edit(editorEl);
@@ -21,7 +20,6 @@ class Playground extends kasper.Component {
         this.editor.setValue(this.htmlSource, -1);
       }
     }
-    // Initial render
     this.renderApp();
   }
 
@@ -40,7 +38,7 @@ class Playground extends kasper.Component {
 
   saveCurrent() {
     if (this.editor) {
-      this[this.activeTab] = this.editor.getValue();
+        this[this.activeTab] = this.editor.getValue();
     }
   }
 
@@ -55,7 +53,6 @@ class Playground extends kasper.Component {
     try {
       if (stylesEl) stylesEl.textContent = this.stylesSource;
 
-      // Component Registry for the user app
       const userRegistry = {};
       const parser = new kasper.TemplateParser();
 
@@ -68,36 +65,30 @@ class Playground extends kasper.Component {
         };
       }
 
-      // Execute user script in a scoped function
       const executeScript = new Function("kasper", "register", `
         ${this.scriptSource}
         return typeof App !== 'undefined' ? App : null;
       `);
 
       const UserAppClass = executeScript(kasper, register);
-
-      // If user defined an 'App' class, use it as the main component
+      
       if (UserAppClass) {
-        userRegistry['user-root'] = {
-          selector: 'user-root',
-          component: UserAppClass,
-          template: document.createElement("div"),
-          nodes: parser.parse(this.htmlSource)
-        };
+          // Use kasper.App (KasperInit) for the user app to get full reactivity
+          userRegistry['user-root'] = {
+              selector: 'user-root',
+              component: UserAppClass,
+              template: document.createElement("div"),
+              nodes: parser.parse(this.htmlSource)
+          };
 
-        const transpiler = new kasper.Transpiler({ registry: userRegistry });
-        const element = document.createElement('user-root');
-        const instance = new UserAppClass({ ref: element, transpiler, args: {} });
-        if (instance.$onInit) instance.$onInit();
-
-        renderContainer.innerHTML = "";
-        transpiler.transpile(userRegistry['user-root'].nodes, instance, element);
-        renderContainer.appendChild(element);
-        if (instance.$onRender) instance.$onRender();
+          kasper.App({
+              root: renderContainer,
+              entry: 'user-root',
+              registry: userRegistry
+          });
       } else {
-        // Legacy mode: just transpile with window/global context
-        renderContainer.innerHTML = "";
-        kasper.transpile(this.htmlSource, window, renderContainer, userRegistry);
+          renderContainer.innerHTML = "";
+          kasper.transpile(this.htmlSource, window, renderContainer, userRegistry);
       }
 
       if (statusEl) statusEl.textContent = `Rendered at ${new Date().toLocaleTimeString()}`;
@@ -108,7 +99,7 @@ class Playground extends kasper.Component {
   }
 }
 
-// Initialize the playground itself as a Kasper App
+// Initialize the playground itself
 kasper.App({
   root: "kasper-app",
   entry: "playground-root",
@@ -123,20 +114,23 @@ kasper.App({
             <div class="border-b border-gray-600 px-4 pt-4 flex items-end justify-between">
               <div class="flex gap-1">
                 <button @on:click="switchTab('htmlSource')" 
-                  class="px-4 py-2 rounded-t-lg border-t border-l border-r border-gray-600 text-sm font-mono {{activeTab === 'htmlSource' ? 'bg-[#26282c] text-white' : 'bg-[#191a1d] text-gray-400'}}">
+                  class="px-4 py-2 rounded-t-lg border-t border-l border-r border-gray-600 text-sm font-mono transition-colors"
+                  @class="activeTab === 'htmlSource' ? 'bg-[#26282c] text-white' : 'bg-[#191a1d] text-gray-400'">
                   App.html
                 </button>
                 <button @on:click="switchTab('scriptSource')" 
-                  class="px-4 py-2 rounded-t-lg border-t border-l border-r border-gray-600 text-sm font-mono {{activeTab === 'scriptSource' ? 'bg-[#26282c] text-white' : 'bg-[#191a1d] text-gray-400'}}">
+                  class="px-4 py-2 rounded-t-lg border-t border-l border-r border-gray-600 text-sm font-mono transition-colors"
+                  @class="activeTab === 'scriptSource' ? 'bg-[#26282c] text-white' : 'bg-[#191a1d] text-gray-400'">
                   App.js
                 </button>
                 <button @on:click="switchTab('stylesSource')" 
-                  class="px-4 py-2 rounded-t-lg border-t border-l border-r border-gray-600 text-sm font-mono {{activeTab === 'stylesSource' ? 'bg-[#26282c] text-white' : 'bg-[#191a1d] text-gray-400'}}">
+                  class="px-4 py-2 rounded-t-lg border-t border-l border-r border-gray-600 text-sm font-mono transition-colors"
+                  @class="activeTab === 'stylesSource' ? 'bg-[#26282c] text-white' : 'bg-[#191a1d] text-gray-400'">
                   App.css
                 </button>
               </div>
               <button @on:click="renderApp()"
-                class="mb-2 px-6 py-1.5 bg-green-600 hover:bg-green-500 text-white font-mono rounded transition-colors">
+                class="mb-2 px-6 py-1.5 bg-green-600 hover:bg-green-500 text-white font-mono rounded transition-colors active:scale-95">
                 RENDER
               </button>
             </div>
@@ -144,11 +138,7 @@ kasper.App({
           </div>
           <div class="bg-gray-900 flex flex-col overflow-hidden">
             <style id="injected-styles"></style>
-            <div id="render-area" class="flex-grow p-8 text-white overflow-auto">
-              <div class="h-full flex items-center justify-center text-gray-500 font-mono italic">
-                Press RENDER to see your app in action!
-              </div>
-            </div>
+            <div id="render-area" class="flex-grow p-8 text-white overflow-auto relative"></div>
             <div id="status-text" class="px-4 py-2 bg-gray-800 border-t border-gray-700 text-xs text-gray-400 font-mono">
               {{status}}
             </div>

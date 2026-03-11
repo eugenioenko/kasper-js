@@ -3,6 +3,7 @@ import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
 import { Scope } from "./scope";
+import { effect } from "./signal";
 import * as KNode from "./types/nodes";
 
 type IfElseNode = [KNode.Element, KNode.Attribute];
@@ -66,6 +67,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     entity: any,
     container: Element
   ): Node {
+    this.destroy(container);
     container.innerHTML = "";
     this.bindMethods(entity);
     this.interpreter.scope.init(entity);
@@ -85,11 +87,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
     try {
-      const content = this.evaluateTemplateString(node.value);
-      const text = document.createTextNode(content);
+      const text = document.createTextNode("");
       if (parent) {
         parent.appendChild(text);
       }
+
+      effect(() => {
+        text.textContent = this.evaluateTemplateString(node.value);
+      });
     } catch (e: any) {
       this.error(e.message || `${e}`, "text node");
     }
@@ -97,9 +102,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
     const attr = document.createAttribute(node.name);
-    if (node.value) {
+    
+    effect(() => {
       attr.value = this.evaluateTemplateString(node.value);
-    }
+    });
 
     if (parent) {
       (parent as HTMLElement).setAttributeNode(attr);
@@ -294,6 +300,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           });
 
           this.bindMethods(component);
+          (element as any).$kasperInstance = component;
 
           if (typeof component.$onInit === "function") {
             component.$onInit();
@@ -303,6 +310,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         component.$slots = slots;
 
         this.interpreter.scope = new Scope(restoreScope, component);
+        this.interpreter.scope.set("$instance", component);
+
         // create the children of the component
         this.createSiblings(this.registry[node.name].nodes, element);
 
@@ -407,10 +416,17 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private createEventListener(element: Node, attr: KNode.Attribute): void {
     const type = attr.name.split(":")[1];
     const listenerScope = new Scope(this.interpreter.scope);
+    const instance = this.interpreter.scope.get("$instance");
+    
+    const options: any = {};
+    if (instance && instance.$abortController) {
+      options.signal = instance.$abortController.signal;
+    }
+
     element.addEventListener(type, (event) => {
       listenerScope.set("$event", event);
       this.execute(attr.value, listenerScope);
-    });
+    }, options);
   }
 
   private evaluateTemplateString(text: string): string {
@@ -439,6 +455,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       result += `${this.interpreter.evaluate(expression)}`;
     }
     return result;
+  }
+
+  public destroy(container: Element): void {
+    const walk = (node: Node) => {
+      if ((node as any).$kasperInstance) {
+        const instance = (node as any).$kasperInstance;
+        if (instance.$onDestroy) instance.$onDestroy();
+        if (instance.$abortController) instance.$abortController.abort();
+      }
+      node.childNodes.forEach(walk);
+    };
+    container.childNodes.forEach(walk);
   }
 
   public visitDoctypeKNode(_node: KNode.Doctype): void {

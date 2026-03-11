@@ -11,6 +11,7 @@ export class Component {
   args: Record<string, any> = {};
   ref?: Node;
   transpiler?: Transpiler;
+  $abortController = new AbortController();
 
   constructor(props?: ComponentArgs) {
     if (!props) {
