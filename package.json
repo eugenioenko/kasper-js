@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A javascript template parser",
   "main": "index.js",
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@10",
   "scripts": {
     "dev": "vite build --mode development --watch",
     "build": "vite build",
