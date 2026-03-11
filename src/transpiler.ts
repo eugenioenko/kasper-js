@@ -1,4 +1,4 @@
-import { Component, ComponentRegistry } from "./component";
+import { ComponentRegistry } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
@@ -232,12 +232,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       );
       const args = this.createComponentArgs(argsAttr as KNode.Attribute[]);
       if (this.registry[node.name]?.component) {
-        const ref = element;
-        const transpiler = this;
         component = new this.registry[node.name].component({
-          args,
-          ref,
-          transpiler,
+          args: args,
+          ref: element,
+          transpiler: this,
         });
       }
       this.interpreter.scope = new Scope(restoreScope, component);
@@ -327,7 +325,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return result;
   }
 
-  public visitDoctypeKNode(node: KNode.Doctype): void {
+  public visitDoctypeKNode(_node: KNode.Doctype): void {
     return;
     // return document.implementation.createDocumentType("html", "", "");
   }

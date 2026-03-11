@@ -73,7 +73,7 @@ export class KasperRenderer {
   };
 }
 
-let renderer = new KasperRenderer();
+const renderer = new KasperRenderer();
 
 export class KasperState {
   _value: any;
@@ -145,7 +145,7 @@ export function KasperInit(config: AppConfig) {
   const parser = new TemplateParser();
   const root = document.querySelector(config.root || "body");
   const registry = normalizeRegistry(config.registry, parser);
-  const transpiler = new Transpiler({ registry });
+  const transpiler = new Transpiler({ registry: registry });
   const entryTag = config.entry || "kasper-app";
   const htmlNodes = createComponent(transpiler, entryTag, registry);
 

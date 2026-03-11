@@ -122,7 +122,7 @@ export class ExpressionParser {
     if (this.match(TokenType.Semicolon)) {
       // consume all semicolons
       // tslint:disable-next-line
-      while (this.match(TokenType.Semicolon)) {}
+      while (this.match(TokenType.Semicolon)) { /* consume semicolons */ }
     }
     return expression;
   }
@@ -293,7 +293,7 @@ export class ExpressionParser {
 
   private call(): Expr.Expr {
     let expr: Expr.Expr = this.primary();
-    let consumed = true;
+    let consumed: boolean;
     do {
       consumed = false;
       if (this.match(TokenType.LeftParen)) {

@@ -147,14 +147,14 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   }
 
   public visitTernaryExpr(expr: Expr.Ternary): any {
-    return this.evaluate(expr.condition).isTruthy()
+    return this.evaluate(expr.condition)
       ? this.evaluate(expr.thenExpr)
       : this.evaluate(expr.elseExpr);
   }
 
   public visitNullCoalescingExpr(expr: Expr.NullCoalescing): any {
     const left = this.evaluate(expr.left);
-    if (!left) {
+    if (left == null) {
       return this.evaluate(expr.right);
     }
     return left;
@@ -176,7 +176,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       case TokenType.Bang:
         return !right;
       case TokenType.PlusPlus:
-      case TokenType.MinusMinus:
+      case TokenType.MinusMinus: {
         const newValue =
           Number(right) + (expr.operator.type === TokenType.PlusPlus ? 1 : -1);
         if (expr.right instanceof Expr.Variable) {
@@ -195,6 +195,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
           );
         }
         return newValue;
+      }
       default:
         this.error(`Unknown unary operator ' + expr.operator`);
         return null; // should be unreachable

@@ -9,20 +9,14 @@ import { Viewer } from "./viewer";
 
 if (typeof window !== "undefined") {
   ((window as any) || {}).kasper = {
-    execute,
-    transpile,
+    execute: execute,
+    transpile: transpile,
     App: KasperInit,
   };
   (window as any)["Kasper"] = Kasper;
   (window as any)["Component"] = Component;
   (window as any)["$state"] = kasperState;
-} else if (typeof exports !== "undefined") {
-  exports.kasper = {
-    ExpressionParser,
-    Interpreter,
-    Scanner,
-    TemplateParser,
-    Transpiler,
-    Viewer,
-  };
 }
+
+export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, Viewer };
+export { execute, transpile, Kasper, kasperState as $state, KasperInit as App, Component };
