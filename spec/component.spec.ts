@@ -23,19 +23,6 @@ describe("Component", () => {
   });
 
   describe("Lifecycle hooks", () => {
-    class TestComponent extends Component {
-      initialized = false;
-      rendered = false;
-      
-      $onInit = () => {
-        this.initialized = true;
-      };
-      
-      $onRender = () => {
-        this.rendered = true;
-      };
-    }
-
     it("executes $onInit and $onRender when transpiled", () => {
       const parser = new TemplateParser();
       let initCalled = false;
@@ -114,5 +101,59 @@ describe("Component Integration", () => {
     expect(container.querySelector("parent-comp")).not.toBeNull();
     expect(container.querySelector("child-comp")).not.toBeNull();
     expect(container.textContent).toContain("parentchild");
+  });
+
+  describe("Slots", () => {
+    it("renders default slot content", () => {
+      const parser = new TemplateParser();
+      const registry = {
+        "my-layout": {
+          selector: "my-layout",
+          component: Component as any,
+          template: document.createElement("div"),
+          nodes: parser.parse('<div class="wrapper"><slot></slot></div>'),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      transpiler.transpile(
+        parser.parse('<my-layout><span>Inside Slot</span></my-layout>'),
+        {},
+        container
+      );
+      
+      expect(container.querySelector(".wrapper span")).not.toBeNull();
+      expect(container.textContent).toBe("Inside Slot");
+    });
+
+    it("renders named slots", () => {
+      const parser = new TemplateParser();
+      const registry = {
+        "multi-slot": {
+          selector: "multi-slot",
+          component: Component as any,
+          template: document.createElement("div"),
+          nodes: parser.parse(`
+            <header><slot name="header"></slot></header>
+            <main><slot></slot></main>
+            <footer><slot name="footer"></slot></footer>
+          `),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      const source = `
+        <multi-slot>
+          <h1 slot="header">Title</h1>
+          <p>Body Content</p>
+          <small slot="footer">Copyright</small>
+        </multi-slot>
+      `;
+      transpiler.transpile(parser.parse(source), {}, container);
+      
+      expect(container.querySelector("header h1")!.textContent).toBe("Title");
+      expect(container.querySelector("main p")!.textContent).toBe("Body Content");
+      expect(container.querySelector("footer small")!.textContent).toBe("Copyright");
+    });
   });
 });

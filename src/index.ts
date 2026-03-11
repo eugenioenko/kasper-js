@@ -12,6 +12,10 @@ if (typeof window !== "undefined") {
     execute: execute,
     transpile: transpile,
     App: KasperInit,
+    Component: Component,
+    TemplateParser: TemplateParser,
+    Transpiler: Transpiler,
+    Viewer: Viewer,
   };
   (window as any)["Kasper"] = Kasper;
   (window as any)["Component"] = Component;

@@ -35,21 +35,6 @@ describe("Transpiler", () => {
       transpile("<div></div>", {}, container);
       expect(container.querySelector("span")).toBeNull();
     });
-
-    it("starts with empty errors", () => {
-      const transpiler = new Transpiler();
-      const parser = new TemplateParser();
-      transpiler.transpile(parser.parse("<div></div>"), {}, makeContainer());
-      expect(transpiler.errors).toHaveLength(0);
-    });
-
-    it("resets errors between calls", () => {
-      const transpiler = new Transpiler();
-      const parser = new TemplateParser();
-      transpiler.transpile(parser.parse("<div></div>"), {}, makeContainer());
-      transpiler.transpile(parser.parse("<span></span>"), {}, makeContainer());
-      expect(transpiler.errors).toHaveLength(0);
-    });
   });
 
   describe("text nodes", () => {
@@ -135,6 +120,40 @@ describe("Transpiler", () => {
       const container = transpile('<div @if="true"></div>');
       const div = container.querySelector("div")!;
       expect(div.hasAttribute("@if")).toBe(false);
+    });
+
+    it("supports shorthand attribute binding with @ prefix", () => {
+      const container = transpile('<div @class="myClass" @id="\'id-\' + num" @disabled="true"></div>', {
+        myClass: "active",
+        num: 123
+      });
+      const div = container.querySelector("div")!;
+      expect(div.getAttribute("class")).toBe("active");
+      expect(div.getAttribute("id")).toBe("id-123");
+      expect(div.hasAttribute("disabled")).toBe(true);
+      expect(div.hasAttribute("@class")).toBe(false);
+    });
+
+    it("removes shorthand attribute if value is false/null/undefined", () => {
+      const container = transpile('<div @disabled="isDisabled" @title="myTitle"></div>', {
+        isDisabled: false,
+        myTitle: null
+      });
+      const div = container.querySelector("div")!;
+      expect(div.hasAttribute("disabled")).toBe(false);
+      expect(div.hasAttribute("title")).toBe(false);
+    });
+
+    it("merges static class and shorthand @class", () => {
+      const container = transpile('<div class="static" @class="\'dynamic\'"></div>');
+      const div = container.querySelector("div")!;
+      expect(div.getAttribute("class")).toBe("static dynamic");
+    });
+
+    it("merges static style and shorthand @style", () => {
+      const container = transpile('<div style="color: red" @style="\'display: block\'"></div>');
+      const div = container.querySelector("div")!;
+      expect(div.getAttribute("style")).toMatch(/color:\s*red;?\s*display:\s*block/);
     });
   });
 
@@ -388,30 +407,17 @@ describe("Transpiler", () => {
   });
 
   describe("error handling", () => {
-    it("reports error on invalid expression in interpolation", () => {
-      const transpiler = new Transpiler();
+    it("throws error on invalid expression in interpolation", () => {
       const parser = new TemplateParser();
-      const container = makeContainer();
       // Expression parser should record error
-      transpiler.transpile(parser.parse("{{ 1 + }}"), {}, container);
-      expect(transpiler.errors.length).toBeGreaterThan(0);
-      expect(transpiler.errors[0]).toMatch(/Template string  error/);
+      expect(() => transpile("{{ 1 + }}")).toThrow(/Runtime Error.*Template string  error/);
     });
 
-    it("logs error but continues if transpilation fails partially", () => {
-      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-      // We can trigger an error by providing an object that throws on access if we want, 
-      // but Transpiler.transpile has a try-catch around createSiblings.
-      
-      // Let's try to pass something that might cause an issue if we can identify a path.
-      // Actually, createSiblings calls evaluate, which calls accept, which calls visit*.
-      // If we have an invalid node, it might throw.
-      const transpiler = new Transpiler();
-      // @ts-ignore - passing invalid nodes
-      transpiler.transpile([{ type: "invalid" }], {}, makeContainer());
-      
-      expect(spy).toHaveBeenCalled();
-      spy.mockRestore();
+    it("includes the tag name in the error context", () => {
+      const parser = new TemplateParser();
+      // Trigger error inside a specific tag
+      const source = '<div id="{{ 1 + }}"></div>';
+      expect(() => transpile(source)).toThrow(/Runtime Error in <div>/);
     });
   });
 

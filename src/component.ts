@@ -11,10 +11,6 @@ export class Component {
   args: Record<string, any> = {};
   ref?: Node;
   transpiler?: Transpiler;
-  $onInit = () => {};
-  $onRender = () => {};
-  $onChanges = () => {};
-  $onDestroy = () => {};
 
   constructor(props?: ComponentArgs) {
     if (!props) {
@@ -32,11 +28,15 @@ export class Component {
     }
   }
 
+  $onInit() {}
+  $onRender() {}
+  $onChanges() {}
+  $onDestroy() {}
+
   $doRender() {
     if (!this.transpiler) {
       return;
     }
-    //this.transpiler?.createComponent(this);
   }
 }
 

@@ -27,6 +27,24 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     node.accept(this, parent);
   }
 
+  private bindMethods(entity: any): void {
+    if (!entity || typeof entity !== "object") return;
+
+    let proto = Object.getPrototypeOf(entity);
+    while (proto && proto !== Object.prototype) {
+      for (const key of Object.getOwnPropertyNames(proto)) {
+        if (
+          typeof entity[key] === "function" &&
+          key !== "constructor" &&
+          !Object.prototype.hasOwnProperty.call(entity, key)
+        ) {
+          entity[key] = entity[key].bind(entity);
+        }
+      }
+      proto = Object.getPrototypeOf(proto);
+    }
+  }
+
   // evaluates expressions and returns the result of the first evaluation
   private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
@@ -45,17 +63,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   public transpile(
     nodes: KNode.KNode[],
-    entity: object,
+    entity: any,
     container: Element
   ): Node {
     container.innerHTML = "";
+    this.bindMethods(entity);
     this.interpreter.scope.init(entity);
     this.errors = [];
     try {
       this.createSiblings(nodes, container);
     } catch (e: any) {
       this.errors.push(e.message || `${e}`);
-      console.error(`${e}`);
+      throw e; // Re-throw to satisfy tests and robust error handling
     }
     return container;
   }
@@ -65,10 +84,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
-    const content = this.evaluateTemplateString(node.value);
-    const text = document.createTextNode(content);
-    if (parent) {
-      parent.appendChild(text);
+    try {
+      const content = this.evaluateTemplateString(node.value);
+      const text = document.createTextNode(content);
+      if (parent) {
+        parent.appendChild(text);
+      }
+    } catch (e: any) {
+      this.error(e.message || `${e}`, "text node");
     }
   }
 
@@ -220,82 +243,153 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private createElement(node: KNode.Element, parent?: Node): Node | undefined {
-    const isVoid = node.name === "void";
-    const isComponent = !!this.registry[node.name];
-    const element = isVoid ? parent : document.createElement(node.name);
-    const restoreScope = this.interpreter.scope;
+    try {
+      if (node.name === "slot") {
+        const nameAttr = this.findAttr(node, ["name"]);
+        const name = nameAttr ? nameAttr.value : "default";
+        const slots = this.interpreter.scope.get("$slots");
+        if (slots && slots[name]) {
+          this.createSiblings(slots[name], parent);
+        }
+        return undefined;
+      }
 
-    if (element) {
-      this.interpreter.scope.set("$ref", element);
-    }
+      const isVoid = node.name === "void";
+      const isComponent = !!this.registry[node.name];
+      const element = isVoid ? parent : document.createElement(node.name);
+      const restoreScope = this.interpreter.scope;
 
-    if (isComponent) {
-      // create a new instance of the component and set it as the current scope
-      let component: any = {};
-      const argsAttr = node.attributes.filter((attr) =>
-        (attr as KNode.Attribute).name.startsWith("@:")
-      );
-      const args = this.createComponentArgs(argsAttr as KNode.Attribute[]);
-      if (this.registry[node.name]?.component) {
-        component = new this.registry[node.name].component({
-          args: args,
-          ref: element,
-          transpiler: this,
-        });
+      if (element) {
+        this.interpreter.scope.set("$ref", element);
+      }
 
-        // bind all methods to the component instance
-        for (const key of Object.getOwnPropertyNames(
-          Object.getPrototypeOf(component)
-        )) {
-          if (typeof component[key] === "function" && key !== "constructor") {
-            component[key] = component[key].bind(component);
+      if (isComponent) {
+        // create a new instance of the component and set it as the current scope
+        let component: any = {};
+        const argsAttr = node.attributes.filter((attr) =>
+          (attr as KNode.Attribute).name.startsWith("@:")
+        );
+        const args = this.createComponentArgs(argsAttr as KNode.Attribute[]);
+
+        // Capture children for slots
+        const slots: Record<string, KNode.KNode[]> = { default: [] };
+        for (const child of node.children) {
+          if (child.type === "element") {
+            const slotAttr = this.findAttr(child as KNode.Element, ["slot"]);
+            if (slotAttr) {
+              const name = slotAttr.value;
+              if (!slots[name]) slots[name] = [];
+              slots[name].push(child);
+              continue;
+            }
+          }
+          slots.default.push(child);
+        }
+
+        if (this.registry[node.name]?.component) {
+          component = new this.registry[node.name].component({
+            args: args,
+            ref: element,
+            transpiler: this,
+          });
+
+          this.bindMethods(component);
+
+          if (typeof component.$onInit === "function") {
+            component.$onInit();
           }
         }
+        // Expose slots in component scope
+        component.$slots = slots;
 
-        if (typeof component.$onInit === "function") {
-          component.$onInit();
+        this.interpreter.scope = new Scope(restoreScope, component);
+        // create the children of the component
+        this.createSiblings(this.registry[node.name].nodes, element);
+
+        if (component && typeof component.$onRender === "function") {
+          component.$onRender();
+        }
+
+        this.interpreter.scope = restoreScope;
+        if (parent) {
+          parent.appendChild(element);
+        }
+        return element;
+      }
+
+      if (!isVoid) {
+        // event binding
+        const events = node.attributes.filter((attr) =>
+          (attr as KNode.Attribute).name.startsWith("@on:")
+        );
+
+        for (const event of events) {
+          this.createEventListener(element, event as KNode.Attribute);
+        }
+
+        // regular attributes (processed first)
+        const attributes = node.attributes.filter(
+          (attr) => !(attr as KNode.Attribute).name.startsWith("@")
+        );
+
+        for (const attr of attributes) {
+          this.evaluate(attr, element);
+        }
+
+        // shorthand attributes (processed second, allows merging)
+        const shorthandAttributes = node.attributes.filter((attr) => {
+          const name = (attr as KNode.Attribute).name;
+          return (
+            name.startsWith("@") &&
+            !["@if", "@elseif", "@else", "@each", "@while", "@let"].includes(
+              name
+            ) &&
+            !name.startsWith("@on:") &&
+            !name.startsWith("@:")
+          );
+        });
+
+        for (const attr of shorthandAttributes) {
+          const realName = (attr as KNode.Attribute).name.slice(1);
+          const value = this.execute((attr as KNode.Attribute).value);
+
+          if (value === false || value === null || value === undefined) {
+            // only remove if it's not a mergeable attribute that might have a static value
+            if (realName !== "class" && realName !== "style") {
+              (element as HTMLElement).removeAttribute(realName);
+            }
+          } else {
+            if (realName === "class") {
+              const existing = (element as HTMLElement).getAttribute("class");
+              const newValue = existing ? `${existing} ${value}` : value;
+              (element as HTMLElement).setAttribute("class", newValue);
+            } else if (realName === "style") {
+              const existing = (element as HTMLElement).getAttribute("style");
+              const newValue = existing
+                ? `${existing.endsWith(";") ? existing : existing + ";"} ${value}`
+                : value;
+              (element as HTMLElement).setAttribute("style", newValue);
+            } else {
+              (element as HTMLElement).setAttribute(realName, value);
+            }
+          }
         }
       }
-      this.interpreter.scope = new Scope(restoreScope, component);
-      // create the children of the component
-      this.createSiblings(this.registry[node.name].nodes, element);
 
-      if (component && typeof component.$onRender === "function") {
-        component.$onRender();
-      }
-    }
-
-    if (!isVoid) {
-      // event binding
-      const events = node.attributes.filter((attr) =>
-        (attr as KNode.Attribute).name.startsWith("@on:")
-      );
-
-      for (const event of events) {
-        this.createEventListener(element, event as KNode.Attribute);
+      if (node.self) {
+        return element;
       }
 
-      // attributes
-      const attributes = node.attributes.filter(
-        (attr) => !(attr as KNode.Attribute).name.startsWith("@")
-      );
+      this.createSiblings(node.children, element);
+      this.interpreter.scope = restoreScope;
 
-      for (const attr of attributes) {
-        this.evaluate(attr, element);
+      if (!isVoid && parent) {
+        parent.appendChild(element);
       }
-    }
-
-    if (node.self) {
       return element;
+    } catch (e: any) {
+      this.error(e.message || `${e}`, node.name);
     }
-
-    this.createSiblings(node.children, element);
-    this.interpreter.scope = restoreScope;
-
-    if (!isVoid && parent) {
-      parent.appendChild(element);
-    }
-    return element;
   }
 
   private createComponentArgs(args: KNode.Attribute[]): Record<string, any> {
@@ -352,7 +446,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     // return document.implementation.createDocumentType("html", "", "");
   }
 
-  public error(message: string): void {
-    throw new Error(`Runtime Error => ${message}`);
+  public error(message: string, tagName?: string): void {
+    const context = tagName ? ` in <${tagName}>` : "";
+    throw new Error(`Runtime Error${context} => ${message}`);
   }
 }

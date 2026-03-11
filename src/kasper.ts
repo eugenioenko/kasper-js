@@ -15,12 +15,13 @@ export function execute(source: string): string {
 export function transpile(
   source: string,
   entity?: { [key: string]: any },
-  container?: HTMLElement
+  container?: HTMLElement,
+  registry?: ComponentRegistry
 ): Node {
   const parser = new TemplateParser();
   const nodes = parser.parse(source);
-  const transpiler = new Transpiler();
-  const result = transpiler.transpile(nodes, entity, container);
+  const transpiler = new Transpiler({ registry: registry || {} });
+  const result = transpiler.transpile(nodes, entity || {}, container);
   return result;
 }
 
@@ -122,10 +123,19 @@ function createComponent(
   registry: ComponentRegistry
 ) {
   const element = document.createElement(tag);
-  const component = new registry[tag].component();
-  component.$onInit();
+  const component = new registry[tag].component({
+    ref: element,
+    transpiler: transpiler,
+    args: {},
+  });
+  if (typeof component.$onInit === "function") {
+    component.$onInit();
+  }
   const nodes = registry[tag].nodes;
-  return transpiler.transpile(nodes, component, element);
+  return {
+    node: transpiler.transpile(nodes, component, element),
+    instance: component,
+  };
 }
 
 function normalizeRegistry(
@@ -135,8 +145,14 @@ function normalizeRegistry(
   const result = { ...registry };
   for (const key of Object.keys(registry)) {
     const entry = registry[key];
-    entry.template = document.querySelector(entry.selector);
-    entry.nodes = parser.parse(entry.template.innerHTML);
+    if (entry.nodes && entry.nodes.length > 0) {
+      continue;
+    }
+    const template = document.querySelector(entry.selector);
+    if (template) {
+      entry.template = template;
+      entry.nodes = parser.parse(template.innerHTML);
+    }
   }
   return result;
 }
@@ -147,7 +163,13 @@ export function KasperInit(config: AppConfig) {
   const registry = normalizeRegistry(config.registry, parser);
   const transpiler = new Transpiler({ registry: registry });
   const entryTag = config.entry || "kasper-app";
-  const htmlNodes = createComponent(transpiler, entryTag, registry);
+  const { node, instance } = createComponent(transpiler, entryTag, registry);
 
-  root.appendChild(htmlNodes);
+  if (root) {
+    root.appendChild(node);
+  }
+
+  if (instance && typeof instance.$onRender === "function") {
+    instance.$onRender();
+  }
 }

@@ -69,60 +69,8 @@
       }
     </style>
   </head>
-  <body>
-    <div class="app w-dvw h-dvh">
-      <div class="flex flex-col bg-[#1d1f21]">
-        <div class="border-b border-gray-500 px-4 pt-4 flex">
-          <div class="flex-grow flex gap-2">
-            <button
-              role="tab"
-              aria-selected="true"
-              aria-controls="htmlSource"
-              class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-28 text-center"
-            >
-              App.html
-            </button>
-            <button
-              role="tab"
-              aria-selected="false"
-              aria-controls="scriptSource"
-              class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-28 text-center"
-            >
-              App.js
-            </button>
-            <button
-              role="tab"
-              aria-selected="false"
-              aria-controls="stylesSource"
-              class="text-white px-2 py-1 rounded-t-lg border-l border-r border-t border-gray-500 w-28 text-center"
-            >
-              App.css
-            </button>
-          </div>
-          <button
-            class="px-8 py-1 bg-green-600 rounded text-white font-mono hover:bg-green-500 relative -top-2"
-            id="execute"
-          >
-            RENDER
-          </button>
-        </div>
-        <div id="editor" class="flex-grow w-full"></div>
-      </div>
-      <div class="text-white bg-gray-700 flex flex-col">
-        <div id="script" class="hidden"></div>
-        <div id="render" class="flex-grow p-6">
-          <div
-            class="w-full h-full flex items-center justify-center p-4 text-gray-300 text-center text-xl"
-          >
-            Press RENDER to render!
-          </div>
-        </div>
-        <div
-          class="text-sm px-4 py-2 border-t border-gray-500"
-          id="status"
-        ></div>
-      </div>
-    </div>
+  <body class="bg-[#1d1f21]">
+    <kasper-app></kasper-app>
     <script src="./js/playground.js"></script>
     <a
       href="https://github.com/eugenioenko/kasper-js"
