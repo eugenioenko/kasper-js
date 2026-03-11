@@ -53,7 +53,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     this.errors = [];
     try {
       this.createSiblings(nodes, container);
-    } catch (e) {
+    } catch (e: any) {
+      this.errors.push(e.message || `${e}`);
       console.error(`${e}`);
     }
     return container;
@@ -224,6 +225,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const element = isVoid ? parent : document.createElement(node.name);
     const restoreScope = this.interpreter.scope;
 
+    if (element) {
+      this.interpreter.scope.set("$ref", element);
+    }
+
     if (isComponent) {
       // create a new instance of the component and set it as the current scope
       let component: any = {};
@@ -237,10 +242,27 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           ref: element,
           transpiler: this,
         });
+
+        // bind all methods to the component instance
+        for (const key of Object.getOwnPropertyNames(
+          Object.getPrototypeOf(component)
+        )) {
+          if (typeof component[key] === "function" && key !== "constructor") {
+            component[key] = component[key].bind(component);
+          }
+        }
+
+        if (typeof component.$onInit === "function") {
+          component.$onInit();
+        }
       }
       this.interpreter.scope = new Scope(restoreScope, component);
       // create the children of the component
       this.createSiblings(this.registry[node.name].nodes, element);
+
+      if (component && typeof component.$onRender === "function") {
+        component.$onRender();
+      }
     }
 
     if (!isVoid) {

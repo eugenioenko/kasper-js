@@ -72,6 +72,12 @@ describe("Transpiler", () => {
       const container = transpile("Hello {{name}}!", { name: "World" });
       expect(container.textContent).toBe("Hello World!");
     });
+
+    it("handles multiline interpolation", () => {
+      const source = "{{ \n  1 + \n  1 \n }}";
+      const container = transpile(source);
+      expect(container.textContent!.trim()).toBe("2");
+    });
   });
 
   describe("element nodes", () => {
@@ -192,6 +198,40 @@ describe("Transpiler", () => {
       const container = transpile('<div @if="false">hidden</div>');
       expect(container.children).toHaveLength(0);
     });
+
+    it("does NOT associate @else with @if if tags are different", () => {
+      // In current implementation, tag must match
+      const source = '<div @if="false">if</div><span @else>else</span>';
+      const container = transpile(source);
+      // 'if' is not rendered. 'else' IS rendered because it's not consumed by doIf and evaluated normally.
+      expect(container.textContent).toBe("else");
+    });
+  });
+
+  describe("nested directives", () => {
+    it("renders @each inside @if", () => {
+      const source = `
+        <div @if="show">
+          <span @each="item of list">{{item}}</span>
+        </div>
+      `;
+      const container = transpile(source, { show: true, list: ["A", "B"] });
+      expect(container.querySelectorAll("span")).toHaveLength(2);
+      expect(container.textContent!.trim()).toBe("AB");
+    });
+
+    it("renders @if inside @each", () => {
+      const source = `
+        <div @each="item of list">
+          <span @if="item % 2 === 0">{{item}}</span>
+        </div>
+      `;
+      const container = transpile(source, { list: [1, 2, 3, 4] });
+      const spans = container.querySelectorAll("span");
+      expect(spans).toHaveLength(2);
+      expect(spans[0].textContent).toBe("2");
+      expect(spans[1].textContent).toBe("4");
+    });
   });
 
   describe("@each directive", () => {
@@ -241,6 +281,15 @@ describe("Transpiler", () => {
       const container = transpile('<div @while="false"></div>');
       expect(container.querySelectorAll("div")).toHaveLength(0);
     });
+
+    it("has access to outer scope and can modify it using an object", () => {
+      const entity = { state: { i: 0 } };
+      const container = transpile('<div @while="state.i < 3">{{++state.i}}</div>', entity);
+      expect(container.querySelectorAll("div")).toHaveLength(3);
+      expect(container.textContent).toBe("123");
+      // Verify state was modified
+      expect(entity.state.i).toBe(3);
+    });
   });
 
   describe("@let directive", () => {
@@ -259,6 +308,110 @@ describe("Transpiler", () => {
         prefix: "hello",
       });
       expect(container.querySelector("div")!.textContent).toBe("hello world");
+    });
+
+    it("makes $ref available to refer to the current element", () => {
+      const container = transpile('<div @let="x = 1" id="test"></div>');
+      const div = container.querySelector("div")!;
+      // In Kasper, @let sets $ref in the scope to the current element.
+      // We can verify this by using it in an interpolation or similar.
+      const container2 = transpile('<div @let="x = 1" id="myid">{{$ref.id}}</div>');
+      expect(container2.querySelector("div")!.textContent).toBe("myid");
+    });
+  });
+
+  describe("void elements", () => {
+    it("renders children into parent when using <void>", () => {
+      const container = transpile("<void><span>1</span><span>2</span></void>");
+      expect(container.querySelectorAll("span")).toHaveLength(2);
+      expect(container.querySelector("void")).toBeNull();
+    });
+
+    it("does not create a wrapper element for <void>", () => {
+      const container = transpile("<void>hello</void>");
+      expect(container.childNodes).toHaveLength(1);
+      expect(container.firstChild!.nodeType).toBe(Node.TEXT_NODE);
+    });
+  });
+
+  describe("components", () => {
+    class MyComponent {
+      args: any;
+      constructor(props: any) {
+        this.args = props.args;
+      }
+      greet() {
+        return "Hello " + (this.args.name || "World");
+      }
+    }
+
+    it("renders a component from registry", () => {
+      const parser = new TemplateParser();
+      // Component template: <p>{{greet()}}</p>
+      const nodes = parser.parse("<p>{{greet()}}</p>");
+      const registry = {
+        "my-comp": {
+          selector: "my-comp",
+          component: MyComponent as any,
+          template: document.createElement("div"),
+          nodes: nodes,
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = makeContainer();
+      transpiler.transpile(parser.parse('<my-comp @:name="Alice"></my-comp>'), {}, container);
+
+      expect(container.querySelector("p")!.textContent).toBe("Hello Alice");
+    });
+
+    it("passes multiple arguments to components", () => {
+      const parser = new TemplateParser();
+      const nodes = parser.parse("<span>{{args.a}} {{args.b}}</span>");
+      const registry = {
+        "test-args": {
+          selector: "test-args",
+          component: MyComponent as any,
+          template: document.createElement("div"),
+          nodes: nodes,
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = makeContainer();
+      transpiler.transpile(
+        parser.parse('<test-args @:a="1" @:b="2"></test-args>'),
+        {},
+        container
+      );
+
+      expect(container.querySelector("span")!.textContent).toBe("1 2");
+    });
+  });
+
+  describe("error handling", () => {
+    it("reports error on invalid expression in interpolation", () => {
+      const transpiler = new Transpiler();
+      const parser = new TemplateParser();
+      const container = makeContainer();
+      // Expression parser should record error
+      transpiler.transpile(parser.parse("{{ 1 + }}"), {}, container);
+      expect(transpiler.errors.length).toBeGreaterThan(0);
+      expect(transpiler.errors[0]).toMatch(/Template string  error/);
+    });
+
+    it("logs error but continues if transpilation fails partially", () => {
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      // We can trigger an error by providing an object that throws on access if we want, 
+      // but Transpiler.transpile has a try-catch around createSiblings.
+      
+      // Let's try to pass something that might cause an issue if we can identify a path.
+      // Actually, createSiblings calls evaluate, which calls accept, which calls visit*.
+      // If we have an invalid node, it might throw.
+      const transpiler = new Transpiler();
+      // @ts-ignore - passing invalid nodes
+      transpiler.transpile([{ type: "invalid" }], {}, makeContainer());
+      
+      expect(spy).toHaveBeenCalled();
+      spy.mockRestore();
     });
   });
 
@@ -374,6 +527,26 @@ describe("Viewer", () => {
       const result = view("<!DOCTYPE html>");
       expect(result.toLowerCase()).toContain("doctype");
       expect(result).toContain("html");
+    });
+  });
+
+  describe("error handling", () => {
+    it("logs and stores error if evaluation fails", () => {
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const viewer = new Viewer();
+      // @ts-ignore - passing invalid node
+      const result = viewer.transpile([{ type: "invalid" }]);
+      expect(viewer.errors.length).toBeGreaterThan(0);
+      expect(spy).toHaveBeenCalled();
+      spy.mockRestore();
+    });
+  });
+
+  describe("complex structure", () => {
+    it("renders complex nested elements correctly", () => {
+      const source = '<div id="1" class="outer"><p>hello<span>world</span></p><!--comment--></div>';
+      const expected = '<div id="1" class="outer"><p>hello<span>world</span></p><!-- comment --></div>';
+      expect(view(source)).toBe(expected);
     });
   });
 });
