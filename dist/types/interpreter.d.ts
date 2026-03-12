@@ -1,0 +1,35 @@
+import * as Expr from "./types/expressions";
+import { Scope } from "./scope";
+export declare class Interpreter implements Expr.ExprVisitor<any> {
+    scope: Scope;
+    private scanner;
+    private parser;
+    evaluate(expr: Expr.Expr): any;
+    visitPipelineExpr(expr: Expr.Pipeline): any;
+    visitArrowFunctionExpr(expr: Expr.ArrowFunction): any;
+    error(message: string): void;
+    visitVariableExpr(expr: Expr.Variable): any;
+    visitAssignExpr(expr: Expr.Assign): any;
+    visitKeyExpr(expr: Expr.Key): any;
+    visitGetExpr(expr: Expr.Get): any;
+    visitSetExpr(expr: Expr.Set): any;
+    visitPostfixExpr(expr: Expr.Postfix): any;
+    visitListExpr(expr: Expr.List): any;
+    visitSpreadExpr(expr: Expr.Spread): any;
+    private templateParse;
+    visitTemplateExpr(expr: Expr.Template): any;
+    visitBinaryExpr(expr: Expr.Binary): any;
+    visitLogicalExpr(expr: Expr.Logical): any;
+    visitTernaryExpr(expr: Expr.Ternary): any;
+    visitNullCoalescingExpr(expr: Expr.NullCoalescing): any;
+    visitGroupingExpr(expr: Expr.Grouping): any;
+    visitLiteralExpr(expr: Expr.Literal): any;
+    visitUnaryExpr(expr: Expr.Unary): any;
+    visitCallExpr(expr: Expr.Call): any;
+    visitNewExpr(expr: Expr.New): any;
+    visitDictionaryExpr(expr: Expr.Dictionary): any;
+    visitTypeofExpr(expr: Expr.Typeof): any;
+    visitEachExpr(expr: Expr.Each): any;
+    visitVoidExpr(expr: Expr.Void): any;
+    visitDebugExpr(expr: Expr.Void): any;
+}

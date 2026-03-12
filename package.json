@@ -3,17 +3,18 @@
   "version": "1.0.0",
   "description": "A javascript template parser",
   "main": "./dist/kasper.js",
-  "module": "./dist/kasper.esm.js",
+  "module": "./dist/kasper.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/kasper.esm.js",
-      "require": "./dist/kasper.js"
+      "import": "./dist/kasper.js",
+      "types": "./dist/types/index.d.ts"
     }
   },
   "packageManager": "pnpm@10",
   "scripts": {
     "dev": "vite build --mode development --watch",
-    "build": "vite build --mode development && vite build",
+    "build": "vite build --mode development && vite build && tsc -p tsconfig.build.json",
     "build:dev": "vite build --mode development",
     "type-check": "tsc --noEmit",
     "lint": "eslint src",
@@ -21,7 +22,8 @@
     "cli": "node dist/@script",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sandbox": "pnpm --filter sandbox dev"
+    "sandbox": "pnpm --filter sandbox dev",
+    "playground": "npx serve . -l 3000"
   },
   "keywords": [
     "javascript",

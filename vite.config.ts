@@ -8,12 +8,8 @@ export default defineConfig(({ mode }) => {
     build: {
       lib: {
         entry: resolve(__dirname, "src/index.ts"),
-        name: "KasperLib",
-        formats: isProd ? ["umd", "es"] : ["umd", "es"],
-        fileName: (format) => {
-          if (format === "es") return isProd ? "kasper.esm.min.js" : "kasper.esm.js";
-          return isProd ? "kasper.min.js" : "kasper.js";
-        },
+        formats: ["es"],
+        fileName: () => isProd ? "kasper.min.js" : "kasper.js",
       },
       outDir: "dist",
       sourcemap: isProd ? false : "inline",
