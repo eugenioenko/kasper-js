@@ -31,7 +31,7 @@ Kasper-js is a lightweight HTML template parser and renderer — a mini-framewor
 | Module | Role |
 |---|---|
 | `kasper.ts` | Core: `KasperRenderer`, `KasperState` (reactive state via `$state()`), `KasperInit` app bootstrap |
-| `component.ts` | Base `Component` class with lifecycle hooks: `$onInit`, `$onRender`, `$onChanges`, `$onDestroy` |
+| `component.ts` | Base `Component` class with lifecycle hooks: `onInit`, `onRender`, `onChanges`, `onDestroy` |
 | `template-parser.ts` | HTML parser → `KNode` AST (Element, Text, Comment, Doctype nodes) |
 | `scanner.ts` | Lexer for Kasper expression syntax (tokenizes `{{ }}` and directive values) |
 | `expression-parser.ts` | Parses tokens into expression AST nodes |

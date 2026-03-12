@@ -76,10 +76,17 @@ function normalizeRegistry(
     if (entry.nodes && entry.nodes.length > 0) {
       continue;
     }
-    const template = document.querySelector(entry.selector);
-    if (template) {
-      entry.template = template;
-      entry.nodes = parser.parse(template.innerHTML);
+    if (entry.selector) {
+      const template = document.querySelector(entry.selector);
+      if (template) {
+        entry.template = template;
+        entry.nodes = parser.parse(template.innerHTML);
+        continue;
+      }
+    }
+    const staticTemplate = (entry.component as any).template;
+    if (staticTemplate) {
+      entry.nodes = parser.parse(staticTemplate);
     }
   }
   return result;

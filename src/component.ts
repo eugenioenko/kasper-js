@@ -8,6 +8,7 @@ interface ComponentArgs {
 }
 
 export class Component {
+  static template?: string;
   args: Record<string, any> = {};
   ref?: Node;
   transpiler?: Transpiler;
@@ -46,9 +47,9 @@ export type KasperEntity = Component | Record<string, any> | null | undefined;
 export type ComponentClass = { new (args?: ComponentArgs): Component };
 export interface ComponentRegistry {
   [tagName: string]: {
-    selector: string;
+    selector?: string;
     component: ComponentClass;
-    template: Element;
+    template?: Element | null;
     nodes: KNode[];
   };
 }

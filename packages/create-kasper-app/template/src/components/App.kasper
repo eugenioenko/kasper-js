@@ -1,0 +1,24 @@
+<template>
+  <div class="app">
+    <h2>{{title}}</h2>
+    <counter></counter>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper';
+import { Counter } from './Counter.kasper';
+
+export class App extends Component {
+  title = 'Kasper App';
+}
+</script>
+
+<style>
+.app {
+  font-family: sans-serif;
+  max-width: 600px;
+  margin: 4rem auto;
+  text-align: center;
+}
+</style>

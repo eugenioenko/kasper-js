@@ -36,6 +36,33 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@20.19.37)(happy-dom@20.8.3)(terser@5.46.0)
 
+  packages/create-kasper-app: {}
+
+  packages/sandbox:
+    dependencies:
+      kasper:
+        specifier: workspace:*
+        version: link:../..
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@20.19.37)(terser@5.46.0)
+      vite-plugin-kasper:
+        specifier: workspace:*
+        version: link:../vite-plugin-kasper
+
+  packages/vite-plugin-kasper:
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@20.19.37)(terser@5.46.0)
+
 packages:
 
   '@babel/helper-string-parser@7.27.1':
