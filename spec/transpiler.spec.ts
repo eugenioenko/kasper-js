@@ -417,6 +417,18 @@ describe("Transpiler", () => {
       // Verify state was modified
       expect(entity.state.i).toBe(3);
     });
+
+    it("re-renders reactively when a signal bound changes", async () => {
+      // n is a plain counter (writes go to the child scope, not the entity,
+      // so it resets to 0 on each effect re-run). limit is the reactive bound.
+      const limit = signal(3);
+      const container = transpile('<div @while="n++ < limit.value">x</div>', { n: 0, limit });
+      expect(container.querySelectorAll("div")).toHaveLength(3);
+
+      limit.value = 2;
+      await Promise.resolve();
+      expect(container.querySelectorAll("div")).toHaveLength(2);
+    });
   });
 
   describe("@let directive", () => {

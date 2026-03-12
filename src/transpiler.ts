@@ -234,12 +234,21 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private doWhile($while: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const boundary = new Boundary(parent, "while");
     const originalScope = this.interpreter.scope;
-    this.interpreter.scope = new Scope(originalScope);
-    while (this.execute($while.value)) {
-      this.createElement(node, parent);
-    }
-    this.interpreter.scope = originalScope;
+
+    const stop = this.scopedEffect(() => {
+      boundary.nodes().forEach((n) => this.destroyNode(n));
+      boundary.clear();
+
+      this.interpreter.scope = new Scope(originalScope);
+      while (this.execute($while.value)) {
+        this.createElement(node, boundary as any);
+      }
+      this.interpreter.scope = originalScope;
+    });
+
+    this.trackEffect(boundary, stop);
   }
 
   // executes initialization in the current scope
