@@ -85,7 +85,7 @@ describe("Component Integration", () => {
     const transpiler = new Transpiler({ registry });
     const container = document.createElement("div");
     
-    transpiler.transpile(parser.parse('<greet-comp @:name="Kasper"></greet-comp>'), {}, container);
+    transpiler.transpile(parser.parse(`<greet-comp @:name="'Kasper'"></greet-comp>`), {}, container);
     
     expect(container.textContent).toContain("Hello Kasper");
   });

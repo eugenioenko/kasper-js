@@ -485,7 +485,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const result: Record<string, any> = {};
     for (const arg of args) {
       const key = arg.name.split(":")[1];
-      result[key] = this.evaluateTemplateString(arg.value);
+      result[key] = this.execute(arg.value);
     }
     return result;
   }

@@ -480,7 +480,7 @@ describe("Transpiler", () => {
       };
       const transpiler = new Transpiler({ registry });
       const container = makeContainer();
-      transpiler.transpile(parser.parse('<my-comp @:name="Alice"></my-comp>'), {}, container);
+      transpiler.transpile(parser.parse(`<my-comp @:name="'Alice'"></my-comp>`), {}, container);
 
       expect(container.querySelector("p")!.textContent).toBe("Hello Alice");
     });
@@ -505,6 +505,61 @@ describe("Transpiler", () => {
       );
 
       expect(container.querySelector("span")!.textContent).toBe("1 2");
+    });
+
+    it("passes non-string args as their actual type", () => {
+      const received: any[] = [];
+      class TypeChecker extends Component {
+        $onInit() { received.push(this.args.num, this.args.flag, this.args.obj); }
+      }
+      const parser = new TemplateParser();
+      const registry = {
+        "type-check": {
+          selector: "",
+          component: TypeChecker as any,
+          template: null,
+          nodes: parser.parse("<span></span>"),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      transpiler.transpile(
+        parser.parse('<type-check @:num="42" @:flag="true" @:obj="myObj"></type-check>'),
+        { myObj: { x: 1 } },
+        makeContainer()
+      );
+
+      expect(received[0]).toBe(42);
+      expect(typeof received[0]).toBe("number");
+      expect(received[1]).toBe(true);
+      expect(typeof received[1]).toBe("boolean");
+      expect(received[2]).toEqual({ x: 1 });
+    });
+
+    it("passes a signal reference as an arg", () => {
+      const count = signal(0);
+      let receivedSignal: any;
+      class Watcher extends Component {
+        $onInit() { receivedSignal = this.args.count; }
+      }
+      const parser = new TemplateParser();
+      const registry = {
+        "x-watch": {
+          selector: "",
+          component: Watcher as any,
+          template: null,
+          nodes: parser.parse("<span></span>"),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      transpiler.transpile(
+        parser.parse('<x-watch @:count="count"></x-watch>'),
+        { count },
+        makeContainer()
+      );
+
+      expect(receivedSignal).toBe(count);
+      count.value = 5;
+      expect(receivedSignal.value).toBe(5);
     });
   });
 
