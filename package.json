@@ -1,5 +1,5 @@
 {
-  "name": "kasper",
+  "name": "kasper-js",
   "version": "1.0.0",
   "description": "A javascript template parser",
   "main": "./dist/kasper.js",

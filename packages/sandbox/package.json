@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "kasper": "workspace:*"
+    "kasper-js": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.4.5",

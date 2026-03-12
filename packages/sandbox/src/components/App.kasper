@@ -6,7 +6,7 @@
 </template>
 
 <script>
-  import { Component } from 'kasper';
+  import { Component } from 'kasper-js';
   import { Counter } from './Counter.kasper';
 
   export class App extends Component {}

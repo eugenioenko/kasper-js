@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "kasper": "^1.0.0"
+    "kasper-js": "^1.0.0"
   },
   "devDependencies": {
     "typescript": "^5.4.5",

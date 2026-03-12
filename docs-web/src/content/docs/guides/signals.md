@@ -8,7 +8,7 @@ Kasper's reactivity system is built on signals — reactive primitives that trac
 ## signal()
 
 ```ts
-import { signal } from 'kasper';
+import { signal } from 'kasper-js';
 
 const count = signal(0);
 
@@ -22,7 +22,7 @@ count.peek();     // read without tracking
 Derived signals that update automatically when their dependencies change:
 
 ```ts
-import { signal, computed } from 'kasper';
+import { signal, computed } from 'kasper-js';
 
 const count = signal(0);
 const double = computed(() => count.value * 2);
@@ -37,7 +37,7 @@ console.log(double.value); // 10
 Runs a function whenever its signal dependencies change:
 
 ```ts
-import { signal, effect } from 'kasper';
+import { signal, effect } from 'kasper-js';
 
 const name = signal('Alice');
 
@@ -57,7 +57,7 @@ stop(); // unsubscribe
 Group multiple signal writes into a single effect flush:
 
 ```ts
-import { signal, effect, batch } from 'kasper';
+import { signal, effect, batch } from 'kasper-js';
 
 const a = signal(0);
 const b = signal(0);
@@ -92,7 +92,7 @@ stop(); // unsubscribe
 Declare signals as class fields:
 
 ```ts
-import { signal, computed, Component } from 'kasper';
+import { signal, computed, Component } from 'kasper-js';
 
 export class Counter extends Component {
   count = signal(0);

@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import { signal, Component } from 'kasper';
+import { signal, Component } from 'kasper-js';
 
 export class Counter extends Component {
   count = signal(0);

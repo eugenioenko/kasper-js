@@ -30,7 +30,7 @@ Create `src/components/Counter.kasper`:
 </template>
 
 <script>
-import { signal, Component } from 'kasper';
+import { signal, Component } from 'kasper-js';
 
 export class Counter extends Component {
   count = signal(0);
@@ -57,7 +57,7 @@ button { font-size: 1.5rem; width: 3rem; height: 3rem; cursor: pointer; }
 Create `src/main.ts`:
 
 ```ts
-import { App } from 'kasper';
+import { App } from 'kasper-js';
 import { Counter } from './components/Counter.kasper';
 
 App({

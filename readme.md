@@ -17,7 +17,7 @@ npm run dev
 ## Installation
 
 ```bash
-npm install kasper
+npm install kasper-js
 npm install -D vite-plugin-kasper
 ```
 
@@ -43,7 +43,7 @@ export default defineConfig({
 </template>
 
 <script>
-import { signal, Component } from 'kasper';
+import { signal, Component } from 'kasper-js';
 
 export class Counter extends Component {
   count = signal(0);
@@ -58,7 +58,7 @@ h1 { font-size: 3rem; }
 
 ```ts
 // main.ts
-import { App } from 'kasper';
+import { App } from 'kasper-js';
 import { Counter } from './Counter.kasper';
 
 App({
@@ -83,7 +83,7 @@ App({
 ## Signals
 
 ```ts
-import { signal, computed, effect, batch } from 'kasper';
+import { signal, computed, effect, batch } from 'kasper-js';
 
 const count = signal(0);
 const double = computed(() => count.value * 2);

@@ -16,7 +16,7 @@ Every Kasper UI is built from components. A component is a TypeScript class that
 </template>
 
 <script>
-import { Component } from 'kasper';
+import { Component } from 'kasper-js';
 
 export class Greeting extends Component {
   name = 'World';
@@ -73,7 +73,7 @@ export class MyComponent extends Component {
 Components must be registered before use. Pass them in the `registry` when bootstrapping:
 
 ```ts
-import { App } from 'kasper';
+import { App } from 'kasper-js';
 import { Counter } from './Counter.kasper';
 import { Greeting } from './Greeting.kasper';
 

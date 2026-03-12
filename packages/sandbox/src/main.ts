@@ -1,4 +1,4 @@
-import { App as KasperApp } from 'kasper';
+import { App as KasperApp } from 'kasper-js';
 import { App } from './components/App.kasper';
 import { Counter } from './components/Counter.kasper';
 

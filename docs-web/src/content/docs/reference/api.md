@@ -10,7 +10,7 @@ description: Complete API reference for Kasper.js.
 Bootstrap a Kasper application.
 
 ```ts
-import { App } from 'kasper';
+import { App } from 'kasper-js';
 
 App({
   root: document.querySelector('#app'),
@@ -107,7 +107,7 @@ class Component {
 Low-level: parse and transpile an HTML string into a DOM node.
 
 ```ts
-import { transpile } from 'kasper';
+import { transpile } from 'kasper-js';
 
 const node = transpile('<p>{{message}}</p>', { message: 'hello' });
 document.body.appendChild(node);
@@ -118,7 +118,7 @@ document.body.appendChild(node);
 Parse an HTML template and return the KNode AST as JSON. Useful for debugging.
 
 ```ts
-import { execute } from 'kasper';
+import { execute } from 'kasper-js';
 
 console.log(execute('<p>{{x}}</p>'));
 ```

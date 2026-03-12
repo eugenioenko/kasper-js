@@ -49,7 +49,7 @@ importers:
 
   packages/sandbox:
     dependencies:
-      kasper:
+      kasper-js:
         specifier: workspace:*
         version: link:../..
     devDependencies:

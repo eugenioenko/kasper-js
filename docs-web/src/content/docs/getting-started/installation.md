@@ -21,7 +21,7 @@ This creates a new Vite project with the Kasper plugin configured and a working 
 Install the framework and Vite plugin:
 
 ```bash
-npm install kasper
+npm install kasper-js
 npm install -D vite-plugin-kasper
 ```
 
@@ -40,7 +40,7 @@ Add a type declaration file so TypeScript recognises `.kasper` imports. Create `
 
 ```ts
 declare module '*.kasper' {
-  import type { Component } from 'kasper';
+  import type { Component } from 'kasper-js';
   type AnyComponent = new (...args: any[]) => Component;
   const exports: Record<string, AnyComponent>;
   export = exports;
