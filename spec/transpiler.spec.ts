@@ -236,12 +236,18 @@ describe("Transpiler", () => {
       expect(container.children).toHaveLength(0);
     });
 
-    it("does NOT associate @else with @if if tags are different", () => {
-      // In current implementation, tag must match
+    it("associates @else with @if even when tags are different", () => {
       const source = '<div @if="false">if</div><span @else>else</span>';
       const container = transpile(source);
-      // 'if' is not rendered. 'else' IS rendered because it's not consumed by doIf and evaluated normally.
       expect(container.textContent).toBe("else");
+      expect(container.querySelector("span")).not.toBeNull();
+    });
+
+    it("associates @elseif and @else with @if across different tag names", () => {
+      const source = '<div @if="a">A</div><section @elseif="b">B</section><span @else>C</span>';
+      expect(transpile(source, { a: true, b: false }).textContent).toBe("A");
+      expect(transpile(source, { a: false, b: true }).textContent).toBe("B");
+      expect(transpile(source, { a: false, b: false }).textContent).toBe("C");
     });
 
     it("updates @if content reactively when signal changes", () => {

@@ -263,22 +263,17 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         const $if = this.findAttr(node as KNode.Element, ["@if"]);
         if ($if) {
           const expressions: IfElseNode[] = [[node as KNode.Element, $if]];
-          const tag = (node as KNode.Element).name;
-          let found = true;
 
-          while (found) {
-            if (current >= nodes.length) {
-              break;
-            }
+          while (current < nodes.length) {
             const attr = this.findAttr(nodes[current] as KNode.Element, [
               "@else",
               "@elseif",
             ]);
-            if ((nodes[current] as KNode.Element).name === tag && attr) {
+            if (attr) {
               expressions.push([nodes[current] as KNode.Element, attr]);
               current += 1;
             } else {
-              found = false;
+              break;
             }
           }
 
