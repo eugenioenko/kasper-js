@@ -29,10 +29,10 @@ export class Component {
     }
   }
 
-  $onInit() {}
-  $onRender() {}
-  $onChanges() {}
-  $onDestroy() {}
+  onInit() {}
+  onRender() {}
+  onChanges() {}
+  onDestroy() {}
 
   $doRender() {
     if (!this.transpiler) {

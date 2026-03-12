@@ -39,11 +39,11 @@ class App extends Component {
   _lastTick = 0;
   _fpsHistory = [];
 
-  $onInit() {
+  onInit() {
     this.randomize();
   }
 
-  $onDestroy() {
+  onDestroy() {
     clearInterval(this._timer);
   }
 

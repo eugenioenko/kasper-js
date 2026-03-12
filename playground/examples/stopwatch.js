@@ -41,7 +41,7 @@ class App extends Component {
   _startedAt = 0;
   _lapStart = 0;
 
-  $onDestroy() {
+  onDestroy() {
     clearInterval(this._timer);
   }
 

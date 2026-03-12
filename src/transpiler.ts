@@ -410,8 +410,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           this.bindMethods(component);
           (element as any).$kasperInstance = component;
 
-          if (typeof component.$onInit === "function") {
-            component.$onInit();
+          if (typeof component.onInit === "function") {
+            component.onInit();
           }
         }
         // Expose slots in component scope
@@ -423,8 +423,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         // create the children of the component
         this.createSiblings(this.registry[node.name].nodes, element);
 
-        if (component && typeof component.$onRender === "function") {
-          component.$onRender();
+        if (component && typeof component.onRender === "function") {
+          component.onRender();
         }
 
         this.interpreter.scope = restoreScope;
@@ -593,7 +593,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     // 1. Cleanup component instance
     if (node.$kasperInstance) {
       const instance = node.$kasperInstance;
-      if (instance.$onDestroy) instance.$onDestroy();
+      if (instance.onDestroy) instance.onDestroy();
       if (instance.$abortController) instance.$abortController.abort();
     }
 

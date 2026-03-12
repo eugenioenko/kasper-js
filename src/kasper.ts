@@ -112,14 +112,14 @@ export function KasperInit(config: AppConfig) {
   }
 
   // Initial render and lifecycle
-  if (typeof instance.$onInit === "function") {
-    instance.$onInit();
+  if (typeof instance.onInit === "function") {
+    instance.onInit();
   }
 
   transpiler.transpile(nodes, instance, node as HTMLElement);
 
-  if (typeof instance.$onRender === "function") {
-    instance.$onRender();
+  if (typeof instance.onRender === "function") {
+    instance.onRender();
   }
 
   return instance;

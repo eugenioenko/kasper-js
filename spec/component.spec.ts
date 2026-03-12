@@ -18,10 +18,10 @@ describe("Component", () => {
 
   it("lifecycle hook methods exist and are callable", () => {
     const component = new Component();
-    expect(() => component.$onInit()).not.toThrow();
-    expect(() => component.$onRender()).not.toThrow();
-    expect(() => component.$onChanges()).not.toThrow();
-    expect(() => component.$onDestroy()).not.toThrow();
+    expect(() => component.onInit()).not.toThrow();
+    expect(() => component.onRender()).not.toThrow();
+    expect(() => component.onChanges()).not.toThrow();
+    expect(() => component.onDestroy()).not.toThrow();
   });
 
   it("initializes with provided props", () => {
@@ -36,14 +36,14 @@ describe("Component", () => {
   });
 
   describe("Lifecycle hooks", () => {
-    it("executes $onInit and $onRender when transpiled", () => {
+    it("executes onInit and onRender when transpiled", () => {
       const parser = new TemplateParser();
       let initCalled = false;
       let renderCalled = false;
 
       class LifecycleComponent extends Component {
-        $onInit = () => { initCalled = true; };
-        $onRender = () => { renderCalled = true; };
+        onInit = () => { initCalled = true; };
+        onRender = () => { renderCalled = true; };
       }
 
       const registry = {

@@ -87,7 +87,7 @@ All directives are placed as attributes on HTML elements. They use the `@` prefi
 - `index` — (optional) name for the zero-based position, introduced with the `with` keyword
 - `expr` — any expression that evaluates to an iterable (array, Set, etc.)
 
-The list re-renders reactively when the source signal changes. `$onDestroy` is called on any components inside the list before they are removed.
+The list re-renders reactively when the source signal changes. `onDestroy` is called on any components inside the list before they are removed.
 
 ### @key — keyed reconciliation
 
@@ -101,7 +101,7 @@ By default `@each` destroys and recreates all DOM nodes on every re-run. Adding 
 
 Benefits:
 - DOM nodes are reused on reorder (no destroy/recreate)
-- `$onDestroy` is only called for genuinely removed items
+- `onDestroy` is only called for genuinely removed items
 - Components inside `@each` preserve their internal state across list updates
 
 ```html
@@ -508,7 +508,7 @@ class Counter extends Component {
   count = kasper.signal(0);
   double = kasper.computed(() => this.count.value * 2);
 
-  $onInit() {
+  onInit() {
     kasper.effect(() => {
       console.log("changed:", this.count.value);
     });
@@ -533,10 +533,10 @@ class MyComponent extends Component {
   loading = kasper.signal(false);
 
   // Lifecycle hooks
-  $onInit()    {}  // called before first render
-  $onRender()  {}  // called after each render
-  $onChanges() {}  // called before re-render when state changes
-  $onDestroy() {}  // called when component is removed from DOM
+  onInit()    {}  // called before first render
+  onRender()  {}  // called after each render
+  onChanges() {}  // called before re-render when state changes
+  onDestroy() {}  // called when component is removed from DOM
 
   // Available properties
   // this.args        — object passed in via @: attributes
@@ -548,12 +548,12 @@ class MyComponent extends Component {
 ### Lifecycle order
 
 On first mount:
-1. `$onInit()`
+1. `onInit()`
 2. Template is rendered
-3. `$onRender()`
+3. `onRender()`
 
 On destroy (component removed):
-1. `$onDestroy()`
+1. `onDestroy()`
 2. All `@on:` event listeners are aborted
 3. All reactive effects are stopped
 

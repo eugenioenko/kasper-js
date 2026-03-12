@@ -368,10 +368,10 @@ describe("Transpiler", () => {
       expect(span.textContent).not.toBe("a");
     });
 
-    it("calls $onDestroy on components inside @each when list changes", async () => {
+    it("calls onDestroy on components inside @each when list changes", async () => {
       const destroyed: number[] = [];
       class Item extends Component {
-        $onDestroy() { destroyed.push(1); }
+        onDestroy() { destroyed.push(1); }
       }
       const list = signal([1, 2, 3]);
       const parser = new TemplateParser();
@@ -436,12 +436,12 @@ describe("Transpiler", () => {
       expect(reordered[2]).toBe(li2);
     });
 
-    it("calls $onDestroy only for removed keys", async () => {
+    it("calls onDestroy only for removed keys", async () => {
       const destroyed: number[] = [];
       class Item extends Component {
         id = 0;
-        $onInit() { this.id = this.args.id; }
-        $onDestroy() { destroyed.push(this.id); }
+        onInit() { this.id = this.args.id; }
+        onDestroy() { destroyed.push(this.id); }
       }
       const list = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
       const parser = new TemplateParser();
@@ -621,7 +621,7 @@ describe("Transpiler", () => {
     it("passes non-string args as their actual type", () => {
       const received: any[] = [];
       class TypeChecker extends Component {
-        $onInit() { received.push(this.args.num, this.args.flag, this.args.obj); }
+        onInit() { received.push(this.args.num, this.args.flag, this.args.obj); }
       }
       const parser = new TemplateParser();
       const registry = {
@@ -650,7 +650,7 @@ describe("Transpiler", () => {
       const count = signal(0);
       let receivedSignal: any;
       class Watcher extends Component {
-        $onInit() { receivedSignal = this.args.count; }
+        onInit() { receivedSignal = this.args.count; }
       }
       const parser = new TemplateParser();
       const registry = {

@@ -109,7 +109,7 @@ class App extends Component {
   searchQuery = signal("");
   isAdding = signal(false);
 
-  $onInit() {
+  onInit() {
     this.fetchTodos();
     this.timer = setInterval(() => {
       this.uptime.value++;
@@ -126,7 +126,7 @@ class App extends Component {
     return (this.todos.value || []).filter(t => t.completed).length;
   }
 
-  $onDestroy() {
+  onDestroy() {
     clearInterval(this.timer);
   }
 
