@@ -298,6 +298,14 @@ describe("Interpreter", () => {
       // Note: scope treats stored `undefined` as "not set" (typeof check), so use null here
       expect(evaluate("obj?.name", { obj: null })).toBeUndefined();
     });
+
+    it("optional chaining obj?.[key] returns value when obj exists", () => {
+      expect(evaluate("arr?.[0]", { arr: ["a", "b"] })).toBe("a");
+    });
+
+    it("optional chaining obj?.[key] returns undefined when obj is null", () => {
+      expect(evaluate("arr?.[0]", { arr: null })).toBeUndefined();
+    });
   });
 
   describe("property assignment (Set)", () => {

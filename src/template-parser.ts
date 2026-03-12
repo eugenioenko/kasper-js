@@ -184,11 +184,11 @@ export class TemplateParser {
       if (this.match("=")) {
         this.whitespace();
         if (this.match("'")) {
-          value = this.string("'");
+          value = this.decodeEntities(this.string("'"));
         } else if (this.match('"')) {
-          value = this.string('"');
+          value = this.decodeEntities(this.string('"'));
         } else {
-          value = this.identifier(">", "/>");
+          value = this.decodeEntities(this.identifier(">", "/>"));
         }
       }
       this.whitespace();

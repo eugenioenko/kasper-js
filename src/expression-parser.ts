@@ -310,7 +310,12 @@ export class ExpressionParser {
       }
       if (this.match(TokenType.Dot, TokenType.QuestionDot)) {
         consumed = true;
-        expr = this.dotGet(expr, this.previous());
+        const operator = this.previous();
+        if (operator.type === TokenType.QuestionDot && this.match(TokenType.LeftBracket)) {
+          expr = this.bracketGet(expr, operator);
+        } else {
+          expr = this.dotGet(expr, operator);
+        }
       }
       if (this.match(TokenType.LeftBracket)) {
         consumed = true;
