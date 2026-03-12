@@ -23,6 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sandbox": "pnpm --filter sandbox dev",
+    "docs": "pnpm --filter docs-web dev",
+    "docs:build": "pnpm --filter docs-web build",
     "playground": "npx serve . -l 3000"
   },
   "keywords": [

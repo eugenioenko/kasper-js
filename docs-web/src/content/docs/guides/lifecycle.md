@@ -1,4 +1,8 @@
-# Kasper.js — Component Lifecycle
+---
+title: Component Lifecycle
+description: Lifecycle hooks for Kasper.js components.
+---
+
 
 Every Kasper component goes through a predictable lifecycle from creation to removal. Override these methods in your component class to hook into each phase.
 

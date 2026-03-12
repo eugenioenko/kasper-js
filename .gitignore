@@ -63,3 +63,6 @@ typings/
 .vs/VSWorkspaceState.json
 .vs/interpreter/v15/.suo
 .vs/VSWorkspaceState.json
+
+
+docs-web/dist

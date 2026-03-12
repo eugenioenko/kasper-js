@@ -1,4 +1,8 @@
-# Kasper.js — Signals
+---
+title: Signals
+description: Complete Signals API reference for Kasper.js.
+---
+
 
 Signals are the reactive primitive in Kasper. They hold a value and notify subscribers whenever that value changes. All template bindings (`{{ }}`, directives) automatically track the signals they read — no manual wiring needed.
 

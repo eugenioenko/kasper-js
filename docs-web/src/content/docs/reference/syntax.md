@@ -1,4 +1,8 @@
-# Kasper.js — Syntax Reference
+---
+title: Syntax Reference
+description: Full template and expression syntax reference for Kasper.js.
+---
+
 
 Kasper templates are valid HTML extended with `{{ }}` interpolation and `@`-prefixed directives. All directives are standard HTML attributes — no special parser or build step required.
 
