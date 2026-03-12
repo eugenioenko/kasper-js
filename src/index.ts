@@ -6,23 +6,25 @@ import { Scanner } from "./scanner";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 import { Viewer } from "./viewer";
+import { signal, effect, computed } from "./signal";
 
 if (typeof window !== "undefined") {
   ((window as any) || {}).kasper = {
-    execute,
-    transpile,
+    execute: execute,
+    transpile: transpile,
     App: KasperInit,
+    Component: Component,
+    TemplateParser: TemplateParser,
+    Transpiler: Transpiler,
+    Viewer: Viewer,
+    signal: signal,
+    effect: effect,
+    computed: computed,
   };
   (window as any)["Kasper"] = Kasper;
   (window as any)["Component"] = Component;
   (window as any)["$state"] = kasperState;
-} else if (typeof exports !== "undefined") {
-  exports.kasper = {
-    ExpressionParser,
-    Interpreter,
-    Scanner,
-    TemplateParser,
-    Transpiler,
-    Viewer,
-  };
 }
+
+export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, Viewer, signal, effect, computed };
+export { execute, transpile, Kasper, kasperState as $state, KasperInit as App, Component };

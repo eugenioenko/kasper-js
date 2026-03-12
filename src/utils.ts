@@ -6,7 +6,7 @@ export function isDigit(char: string): boolean {
 
 export function isAlpha(char: string): boolean {
   return (
-    (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") || char === "$"
+    (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") || char === "$" || char === "_"
   );
 }
 

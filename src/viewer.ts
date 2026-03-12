@@ -47,7 +47,11 @@ export class Viewer implements KNode.KNodeVisitor<string> {
   }
 
   public visitTextKNode(node: KNode.Text): string {
-    return node.value;
+    return node.value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\u00a0/g, "&nbsp;");
   }
 
   public visitCommentKNode(node: KNode.Comment): string {

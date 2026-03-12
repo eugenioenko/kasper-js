@@ -311,12 +311,12 @@ export class NullCoalescing extends Expr {
 }
 
 export class Postfix extends Expr {
-    public name: Token;
+    public entity: Expr;
     public increment: number;
 
-    constructor(name: Token, increment: number, line: number) {
+    constructor(entity: Expr, increment: number, line: number) {
         super();
-        this.name = name;
+        this.entity = entity;
         this.increment = increment;
         this.line = line;
     }

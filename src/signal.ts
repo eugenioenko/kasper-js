@@ -1,0 +1,79 @@
+type Listener = () => void;
+
+let activeEffect: { fn: Listener; deps: Set<any> } | null = null;
+const effectStack: any[] = [];
+
+export class Signal<T> {
+  private _value: T;
+  private subscribers = new Set<Listener>();
+
+  constructor(initialValue: T) {
+    this._value = initialValue;
+  }
+
+  get value(): T {
+    if (activeEffect) {
+      this.subscribers.add(activeEffect.fn);
+      activeEffect.deps.add(this);
+    }
+    return this._value;
+  }
+
+  set value(newValue: T) {
+    if (this._value !== newValue) {
+      this._value = newValue;
+      const subs = Array.from(this.subscribers);
+      for (const sub of subs) {
+        try {
+          sub();
+        } catch (e) {
+          console.error("Effect error:", e);
+        }
+      }
+    }
+  }
+
+  unsubscribe(fn: Listener) {
+    this.subscribers.delete(fn);
+  }
+
+  toString() { return String(this.value); }
+  peek() { return this._value; }
+}
+
+export function effect(fn: Listener) {
+  const effectObj = {
+    fn: () => {
+      effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
+      effectObj.deps.clear();
+
+      effectStack.push(effectObj);
+      activeEffect = effectObj;
+      try {
+        fn();
+      } finally {
+        effectStack.pop();
+        activeEffect = effectStack[effectStack.length - 1] || null;
+      }
+    },
+    deps: new Set<Signal<any>>()
+  };
+
+  effectObj.fn();
+  return () => {
+    effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
+    effectObj.deps.clear();
+  };
+}
+
+export function signal<T>(initialValue: T): Signal<T> {
+  return new Signal(initialValue);
+}
+
+export function computed<T>(fn: () => T): Signal<T> {
+  const s = signal<T>(undefined as any);
+  effect(() => {
+    s.value = fn();
+  });
+  return s;
+}
