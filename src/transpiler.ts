@@ -47,6 +47,21 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  // Creates an effect that restores the current scope on every re-run,
+  // so effects set up inside @each always evaluate in their item scope.
+  private scopedEffect(fn: () => void): () => void {
+    const scope = this.interpreter.scope;
+    return effect(() => {
+      const prev = this.interpreter.scope;
+      this.interpreter.scope = scope;
+      try {
+        fn();
+      } finally {
+        this.interpreter.scope = prev;
+      }
+    });
+  }
+
   // evaluates expressions and returns the result of the first evaluation
   private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
@@ -97,7 +112,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         }
       }
 
-      const stop = effect(() => {
+      const stop = this.scopedEffect(() => {
         text.textContent = this.evaluateTemplateString(node.value);
       });
       this.trackEffect(text, stop);
@@ -108,8 +123,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
     const attr = document.createAttribute(node.name);
-    
-    const stop = effect(() => {
+
+    const stop = this.scopedEffect(() => {
       attr.value = this.evaluateTemplateString(node.value);
     });
     this.trackEffect(attr, stop);
@@ -155,7 +170,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private doIf(expressions: IfElseNode[], parent: Node): void {
     const boundary = new Boundary(parent, "if");
 
-    const stop = effect(() => {
+    const stop = this.scopedEffect(() => {
       boundary.clear();
 
       const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
@@ -180,7 +195,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         }
       }
     });
-    
+
     this.trackEffect(boundary, stop);
   }
 
@@ -190,12 +205,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
     const stop = effect(() => {
       boundary.clear();
-      
+
       const tokens = this.scanner.scan((each as KNode.Attribute).value);
       const [name, key, iterable] = this.interpreter.evaluate(
         this.parser.foreach(tokens)
       );
-      
+
       let index = 0;
       for (const item of iterable) {
         // Create a new scope that inherits from the current scope
@@ -204,7 +219,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         if (key) {
           scopeValues[key] = index;
         }
-        
+
         const itemScope = new Scope(originalScope, scopeValues);
         this.interpreter.scope = itemScope;
         this.createElement(node, boundary as any);
@@ -401,13 +416,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
         for (const attr of shorthandAttributes) {
           const realName = (attr as KNode.Attribute).name.slice(1);
-          
+
           if (realName === "class") {
             let lastDynamicValue = "";
-            const stop = effect(() => {
+            const stop = this.scopedEffect(() => {
               const value = this.execute((attr as KNode.Attribute).value);
               const staticClass = (element as HTMLElement).getAttribute("class") || "";
-              let currentClasses = staticClass.split(" ")
+              const currentClasses = staticClass.split(" ")
                 .filter(c => c !== lastDynamicValue && c !== "")
                 .join(" ");
               const newValue = currentClasses ? `${currentClasses} ${value}` : value;
@@ -416,7 +431,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             });
             this.trackEffect(element, stop);
           } else {
-            const stop = effect(() => {
+            const stop = this.scopedEffect(() => {
               const value = this.execute((attr as KNode.Attribute).value);
 
               if (value === false || value === null || value === undefined) {
@@ -477,7 +492,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const type = attr.name.split(":")[1];
     const listenerScope = new Scope(this.interpreter.scope);
     const instance = this.interpreter.scope.get("$instance");
-    
+
     const options: any = {};
     if (instance && instance.$abortController) {
       options.signal = instance.$abortController.signal;
@@ -521,7 +536,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         if (instance.$onDestroy) instance.$onDestroy();
         if (instance.$abortController) instance.$abortController.abort();
       }
-      
+
       // 2. Cleanup effects attached to the node
       if (node.$kasperEffects) {
         node.$kasperEffects.forEach((stop: () => void) => stop());
@@ -551,12 +566,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public error(message: string, tagName?: string): void {
-    const cleanMessage = message.startsWith("Runtime Error") 
-      ? message 
+    const cleanMessage = message.startsWith("Runtime Error")
+      ? message
       : `Runtime Error: ${message}`;
-    
+
     if (tagName && !cleanMessage.includes(`at <${tagName}>`)) {
-       throw new Error(`${cleanMessage}\n  at <${tagName}>`);
+      throw new Error(`${cleanMessage}\n  at <${tagName}>`);
     }
 
     throw new Error(cleanMessage);
