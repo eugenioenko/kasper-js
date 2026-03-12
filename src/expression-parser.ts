@@ -295,17 +295,7 @@ export class ExpressionParser {
       if (this.match(TokenType.LeftParen)) {
         consumed = true;
         do {
-          const args: Expr.Expr[] = [];
-          if (!this.check(TokenType.RightParen)) {
-            do {
-              args.push(this.expression());
-            } while (this.match(TokenType.Comma));
-          }
-          const paren: Token = this.consume(
-            TokenType.RightParen,
-            `Expected ")" after arguments`
-          );
-          expr = new Expr.Call(expr, paren, args, paren.line);
+          expr = this.finishCall(expr, this.previous(), false);
         } while (this.match(TokenType.LeftParen));
       }
       if (this.match(TokenType.Dot, TokenType.QuestionDot)) {
@@ -313,6 +303,8 @@ export class ExpressionParser {
         const operator = this.previous();
         if (operator.type === TokenType.QuestionDot && this.match(TokenType.LeftBracket)) {
           expr = this.bracketGet(expr, operator);
+        } else if (operator.type === TokenType.QuestionDot && this.match(TokenType.LeftParen)) {
+          expr = this.finishCall(expr, this.previous(), true);
         } else {
           expr = this.dotGet(expr, operator);
         }
@@ -323,6 +315,17 @@ export class ExpressionParser {
       }
     } while (consumed);
     return expr;
+  }
+
+  private finishCall(callee: Expr.Expr, paren: Token, optional: boolean): Expr.Expr {
+    const args: Expr.Expr[] = [];
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        args.push(this.expression());
+      } while (this.match(TokenType.Comma));
+    }
+    const closeParen = this.consume(TokenType.RightParen, `Expected ")" after arguments`);
+    return new Expr.Call(callee, closeParen, args, closeParen.line, optional);
   }
 
   private dotGet(expr: Expr.Expr, operator: Token): Expr.Expr {

@@ -306,6 +306,14 @@ describe("Interpreter", () => {
     it("optional chaining obj?.[key] returns undefined when obj is null", () => {
       expect(evaluate("arr?.[0]", { arr: null })).toBeUndefined();
     });
+
+    it("optional call fn?.() calls the function when it exists", () => {
+      expect(evaluate("fn?.()", { fn: () => 42 })).toBe(42);
+    });
+
+    it("optional call fn?.() returns undefined when fn is null", () => {
+      expect(evaluate("fn?.()", { fn: null })).toBeUndefined();
+    });
   });
 
   describe("property assignment (Set)", () => {

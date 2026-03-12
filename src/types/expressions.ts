@@ -80,13 +80,15 @@ export class Call extends Expr {
     public callee: Expr;
     public paren: Token;
     public args: Expr[];
+    public optional: boolean;
 
-    constructor(callee: Expr, paren: Token, args: Expr[], line: number) {
+    constructor(callee: Expr, paren: Token, args: Expr[], line: number, optional = false) {
         super();
         this.callee = callee;
         this.paren = paren;
         this.args = args;
         this.line = line;
+        this.optional = optional;
     }
 
   public accept<R>(visitor: ExprVisitor<R>): R {

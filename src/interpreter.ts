@@ -217,6 +217,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   public visitCallExpr(expr: Expr.Call): any {
     // verify callee is a function
     const callee = this.evaluate(expr.callee);
+    if (callee == null && expr.optional) return undefined;
     if (typeof callee !== "function") {
       this.error(`${callee} is not a function`);
     }
