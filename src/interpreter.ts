@@ -6,7 +6,6 @@ import { TokenType } from "./types/token";
 
 export class Interpreter implements Expr.ExprVisitor<any> {
   public scope = new Scope();
-  public errors: string[] = [];
   private scanner = new Scanner();
   private parser = new Parser();
 

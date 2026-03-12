@@ -13,7 +13,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private scanner = new Scanner();
   private parser = new ExpressionParser();
   private interpreter = new Interpreter();
-  public errors: string[] = [];
   private registry: ComponentRegistry = {};
 
   constructor(options?: { registry: ComponentRegistry }) {
@@ -87,13 +86,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     container.innerHTML = "";
     this.bindMethods(entity);
     this.interpreter.scope.init(entity);
-    this.errors = [];
-    try {
-      this.createSiblings(nodes, container);
-    } catch (e: any) {
-      this.errors.push(e.message || `${e}`);
-      throw e; // Re-throw to satisfy tests and robust error handling
-    }
+    this.createSiblings(nodes, container);
     return container;
   }
 
