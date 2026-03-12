@@ -471,6 +471,28 @@ describe("Transpiler", () => {
       expect(container.childNodes).toHaveLength(1);
       expect(container.firstChild!.nodeType).toBe(Node.TEXT_NODE);
     });
+
+    it("renders multiple children without a wrapper when used with @if", () => {
+      const source = '<void @if="show"><p>A</p><p>B</p></void>';
+      const container = transpile(source, { show: true });
+      expect(container.querySelectorAll("p")).toHaveLength(2);
+      expect(container.querySelector("void")).toBeNull();
+    });
+
+    it("renders nothing with @if false and no wrapper element", () => {
+      const source = '<void @if="show"><p>A</p><p>B</p></void>';
+      const container = transpile(source, { show: false });
+      expect(container.querySelectorAll("p")).toHaveLength(0);
+      expect(container.querySelector("void")).toBeNull();
+    });
+
+    it("renders multiple children per iteration with @each", () => {
+      const source = '<void @each="item of list"><dt>{{item.k}}</dt><dd>{{item.v}}</dd></void>';
+      const container = transpile(source, { list: [{ k: "a", v: 1 }, { k: "b", v: 2 }] });
+      expect(container.querySelectorAll("dt")).toHaveLength(2);
+      expect(container.querySelectorAll("dd")).toHaveLength(2);
+      expect(container.querySelector("void")).toBeNull();
+    });
   });
 
   describe("components", () => {
