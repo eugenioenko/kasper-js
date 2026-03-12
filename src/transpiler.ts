@@ -488,7 +488,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private createEventListener(element: Node, attr: KNode.Attribute): void {
-    const type = attr.name.split(":")[1];
+    const [eventName, ...modifiers] = attr.name.split(":")[1].split(".");
     const listenerScope = new Scope(this.interpreter.scope);
     const instance = this.interpreter.scope.get("$instance");
 
@@ -496,8 +496,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (instance && instance.$abortController) {
       options.signal = instance.$abortController.signal;
     }
+    if (modifiers.includes("once"))    options.once    = true;
+    if (modifiers.includes("passive")) options.passive = true;
+    if (modifiers.includes("capture")) options.capture = true;
 
-    element.addEventListener(type, (event) => {
+    element.addEventListener(eventName, (event) => {
+      if (modifiers.includes("prevent")) event.preventDefault();
+      if (modifiers.includes("stop"))    event.stopPropagation();
       listenerScope.set("$event", event);
       this.execute(attr.value, listenerScope);
     }, options);

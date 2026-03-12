@@ -640,6 +640,47 @@ describe("Transpiler", () => {
       const container = transpile('<button @on:click="handler()"></button>', { handler });
       expect(container.querySelector("button")!.hasAttribute("@on:click")).toBe(false);
     });
+
+    describe("modifiers", () => {
+      it(".prevent calls preventDefault", () => {
+        let prevented = false;
+        const container = transpile('<button @on:click.prevent="handler()"></button>', { handler: () => {} });
+        container.querySelector("button")!.addEventListener("click", (e) => {
+          prevented = e.defaultPrevented;
+        });
+        container.querySelector("button")!.click();
+        expect(prevented).toBe(true);
+      });
+
+      it(".stop calls stopPropagation", () => {
+        let bubbled = false;
+        const container = transpile('<div><button @on:click.stop="handler()"></button></div>', { handler: () => {} });
+        container.querySelector("div")!.addEventListener("click", () => { bubbled = true; });
+        container.querySelector("button")!.click();
+        expect(bubbled).toBe(false);
+      });
+
+      it(".once fires the handler only once", () => {
+        const handler = vi.fn();
+        const container = transpile('<button @on:click.once="handler()"></button>', { handler });
+        const btn = container.querySelector("button")!;
+        btn.click();
+        btn.click();
+        btn.click();
+        expect(handler).toHaveBeenCalledOnce();
+      });
+
+      it("multiple modifiers can be combined", () => {
+        let prevented = false;
+        let bubbled = false;
+        const container = transpile('<div><button @on:click.prevent.stop="handler()"></button></div>', { handler: () => {} });
+        container.querySelector("div")!.addEventListener("click", () => { bubbled = true; });
+        container.querySelector("button")!.addEventListener("click", (e) => { prevented = e.defaultPrevented; });
+        container.querySelector("button")!.click();
+        expect(prevented).toBe(true);
+        expect(bubbled).toBe(false);
+      });
+    });
   });
 });
 
