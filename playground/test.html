@@ -1,0 +1,80 @@
+<html>
+
+<head>
+  <script src="../dist/kasper.js"></script>
+</head>
+
+<body>
+
+  <!-- Badge: a component with a slot and a @: arg -->
+  <template id="badge-tpl">
+    <span @class="`badge badge-${color}`">
+      <slot></slot>
+    </span>
+  </template>
+
+  <template id="app-tpl">
+    <!-- @let: local variable -->
+    <div @let="title = label ?? 'Untitled'">
+
+      <h2>{{title}} — {{typeof count.value}} signal</h2>
+
+      <!-- @if / @elseif / @else -->
+      <div @if="count.value === 0">empty</div>
+      <div @elseif="count.value < 5">getting started</div>
+      <div @else>going strong</div>
+
+      <!-- @each with index, nested component with @: and slot -->
+      <div @each="item with i of items.value">
+        <badge @:color="i % 2 === 0 ? 'blue' : 'gray'">
+          {{i + 1}}. {{item}} {{item === highlight.value ? '★' : ''}}
+        </badge>
+      </div>
+
+      <!-- @while: render N dots -->
+      <div @while="count.value > dot++">●</div>
+
+      <!-- @on events -->
+      <button @on:click="add()">add</button>
+      <button @on:click="count.value--" @class="count.value === 0 ? 'disabled' : ''">-</button>
+      <input @on:input="highlight.value = $event.target.value" />
+
+      <!-- computed and optional chaining -->
+      <p>double: {{double.value}} · first: {{items.value?.[0] ?? 'none'}}</p>
+    </div>
+  </template>
+
+  <kasper-app></kasper-app>
+
+  <script>
+    class App extends kasper.Component {
+      label = 'Items';
+      count = kasper.signal(0);
+      items = kasper.signal([]);
+      highlight = kasper.signal('');
+      double = kasper.computed(() => this.count.value * 2);
+
+      $onInit() {
+        kasper.effect(() => {
+          document.title = `count: ${this.count.value}`;
+        });
+      }
+
+      add() {
+        this.items.value = [...this.items.value, `item ${this.count.value}`];
+        this.count.value++;
+      }
+    }
+
+    kasper.App({
+      root: 'body',
+      entry: 'kasper-app',
+      registry: {
+        'badge': { selector: '#badge-tpl', component: kasper.Component, nodes: [] },
+        'kasper-app': { selector: '#app-tpl', component: App, nodes: [] },
+      }
+    });
+  </script>
+</body>
+
+</html>
