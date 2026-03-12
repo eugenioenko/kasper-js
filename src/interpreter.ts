@@ -13,6 +13,29 @@ export class Interpreter implements Expr.ExprVisitor<any> {
     return (expr.result = expr.accept(this));
   }
 
+  public visitPipelineExpr(expr: Expr.Pipeline): any {
+    const value = this.evaluate(expr.left);
+
+    if (expr.right instanceof Expr.Call) {
+      const callee = this.evaluate(expr.right.callee);
+      const args = [value];
+      for (const arg of expr.right.args) {
+        if (arg instanceof Expr.Spread) {
+          args.push(...this.evaluate((arg as Expr.Spread).value));
+        } else {
+          args.push(this.evaluate(arg));
+        }
+      }
+      if (expr.right.callee instanceof Expr.Get) {
+        return callee.apply(expr.right.callee.entity.result, args);
+      }
+      return callee(...args);
+    }
+
+    const fn = this.evaluate(expr.right);
+    return fn(value);
+  }
+
   public visitArrowFunctionExpr(expr: Expr.ArrowFunction): any {
     const capturedScope = this.scope;
     return (...args: any[]) => {

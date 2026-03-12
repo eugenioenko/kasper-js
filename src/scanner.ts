@@ -216,7 +216,12 @@ export class Scanner {
         );
         break;
       case "|":
-        this.addToken(this.match("|") ? TokenType.Or : TokenType.Pipe, null);
+        this.addToken(
+          this.match("|") ? TokenType.Or :
+          this.match(">") ? TokenType.Pipeline :
+          TokenType.Pipe,
+          null
+        );
         break;
       case "&":
         this.addToken(

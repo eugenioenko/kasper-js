@@ -500,6 +500,32 @@ describe("Interpreter", () => {
     });
   });
 
+  describe("|> pipeline", () => {
+    it("value |> fn calls fn with value", () => {
+      expect(evaluate("name |> upper", { name: "kasper", upper: (s: string) => s.toUpperCase() })).toBe("KASPER");
+    });
+
+    it("value |> fn(arg) inserts value as first arg", () => {
+      expect(evaluate("name |> padStart(10)", { name: "hi", padStart: (s: string, n: number) => s.padStart(n) })).toBe("        hi");
+    });
+
+    it("chains multiple pipes", () => {
+      const trim = (s: string) => s.trim();
+      const upper = (s: string) => s.toUpperCase();
+      expect(evaluate("name |> trim |> upper", { name: "  kasper  ", trim, upper })).toBe("KASPER");
+    });
+
+    it("works with native array methods", () => {
+      expect(evaluate("items |> filter(x => x > 2)", { items: [1, 2, 3, 4], filter: (arr: number[], fn: (x: number) => boolean) => arr.filter(fn) })).toEqual([3, 4]);
+    });
+
+    it("pipe result feeds into next pipe arg", () => {
+      const double = (n: number) => n * 2;
+      const add = (n: number, m: number) => n + m;
+      expect(evaluate("5 |> double |> add(3)", { double, add })).toBe(13);
+    });
+  });
+
   describe("instanceof", () => {
     it("returns true for matching class", () => {
       expect(evaluate("x instanceof Date", { x: new Date() })).toBe(true);

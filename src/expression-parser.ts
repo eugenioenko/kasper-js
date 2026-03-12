@@ -111,7 +111,7 @@ export class ExpressionParser {
   }
 
   private assignment(): Expr.Expr {
-    const expr: Expr.Expr = this.ternary();
+    const expr: Expr.Expr = this.pipeline();
     if (
       this.match(
         TokenType.Equal,
@@ -146,6 +146,15 @@ export class ExpressionParser {
         return new Expr.Set(expr.entity, expr.key, value, expr.line);
       }
       this.error(operator, `Invalid l-value, is not an assigning target.`);
+    }
+    return expr;
+  }
+
+  private pipeline(): Expr.Expr {
+    let expr = this.ternary();
+    while (this.match(TokenType.Pipeline)) {
+      const right = this.ternary();
+      expr = new Expr.Pipeline(expr, right, expr.line);
     }
     return expr;
   }

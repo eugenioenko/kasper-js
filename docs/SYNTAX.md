@@ -22,6 +22,9 @@ Kasper templates are valid HTML extended with `{{ }}` interpolation and `@`-pref
    - [@: (argument passing)](#-argument-passing) — Kasper's convention for passing values to child components
    - [Slots](#slots)
 5. [Expression Language](#expression-language)
+   - [Pipeline operator](#pipeline-operator)
+   - [Spread](#spread)
+   - [Arrow functions](#arrow-functions)
 6. [Signals](#signals)
 7. [Component Class](#component-class)
 8. [App Bootstrap](#app-bootstrap)
@@ -432,10 +435,12 @@ Template literals use `` ` `` and support `${ }` interpolation of any expression
 | Logical | `&&` `\|\|` `!` |
 | Ternary | `cond ? a : b` |
 | Null coalescing | `??` |
-| Optional chaining | `?.` |
-| Bitwise | `\|` `^` |
+| Optional chaining | `?.` `?.[key]` `?.()` |
+| Bitwise | `\|` `^` `~` `<<` `>>` |
+| Type | `instanceof` `in` `typeof` |
 | Prefix | `++x` `--x` `-x` |
 | Postfix | `x++` `x--` |
+| Pipeline | `\|>` |
 
 ### Assignment operators
 
@@ -486,6 +491,56 @@ typeof x            // returns type string
 void expr           // evaluates expr, discards result (returns "")
 debug expr          // evaluates expr, console.logs it, returns ""
 ```
+
+### Pipeline operator
+
+**Syntax:** `value |> fn` or `value |> fn(arg)`
+
+Passes the left-hand value as the **first argument** to the right-hand function. Chains naturally left to right.
+
+```js
+name |> uppercase                  // uppercase(name)
+price |> formatCurrency('USD')     // formatCurrency(price, 'USD')
+items |> filter(x => x.active) |> slice(0, 10)
+score |> Math.round |> toPercent
+```
+
+Pipeline functions are just regular functions in component scope or `window` — no registry needed:
+
+```js
+class MyComp extends Component {
+  items = signal([]);
+
+  uppercase(s) { return s.toUpperCase(); }
+  truncate(s, len) { return s.slice(0, len); }
+}
+```
+
+```html
+<p>{{ title |> uppercase }}</p>
+<p>{{ description |> truncate(100) }}</p>
+```
+
+---
+
+### Spread
+
+```js
+[...arr, 4]          // array spread
+{ ...obj, key: val } // object spread
+fn(...args)          // call spread
+```
+
+### Arrow functions
+
+```js
+items.filter(x => x.active)
+items.filter((x) => x.active)
+items.reduce((acc, x) => acc + x, 0)
+() => defaultValue
+```
+
+---
 
 ### Scope
 

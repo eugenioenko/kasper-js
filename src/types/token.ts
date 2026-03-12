@@ -61,6 +61,7 @@ export enum TokenType {
   // One Or Two Character Tokens (bitwise shifts)
   LeftShift,
   RightShift,
+  Pipeline,
   Tilde,
 
   // Keywords
