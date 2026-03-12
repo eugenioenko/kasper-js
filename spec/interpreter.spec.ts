@@ -500,6 +500,40 @@ describe("Interpreter", () => {
     });
   });
 
+  describe("instanceof", () => {
+    it("returns true for matching class", () => {
+      expect(evaluate("x instanceof Date", { x: new Date() })).toBe(true);
+    });
+
+    it("returns false for non-matching class", () => {
+      expect(evaluate("x instanceof Date", { x: 42 })).toBe(false);
+    });
+  });
+
+  describe("in", () => {
+    it("returns true when key exists in object", () => {
+      expect(evaluate("'name' in obj", { obj: { name: "test" } })).toBe(true);
+    });
+
+    it("returns false when key is missing from object", () => {
+      expect(evaluate("'age' in obj", { obj: { name: "test" } })).toBe(false);
+    });
+  });
+
+  describe("bitwise", () => {
+    it("~ bitwise NOT", () => {
+      expect(evaluate("~5", {})).toBe(-6);
+    });
+
+    it("<< left shift", () => {
+      expect(evaluate("1 << 3", {})).toBe(8);
+    });
+
+    it(">> right shift", () => {
+      expect(evaluate("16 >> 2", {})).toBe(4);
+    });
+  });
+
   describe("arrow functions", () => {
     it("single param: x => expr", () => {
       expect(evaluate("items.map(x => x * 2)", { items: [1, 2, 3] })).toEqual([2, 4, 6]);

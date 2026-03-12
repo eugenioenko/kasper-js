@@ -58,11 +58,17 @@ export enum TokenType {
   String,
   Number,
 
+  // One Or Two Character Tokens (bitwise shifts)
+  LeftShift,
+  RightShift,
+  Tilde,
+
   // Keywords
   And,
   Const,
   Debug,
   False,
+  In,
   Instanceof,
   New,
   Null,

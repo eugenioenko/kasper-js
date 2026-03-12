@@ -188,6 +188,9 @@ export class Scanner {
       case ";":
         this.addToken(TokenType.Semicolon, null);
         break;
+      case "~":
+        this.addToken(TokenType.Tilde, null);
+        break;
       case "^":
         this.addToken(TokenType.Caret, null);
         break;
@@ -223,6 +226,7 @@ export class Scanner {
         break;
       case ">":
         this.addToken(
+          this.match(">") ? TokenType.RightShift :
           this.match("=") ? TokenType.GreaterEqual : TokenType.Greater,
           null
         );
@@ -280,6 +284,7 @@ export class Scanner {
         break;
       case "<":
         this.addToken(
+          this.match("<") ? TokenType.LeftShift :
           this.match("=")
             ? this.match(">")
               ? TokenType.LessEqualGreater

@@ -191,7 +191,7 @@ export class ExpressionParser {
   }
 
   private equality(): Expr.Expr {
-    let expr: Expr.Expr = this.addition();
+    let expr: Expr.Expr = this.shift();
     while (
       this.match(
         TokenType.BangEqual,
@@ -201,9 +201,21 @@ export class ExpressionParser {
         TokenType.Greater,
         TokenType.GreaterEqual,
         TokenType.Less,
-        TokenType.LessEqual
+        TokenType.LessEqual,
+        TokenType.Instanceof,
+        TokenType.In,
       )
     ) {
+      const operator: Token = this.previous();
+      const right: Expr.Expr = this.shift();
+      expr = new Expr.Binary(expr, operator, right, operator.line);
+    }
+    return expr;
+  }
+
+  private shift(): Expr.Expr {
+    let expr: Expr.Expr = this.addition();
+    while (this.match(TokenType.LeftShift, TokenType.RightShift)) {
       const operator: Token = this.previous();
       const right: Expr.Expr = this.addition();
       expr = new Expr.Binary(expr, operator, right, operator.line);
@@ -255,6 +267,7 @@ export class ExpressionParser {
       this.match(
         TokenType.Minus,
         TokenType.Bang,
+        TokenType.Tilde,
         TokenType.Dollar,
         TokenType.PlusPlus,
         TokenType.MinusMinus

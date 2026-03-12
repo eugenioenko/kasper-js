@@ -159,6 +159,14 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       case TokenType.BangEqual:
       case TokenType.BangEqualEqual:
         return left !== right;
+      case TokenType.Instanceof:
+        return left instanceof right;
+      case TokenType.In:
+        return left in right;
+      case TokenType.LeftShift:
+        return left << right;
+      case TokenType.RightShift:
+        return left >> right;
       default:
         this.error("Unknown binary operator " + expr.operator);
         return null; // unreachable
@@ -210,6 +218,8 @@ export class Interpreter implements Expr.ExprVisitor<any> {
         return -right;
       case TokenType.Bang:
         return !right;
+      case TokenType.Tilde:
+        return ~right;
       case TokenType.PlusPlus:
       case TokenType.MinusMinus: {
         const newValue =
