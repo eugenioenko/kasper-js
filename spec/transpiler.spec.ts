@@ -398,6 +398,77 @@ describe("Transpiler", () => {
     });
   });
 
+  describe("@key keyed reconciliation", () => {
+    it("renders the same as unkeyed initially", () => {
+      const list = signal([{ id: 1, name: "a" }, { id: 2, name: "b" }]);
+      const container = transpile('<li @each="item of list.value" @key="item.id">{{item.name}}</li>', { list });
+      const items = container.querySelectorAll("li");
+      expect(items).toHaveLength(2);
+      expect(items[0].textContent).toBe("a");
+      expect(items[1].textContent).toBe("b");
+    });
+
+    it("reuses existing DOM nodes for matching keys", async () => {
+      const list = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+      const container = transpile('<li @each="item of list.value" @key="item.id">x</li>', { list });
+      const [li1, li2, li3] = Array.from(container.querySelectorAll("li"));
+
+      list.value = [{ id: 1 }, { id: 3 }]; // remove id:2
+      await Promise.resolve();
+
+      const remaining = container.querySelectorAll("li");
+      expect(remaining).toHaveLength(2);
+      expect(remaining[0]).toBe(li1); // reused
+      expect(remaining[1]).toBe(li3); // reused
+    });
+
+    it("reorders DOM nodes without recreating them", async () => {
+      const list = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+      const container = transpile('<li @each="item of list.value" @key="item.id">x</li>', { list });
+      const [li1, li2, li3] = Array.from(container.querySelectorAll("li"));
+
+      list.value = [{ id: 3 }, { id: 1 }, { id: 2 }];
+      await Promise.resolve();
+
+      const reordered = container.querySelectorAll("li");
+      expect(reordered[0]).toBe(li3);
+      expect(reordered[1]).toBe(li1);
+      expect(reordered[2]).toBe(li2);
+    });
+
+    it("calls $onDestroy only for removed keys", async () => {
+      const destroyed: number[] = [];
+      class Item extends Component {
+        id = 0;
+        $onInit() { this.id = this.args.id; }
+        $onDestroy() { destroyed.push(this.id); }
+      }
+      const list = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+      const parser = new TemplateParser();
+      const registry = {
+        "x-item": { selector: "", component: Item as any, template: null, nodes: parser.parse("<span></span>") },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = makeContainer();
+      transpiler.transpile(
+        parser.parse('<x-item @each="item of list.value" @key="item.id" @:id="item.id"></x-item>'),
+        { list },
+        container
+      );
+
+      list.value = [{ id: 1 }, { id: 3 }];
+      await Promise.resolve();
+
+      expect(destroyed).toEqual([2]);
+    });
+
+    it("does not set @key as a DOM attribute", () => {
+      const list = [{ id: 1 }];
+      const container = transpile('<li @each="item of list" @key="item.id">x</li>', { list });
+      expect(container.querySelector("li")!.hasAttribute("@key")).toBe(false);
+    });
+  });
+
   describe("@while directive", () => {
     it("renders elements while condition is true", () => {
       const container = transpile('<div @while="count-- > 0"></div>', { count: 3 });

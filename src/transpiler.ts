@@ -194,6 +194,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private doEach(each: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const keyAttr = this.findAttr(node, ["@key"]);
+    if (keyAttr) {
+      this.doEachKeyed(each, node, parent, keyAttr);
+    } else {
+      this.doEachUnkeyed(each, node, parent);
+    }
+  }
+
+  private doEachUnkeyed(each: KNode.Attribute, node: KNode.Element, parent: Node) {
     const boundary = new Boundary(parent, "each");
     const originalScope = this.interpreter.scope;
 
@@ -201,25 +210,73 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       boundary.nodes().forEach((n) => this.destroyNode(n));
       boundary.clear();
 
-      const tokens = this.scanner.scan((each as KNode.Attribute).value);
+      const tokens = this.scanner.scan(each.value);
       const [name, key, iterable] = this.interpreter.evaluate(
         this.parser.foreach(tokens)
       );
 
       let index = 0;
       for (const item of iterable) {
-        // Create a new scope that inherits from the current scope
-        // and provides the item and index
         const scopeValues: any = { [name]: item };
-        if (key) {
-          scopeValues[key] = index;
-        }
+        if (key) scopeValues[key] = index;
 
-        const itemScope = new Scope(originalScope, scopeValues);
-        this.interpreter.scope = itemScope;
+        this.interpreter.scope = new Scope(originalScope, scopeValues);
         this.createElement(node, boundary as any);
         index += 1;
       }
+      this.interpreter.scope = originalScope;
+    });
+
+    this.trackEffect(boundary, stop);
+  }
+
+  private doEachKeyed(each: KNode.Attribute, node: KNode.Element, parent: Node, keyAttr: KNode.Attribute) {
+    const boundary = new Boundary(parent, "each");
+    const originalScope = this.interpreter.scope;
+    const keyedNodes = new Map<any, Node>();
+
+    const stop = effect(() => {
+      const tokens = this.scanner.scan(each.value);
+      const [name, indexKey, iterable] = this.interpreter.evaluate(
+        this.parser.foreach(tokens)
+      );
+
+      // Compute new items and their keys
+      const newItems: Array<{ item: any; idx: number; key: any }> = [];
+      let index = 0;
+      for (const item of iterable) {
+        const scopeValues: any = { [name]: item };
+        if (indexKey) scopeValues[indexKey] = index;
+        this.interpreter.scope = new Scope(originalScope, scopeValues);
+        const key = this.execute(keyAttr.value);
+        newItems.push({ item, idx: index, key });
+        index++;
+      }
+
+      // Destroy nodes whose keys are no longer present
+      const newKeySet = new Set(newItems.map((i) => i.key));
+      for (const [key, domNode] of keyedNodes) {
+        if (!newKeySet.has(key)) {
+          this.destroyNode(domNode);
+          domNode.parentNode?.removeChild(domNode);
+          keyedNodes.delete(key);
+        }
+      }
+
+      // Insert/reuse nodes in new order
+      for (const { item, idx, key } of newItems) {
+        const scopeValues: any = { [name]: item };
+        if (indexKey) scopeValues[indexKey] = idx;
+        this.interpreter.scope = new Scope(originalScope, scopeValues);
+
+        if (keyedNodes.has(key)) {
+          boundary.insert(keyedNodes.get(key)!);
+        } else {
+          const created = this.createElement(node, boundary as any);
+          if (created) keyedNodes.set(key, created);
+        }
+      }
+
       this.interpreter.scope = originalScope;
     });
 
@@ -405,7 +462,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const name = (attr as KNode.Attribute).name;
           return (
             name.startsWith("@") &&
-            !["@if", "@elseif", "@else", "@each", "@while", "@let"].includes(
+            !["@if", "@elseif", "@else", "@each", "@while", "@let", "@key"].includes(
               name
             ) &&
             !name.startsWith("@on:") &&

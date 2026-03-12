@@ -89,6 +89,32 @@ All directives are placed as attributes on HTML elements. They use the `@` prefi
 
 The list re-renders reactively when the source signal changes. `$onDestroy` is called on any components inside the list before they are removed.
 
+### @key — keyed reconciliation
+
+By default `@each` destroys and recreates all DOM nodes on every re-run. Adding `@key` enables keyed reconciliation — nodes whose key matches an existing node are reused and moved rather than recreated.
+
+```html
+<li @each="item of items.value" @key="item.id">{{item.name}}</li>
+```
+
+**Syntax:** `@key="<expr>"` — expression is evaluated in the item's scope.
+
+Benefits:
+- DOM nodes are reused on reorder (no destroy/recreate)
+- `$onDestroy` is only called for genuinely removed items
+- Components inside `@each` preserve their internal state across list updates
+
+```html
+<!-- Components keep their state when the list is reordered -->
+<todo-item
+  @each="todo of todos.value"
+  @key="todo.id"
+  @:todo="todo"
+></todo-item>
+```
+
+> **Note:** Keyed reconciliation does not automatically propagate new item data to existing nodes when items are plain objects — only the DOM position updates. For per-item reactivity, use signals as item values.
+
 ```html
 <!-- Iterating a signal -->
 <div @each="user of users.value">
@@ -143,7 +169,7 @@ Evaluates the expression, binds the result to `name` in the local scope, and mak
 <form @on:submit="handleSubmit($event)">...</form>
 ```
 
-**Syntax:** `@on:<eventName>="<expr>"`
+**Syntax:** `@on:<eventName>[.modifier]*="<expr>"`
 
 Attaches a DOM event listener. Inside the handler expression:
 
@@ -156,6 +182,25 @@ Listeners are automatically removed when the component is destroyed (via `AbortC
 <!-- Any DOM event name works -->
 <div @on:mouseover="highlight()" @on:mouseleave="reset()"></div>
 <input @on:keydown="onKey($event)" />
+```
+
+### Event modifiers
+
+Modifiers are appended to the event name with a dot. Multiple modifiers can be combined.
+
+| Modifier | Effect |
+|---|---|
+| `.prevent` | calls `event.preventDefault()` |
+| `.stop` | calls `event.stopPropagation()` |
+| `.once` | listener fires at most once then is removed |
+| `.passive` | marks listener as passive (improves scroll performance) |
+| `.capture` | listener fires during capture phase instead of bubble |
+
+```html
+<form @on:submit.prevent="save()">...</form>
+<button @on:click.stop="toggle()">...</button>
+<button @on:click.once="init()">...</button>
+<button @on:click.prevent.stop="handle()">...</button>
 ```
 
 ---
