@@ -500,6 +500,28 @@ describe("Interpreter", () => {
     });
   });
 
+  describe("arrow functions", () => {
+    it("single param: x => expr", () => {
+      expect(evaluate("items.map(x => x * 2)", { items: [1, 2, 3] })).toEqual([2, 4, 6]);
+    });
+
+    it("no params: () => expr", () => {
+      expect(evaluate("fn()", { fn: evaluate("() => 42", {}) })).toBe(42);
+    });
+
+    it("multiple params: (a, b) => expr", () => {
+      expect(evaluate("items.reduce((acc, x) => acc + x, 0)", { items: [1, 2, 3] })).toBe(6);
+    });
+
+    it("captures outer scope", () => {
+      expect(evaluate("items.filter(x => x > threshold)", { items: [1, 2, 3, 4], threshold: 2 })).toEqual([3, 4]);
+    });
+
+    it("works with array methods chain", () => {
+      expect(evaluate("items.filter(x => x > 1).map(x => x * 10)", { items: [1, 2, 3] })).toEqual([20, 30]);
+    });
+  });
+
   describe("spread operator", () => {
     it("spreads array into array literal", () => {
       expect(evaluate("[...a, 4]", { a: [1, 2, 3] })).toEqual([1, 2, 3, 4]);

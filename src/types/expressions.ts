@@ -10,6 +10,7 @@ export abstract class Expr {
 
 // tslint:disable-next-line
 export interface ExprVisitor<R> {
+    visitArrowFunctionExpr(expr: ArrowFunction): R;
     visitAssignExpr(expr: Assign): R;
     visitBinaryExpr(expr: Binary): R;
     visitCallExpr(expr: Call): R;
@@ -33,6 +34,26 @@ export interface ExprVisitor<R> {
     visitUnaryExpr(expr: Unary): R;
     visitVariableExpr(expr: Variable): R;
     visitVoidExpr(expr: Void): R;
+}
+
+export class ArrowFunction extends Expr {
+    public params: Token[];
+    public body: Expr;
+
+    constructor(params: Token[], body: Expr, line: number) {
+        super();
+        this.params = params;
+        this.body = body;
+        this.line = line;
+    }
+
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitArrowFunctionExpr(this);
+  }
+
+  public toString(): string {
+      return 'Expr.ArrowFunction';
+  }
 }
 
 export class Assign extends Expr {

@@ -13,6 +13,22 @@ export class Interpreter implements Expr.ExprVisitor<any> {
     return (expr.result = expr.accept(this));
   }
 
+  public visitArrowFunctionExpr(expr: Expr.ArrowFunction): any {
+    const capturedScope = this.scope;
+    return (...args: any[]) => {
+      const prev = this.scope;
+      this.scope = new Scope(capturedScope);
+      for (let i = 0; i < expr.params.length; i++) {
+        this.scope.set(expr.params[i].lexeme, args[i]);
+      }
+      try {
+        return this.evaluate(expr.body);
+      } finally {
+        this.scope = prev;
+      }
+    };
+  }
+
   public error(message: string): void {
     throw new Error(`Runtime Error => ${message}`);
   }
@@ -237,12 +253,8 @@ export class Interpreter implements Expr.ExprVisitor<any> {
         args.push(this.evaluate(argument));
       }
     }
-    // execute function
-    if (
-      expr.callee instanceof Expr.Get &&
-      (expr.callee.entity instanceof Expr.Variable ||
-        expr.callee.entity instanceof Expr.Grouping)
-    ) {
+    // execute function — preserve `this` for method calls
+    if (expr.callee instanceof Expr.Get) {
       return callee.apply(expr.callee.entity.result, args);
     } else {
       return callee(...args);

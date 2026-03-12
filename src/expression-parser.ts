@@ -317,6 +317,27 @@ export class ExpressionParser {
     return expr;
   }
 
+  private tokenAt(offset: number): TokenType {
+    return this.tokens[this.current + offset]?.type;
+  }
+
+  private isArrowParams(): boolean {
+    let i = this.current + 1; // skip (
+    if (this.tokens[i]?.type === TokenType.RightParen) {
+      return this.tokens[i + 1]?.type === TokenType.Arrow;
+    }
+    while (i < this.tokens.length) {
+      if (this.tokens[i]?.type !== TokenType.Identifier) return false;
+      i++;
+      if (this.tokens[i]?.type === TokenType.RightParen) {
+        return this.tokens[i + 1]?.type === TokenType.Arrow;
+      }
+      if (this.tokens[i]?.type !== TokenType.Comma) return false;
+      i++;
+    }
+    return false;
+  }
+
   private finishCall(callee: Expr.Expr, paren: Token, optional: boolean): Expr.Expr {
     const args: Expr.Expr[] = [];
     if (!this.check(TokenType.RightParen)) {
@@ -371,9 +392,28 @@ export class ExpressionParser {
     if (this.match(TokenType.Template)) {
       return new Expr.Template(this.previous().literal, this.previous().line);
     }
+    if (this.check(TokenType.Identifier) && this.tokenAt(1) === TokenType.Arrow) {
+      const param = this.advance();
+      this.advance(); // consume =>
+      const body = this.expression();
+      return new Expr.ArrowFunction([param], body, param.line);
+    }
     if (this.match(TokenType.Identifier)) {
       const identifier = this.previous();
       return new Expr.Variable(identifier, identifier.line);
+    }
+    if (this.check(TokenType.LeftParen) && this.isArrowParams()) {
+      this.advance(); // consume (
+      const params: Token[] = [];
+      if (!this.check(TokenType.RightParen)) {
+        do {
+          params.push(this.consume(TokenType.Identifier, "Expected parameter name"));
+        } while (this.match(TokenType.Comma));
+      }
+      this.consume(TokenType.RightParen, `Expected ")"`);
+      this.consume(TokenType.Arrow, `Expected "=>"`);
+      const body = this.expression();
+      return new Expr.ArrowFunction(params, body, this.previous().line);
     }
     if (this.match(TokenType.LeftParen)) {
       const expr: Expr.Expr = this.expression();
