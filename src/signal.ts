@@ -3,9 +3,12 @@ type Listener = () => void;
 let activeEffect: { fn: Listener; deps: Set<any> } | null = null;
 const effectStack: any[] = [];
 
+type Watcher<T> = (newValue: T, oldValue: T) => void;
+
 export class Signal<T> {
   private _value: T;
   private subscribers = new Set<Listener>();
+  private watchers = new Set<Watcher<T>>();
 
   constructor(initialValue: T) {
     this._value = initialValue;
@@ -21,6 +24,7 @@ export class Signal<T> {
 
   set value(newValue: T) {
     if (this._value !== newValue) {
+      const oldValue = this._value;
       this._value = newValue;
       const subs = Array.from(this.subscribers);
       for (const sub of subs) {
@@ -30,7 +34,19 @@ export class Signal<T> {
           console.error("Effect error:", e);
         }
       }
+      for (const watcher of this.watchers) {
+        try {
+          watcher(newValue, oldValue);
+        } catch (e) {
+          console.error("Watcher error:", e);
+        }
+      }
     }
+  }
+
+  onChange(fn: Watcher<T>): () => void {
+    this.watchers.add(fn);
+    return () => this.watchers.delete(fn);
   }
 
   unsubscribe(fn: Listener) {

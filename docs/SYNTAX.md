@@ -502,53 +502,16 @@ Unresolved names fall through to `window` — so `Math`, `Date`, `JSON`, `consol
 
 ## Signals
 
-Signals are the reactive primitive. Reading `.value` inside an effect (including all directive expressions) automatically subscribes that effect to future changes.
+Signals are the reactive primitive. All `{{ }}` bindings and directive expressions automatically track the signals they read — no manual subscription needed.
 
 ```js
 const count = kasper.signal(0);
-
-count.value        // read — subscribes current effect
+count.value        // read — subscribes the current effect
 count.value = 5    // write — notifies all subscribers
 count.peek()       // read without subscribing
 ```
 
-### computed
-
-```js
-const double = kasper.computed(() => count.value * 2);
-// double.value is always count.value * 2
-```
-
-### effect
-
-```js
-const stop = kasper.effect(() => {
-  console.log("count is", count.value);
-});
-
-stop(); // unsubscribe
-```
-
-### In components
-
-```js
-class Counter extends Component {
-  count = kasper.signal(0);
-  double = kasper.computed(() => this.count.value * 2);
-
-  onInit() {
-    kasper.effect(() => {
-      console.log("changed:", this.count.value);
-    });
-  }
-
-  increment() {
-    this.count.value++;
-  }
-}
-```
-
-All `{{ }}` bindings and directive expressions in the template automatically track signals — no manual subscription needed.
+For the full signals API — `signal`, `computed`, `effect`, `onChange` — see [SIGNALS.md](./SIGNALS.md).
 
 ---
 

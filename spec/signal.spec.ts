@@ -118,4 +118,41 @@ describe("Signals", () => {
     s.value = "same";
     expect(runs).toBe(1);
   });
+
+  describe("onChange", () => {
+    it("calls the watcher with new and old values on change", () => {
+      const s = signal(1);
+      const calls: [number, number][] = [];
+      s.onChange((n, o) => calls.push([n, o]));
+      s.value = 2;
+      s.value = 3;
+      expect(calls).toEqual([[2, 1], [3, 2]]);
+    });
+
+    it("does not fire when value is set to the same value", () => {
+      const s = signal("a");
+      const spy = vi.fn();
+      s.onChange(spy);
+      s.value = "a";
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("does not fire immediately — only on subsequent changes", () => {
+      const s = signal(42);
+      const spy = vi.fn();
+      s.onChange(spy);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("stop function removes the watcher", () => {
+      const s = signal(0);
+      const spy = vi.fn();
+      const stop = s.onChange(spy);
+      s.value = 1;
+      expect(spy).toHaveBeenCalledTimes(1);
+      stop();
+      s.value = 2;
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
 });
