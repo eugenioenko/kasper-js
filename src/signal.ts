@@ -3,6 +3,10 @@ type Listener = () => void;
 let activeEffect: { fn: Listener; deps: Set<any> } | null = null;
 const effectStack: any[] = [];
 
+let batching = false;
+const pendingSubscribers = new Set<Listener>();
+const pendingWatchers: Array<() => void> = [];
+
 type Watcher<T> = (newValue: T, oldValue: T) => void;
 
 export class Signal<T> {
@@ -26,19 +30,15 @@ export class Signal<T> {
     if (this._value !== newValue) {
       const oldValue = this._value;
       this._value = newValue;
-      const subs = Array.from(this.subscribers);
-      for (const sub of subs) {
-        try {
-          sub();
-        } catch (e) {
-          console.error("Effect error:", e);
+      if (batching) {
+        for (const sub of this.subscribers) pendingSubscribers.add(sub);
+        for (const watcher of this.watchers) pendingWatchers.push(() => watcher(newValue, oldValue));
+      } else {
+        for (const sub of Array.from(this.subscribers)) {
+          try { sub(); } catch (e) { console.error("Effect error:", e); }
         }
-      }
-      for (const watcher of this.watchers) {
-        try {
-          watcher(newValue, oldValue);
-        } catch (e) {
-          console.error("Watcher error:", e);
+        for (const watcher of this.watchers) {
+          try { watcher(newValue, oldValue); } catch (e) { console.error("Watcher error:", e); }
         }
       }
     }
@@ -84,6 +84,24 @@ export function effect(fn: Listener) {
 
 export function signal<T>(initialValue: T): Signal<T> {
   return new Signal(initialValue);
+}
+
+export function batch(fn: () => void): void {
+  batching = true;
+  try {
+    fn();
+  } finally {
+    batching = false;
+    const subs = Array.from(pendingSubscribers);
+    pendingSubscribers.clear();
+    const watchers = pendingWatchers.splice(0);
+    for (const sub of subs) {
+      try { sub(); } catch (e) { console.error("Effect error:", e); }
+    }
+    for (const watcher of watchers) {
+      try { watcher(); } catch (e) { console.error("Watcher error:", e); }
+    }
+  }
 }
 
 export function computed<T>(fn: () => T): Signal<T> {

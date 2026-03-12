@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { signal, effect, computed } from "../src/signal";
+import { signal, effect, computed, batch } from "../src/signal";
 
 describe("Signals", () => {
   it("holds a value", () => {
@@ -117,6 +117,53 @@ describe("Signals", () => {
     expect(runs).toBe(1);
     s.value = "same";
     expect(runs).toBe(1);
+  });
+
+  describe("batch", () => {
+    it("flushes all effects once after all writes", () => {
+      const a = signal(0);
+      const b = signal(0);
+      let runs = 0;
+      effect(() => { a.value; b.value; runs++; });
+      expect(runs).toBe(1);
+
+      batch(() => {
+        a.value = 1;
+        b.value = 2;
+      });
+
+      expect(runs).toBe(2);
+      expect(a.value).toBe(1);
+      expect(b.value).toBe(2);
+    });
+
+    it("flushes onChange watchers once with final value", () => {
+      const s = signal(0);
+      const calls: [number, number][] = [];
+      s.onChange((n, o) => calls.push([n, o]));
+
+      batch(() => {
+        s.value = 1;
+        s.value = 2;
+      });
+
+      expect(calls).toEqual([[1, 0], [2, 1]]);
+    });
+
+    it("deduplicates effects triggered by multiple signals", () => {
+      const a = signal(0);
+      const b = signal(0);
+      let runs = 0;
+      effect(() => { a.value + b.value; runs++; });
+      expect(runs).toBe(1);
+
+      batch(() => {
+        a.value = 10;
+        b.value = 20;
+      });
+
+      expect(runs).toBe(2);
+    });
   });
 
   describe("onChange", () => {
