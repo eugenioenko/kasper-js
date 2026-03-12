@@ -1,3 +1,4 @@
+import { Component } from "../src/component";
 import { TemplateParser } from "../src/template-parser";
 import { Transpiler } from "../src/transpiler";
 import { Viewer } from "../src/viewer";
@@ -359,6 +360,35 @@ describe("Transpiler", () => {
       // The span is outside the each — item is not in the outer scope
       const span = container.querySelector("span")!;
       expect(span.textContent).not.toBe("a");
+    });
+
+    it("calls $onDestroy on components inside @each when list changes", async () => {
+      const destroyed: number[] = [];
+      class Item extends Component {
+        $onDestroy() { destroyed.push(1); }
+      }
+      const list = signal([1, 2, 3]);
+      const parser = new TemplateParser();
+      const itemNodes = parser.parse("<span>item</span>");
+      const registry = {
+        "x-item": { selector: "", component: Item as any, template: null, nodes: itemNodes },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = makeContainer();
+      transpiler.transpile(
+        parser.parse('<x-item @each="id of list.value"></x-item>'),
+        { list },
+        container
+      );
+
+      expect(container.querySelectorAll("x-item")).toHaveLength(3);
+      expect(destroyed).toHaveLength(0);
+
+      list.value = [4, 5];
+      await Promise.resolve();
+
+      expect(container.querySelectorAll("x-item")).toHaveLength(2);
+      expect(destroyed).toHaveLength(3);
     });
   });
 

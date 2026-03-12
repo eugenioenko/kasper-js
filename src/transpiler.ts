@@ -171,6 +171,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const boundary = new Boundary(parent, "if");
 
     const stop = this.scopedEffect(() => {
+      boundary.nodes().forEach((n) => this.destroyNode(n));
       boundary.clear();
 
       const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
@@ -204,6 +205,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const originalScope = this.interpreter.scope;
 
     const stop = effect(() => {
+      boundary.nodes().forEach((n) => this.destroyNode(n));
       boundary.clear();
 
       const tokens = this.scanner.scan((each as KNode.Attribute).value);
@@ -528,36 +530,37 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     return result;
   }
 
-  public destroy(container: Element): void {
-    const walk = (node: any) => {
-      // 1. Cleanup component instance
-      if (node.$kasperInstance) {
-        const instance = node.$kasperInstance;
-        if (instance.$onDestroy) instance.$onDestroy();
-        if (instance.$abortController) instance.$abortController.abort();
-      }
+  private destroyNode(node: any): void {
+    // 1. Cleanup component instance
+    if (node.$kasperInstance) {
+      const instance = node.$kasperInstance;
+      if (instance.$onDestroy) instance.$onDestroy();
+      if (instance.$abortController) instance.$abortController.abort();
+    }
 
-      // 2. Cleanup effects attached to the node
-      if (node.$kasperEffects) {
-        node.$kasperEffects.forEach((stop: () => void) => stop());
-        node.$kasperEffects = [];
-      }
+    // 2. Cleanup effects attached to the node
+    if (node.$kasperEffects) {
+      node.$kasperEffects.forEach((stop: () => void) => stop());
+      node.$kasperEffects = [];
+    }
 
-      // 3. Cleanup effects on attributes
-      if (node.attributes) {
-        for (let i = 0; i < node.attributes.length; i++) {
-          const attr = node.attributes[i];
-          if (attr.$kasperEffects) {
-            attr.$kasperEffects.forEach((stop: () => void) => stop());
-            attr.$kasperEffects = [];
-          }
+    // 3. Cleanup effects on attributes
+    if (node.attributes) {
+      for (let i = 0; i < node.attributes.length; i++) {
+        const attr = node.attributes[i];
+        if (attr.$kasperEffects) {
+          attr.$kasperEffects.forEach((stop: () => void) => stop());
+          attr.$kasperEffects = [];
         }
       }
+    }
 
-      // 4. Recurse
-      node.childNodes.forEach(walk);
-    };
-    container.childNodes.forEach(walk);
+    // 4. Recurse
+    node.childNodes?.forEach((child: any) => this.destroyNode(child));
+  }
+
+  public destroy(container: Element): void {
+    container.childNodes.forEach((child) => this.destroyNode(child));
   }
 
   public visitDoctypeKNode(_node: KNode.Doctype): void {

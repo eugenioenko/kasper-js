@@ -22,6 +22,16 @@ export class Boundary {
     this.end.parentNode?.insertBefore(node, this.end);
   }
 
+  public nodes(): Node[] {
+    const result: Node[] = [];
+    let current = this.start.nextSibling;
+    while (current && current !== this.end) {
+      result.push(current);
+      current = current.nextSibling;
+    }
+    return result;
+  }
+
   public get parent(): Node | null {
     return this.start.parentNode;
   }
