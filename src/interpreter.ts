@@ -72,10 +72,17 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   public visitListExpr(expr: Expr.List): any {
     const values: any[] = [];
     for (const expression of expr.value) {
-      const value = this.evaluate(expression);
-      values.push(value);
+      if (expression instanceof Expr.Spread) {
+        values.push(...this.evaluate((expression as Expr.Spread).value));
+      } else {
+        values.push(this.evaluate(expression));
+      }
     }
     return values;
+  }
+
+  public visitSpreadExpr(expr: Expr.Spread): any {
+    return this.evaluate(expr.value);
   }
 
   private templateParse(source: string): string {
@@ -224,7 +231,11 @@ export class Interpreter implements Expr.ExprVisitor<any> {
     // evaluate function arguments
     const args = [];
     for (const argument of expr.args) {
-      args.push(this.evaluate(argument));
+      if (argument instanceof Expr.Spread) {
+        args.push(...this.evaluate((argument as Expr.Spread).value));
+      } else {
+        args.push(this.evaluate(argument));
+      }
     }
     // execute function
     if (
@@ -259,9 +270,13 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   public visitDictionaryExpr(expr: Expr.Dictionary): any {
     const dict: any = {};
     for (const property of expr.properties) {
-      const key = this.evaluate((property as Expr.Set).key);
-      const value = this.evaluate((property as Expr.Set).value);
-      dict[key] = value;
+      if (property instanceof Expr.Spread) {
+        Object.assign(dict, this.evaluate((property as Expr.Spread).value));
+      } else {
+        const key = this.evaluate((property as Expr.Set).key);
+        const value = this.evaluate((property as Expr.Set).value);
+        dict[key] = value;
+      }
     }
     return dict;
   }

@@ -321,7 +321,11 @@ export class ExpressionParser {
     const args: Expr.Expr[] = [];
     if (!this.check(TokenType.RightParen)) {
       do {
-        args.push(this.expression());
+        if (this.match(TokenType.DotDotDot)) {
+          args.push(new Expr.Spread(this.expression(), this.previous().line));
+        } else {
+          args.push(this.expression());
+        }
       } while (this.match(TokenType.Comma));
     }
     const closeParen = this.consume(TokenType.RightParen, `Expected ")" after arguments`);
@@ -406,7 +410,9 @@ export class ExpressionParser {
     }
     const properties: Expr.Expr[] = [];
     do {
-      if (
+      if (this.match(TokenType.DotDotDot)) {
+        properties.push(new Expr.Spread(this.expression(), this.previous().line));
+      } else if (
         this.match(TokenType.String, TokenType.Identifier, TokenType.Number)
       ) {
         const key: Token = this.previous();
@@ -443,7 +449,11 @@ export class ExpressionParser {
       return new Expr.List([], this.previous().line);
     }
     do {
-      values.push(this.expression());
+      if (this.match(TokenType.DotDotDot)) {
+        values.push(new Expr.Spread(this.expression(), this.previous().line));
+      } else {
+        values.push(this.expression());
+      }
     } while (this.match(TokenType.Comma));
 
     this.consume(

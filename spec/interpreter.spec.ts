@@ -500,6 +500,28 @@ describe("Interpreter", () => {
     });
   });
 
+  describe("spread operator", () => {
+    it("spreads array into array literal", () => {
+      expect(evaluate("[...a, 4]", { a: [1, 2, 3] })).toEqual([1, 2, 3, 4]);
+    });
+
+    it("spreads multiple arrays into array literal", () => {
+      expect(evaluate("[...a, ...b]", { a: [1, 2], b: [3, 4] })).toEqual([1, 2, 3, 4]);
+    });
+
+    it("spreads object into object literal", () => {
+      expect(evaluate("{ ...a, c: 3 }", { a: { a: 1, b: 2 } })).toEqual({ a: 1, b: 2, c: 3 });
+    });
+
+    it("later keys override spread keys in object literal", () => {
+      expect(evaluate("{ ...a, x: 99 }", { a: { x: 1, y: 2 } })).toEqual({ x: 99, y: 2 });
+    });
+
+    it("spreads array into function call arguments", () => {
+      expect(evaluate("fn(...args)", { fn: (a: number, b: number) => a + b, args: [3, 4] })).toBe(7);
+    });
+  });
+
   describe("error handling", () => {
     it("throws on unknown binary operator", () => {
       // Direct test: construct a bad binary expression manually

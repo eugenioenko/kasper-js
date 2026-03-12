@@ -26,6 +26,7 @@ export interface ExprVisitor<R> {
     visitNullCoalescingExpr(expr: NullCoalescing): R;
     visitPostfixExpr(expr: Postfix): R;
     visitSetExpr(expr: Set): R;
+    visitSpreadExpr(expr: Spread): R;
     visitTemplateExpr(expr: Template): R;
     visitTernaryExpr(expr: Ternary): R;
     visitTypeofExpr(expr: Typeof): R;
@@ -351,6 +352,24 @@ export class Set extends Expr {
 
   public toString(): string {
       return 'Expr.Set';
+  }
+}
+
+export class Spread extends Expr {
+    public value: Expr;
+
+    constructor(value: Expr, line: number) {
+        super();
+        this.value = value;
+        this.line = line;
+    }
+
+  public accept<R>(visitor: ExprVisitor<R>): R {
+      return visitor.visitSpreadExpr(this);
+  }
+
+  public toString(): string {
+      return 'Expr.Spread';
   }
 }
 
