@@ -16,11 +16,6 @@ function parseAll(source: string): Expr.Expr[] {
   return new ExpressionParser().parse(tokens(source));
 }
 
-function parserErrors(source: string): string[] {
-  const parser = new ExpressionParser();
-  parser.parse(tokens(source));
-  return parser.errors;
-}
 
 function foreachExpr(source: string): Expr.Each {
   const parser = new ExpressionParser();
@@ -85,7 +80,7 @@ describe("ExpressionParser", () => {
       const expr = parseOne("x++") as Expr.Postfix;
       expect(expr).toBeInstanceOf(Expr.Postfix);
       expect(expr.increment).toBe(1);
-      expect(expr.name.lexeme).toBe("x");
+      expect((expr.entity as Expr.Variable).name.lexeme).toBe("x");
     });
 
     it("x-- → Postfix with increment -1", () => {
@@ -123,6 +118,36 @@ describe("ExpressionParser", () => {
     it("unary right-hand side is parsed", () => {
       const expr = parseOne("-x") as Expr.Unary;
       expect(expr.right).toBeInstanceOf(Expr.Variable);
+    });
+  });
+
+  describe("postfix operators", () => {
+    it("x++ → Postfix(1)", () => {
+      const expr = parseOne("x++") as Expr.Postfix;
+      expect(expr).toBeInstanceOf(Expr.Postfix);
+      expect(expr.increment).toBe(1);
+      expect(expr.entity).toBeInstanceOf(Expr.Variable);
+    });
+
+    it("x-- → Postfix(-1)", () => {
+      const expr = parseOne("x--") as Expr.Postfix;
+      expect(expr).toBeInstanceOf(Expr.Postfix);
+      expect(expr.increment).toBe(-1);
+      expect(expr.entity).toBeInstanceOf(Expr.Variable);
+    });
+
+    it("obj.prop++ → Postfix(1) on Get", () => {
+      const expr = parseOne("obj.prop++") as Expr.Postfix;
+      expect(expr).toBeInstanceOf(Expr.Postfix);
+      expect(expr.increment).toBe(1);
+      expect(expr.entity).toBeInstanceOf(Expr.Get);
+    });
+
+    it("arr[0]-- → Postfix(-1) on Get", () => {
+      const expr = parseOne("arr[0]--") as Expr.Postfix;
+      expect(expr).toBeInstanceOf(Expr.Postfix);
+      expect(expr.increment).toBe(-1);
+      expect(expr.entity).toBeInstanceOf(Expr.Get);
     });
   });
 
@@ -445,7 +470,6 @@ describe("ExpressionParser", () => {
       parser.parse(tokens("1 + 2"));
       const exprs = parser.parse(tokens("true"));
       expect(exprs).toHaveLength(1);
-      expect(parser.errors).toHaveLength(0);
     });
   });
 
@@ -471,25 +495,12 @@ describe("ExpressionParser", () => {
   });
 
   describe("error handling", () => {
-    it("unexpected token records an error", () => {
-      expect(parserErrors(")")).toHaveLength(1);
+    it("throws on unexpected token", () => {
+      expect(() => new ExpressionParser().parse(tokens(")"))).toThrow("unexpected token");
     });
 
-    it("error message contains token info", () => {
-      const errors = parserErrors(")");
-      expect(errors[0]).toContain("unexpected token");
-    });
-
-    it("parser recovers after error and continues past semicolon", () => {
-      const parser = new ExpressionParser();
-      // synchronize() stops at ';', so the '1' after it gets parsed
-      const exprs = parser.parse(tokens("); 1"));
-      expect(parser.errors).toHaveLength(1);
-      expect(exprs.some((e) => e instanceof Expr.Literal)).toBe(true);
-    });
-
-    it("invalid l-value assignment records an error", () => {
-      expect(parserErrors("1 = 2")).toHaveLength(1);
+    it("throws on invalid l-value assignment", () => {
+      expect(() => new ExpressionParser().parse(tokens("1 = 2"))).toThrow();
     });
   });
 });

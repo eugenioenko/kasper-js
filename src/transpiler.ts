@@ -4,6 +4,7 @@ import { Interpreter } from "./interpreter";
 import { Scanner } from "./scanner";
 import { Scope } from "./scope";
 import { effect } from "./signal";
+import { Boundary } from "./boundary";
 import * as KNode from "./types/nodes";
 
 type IfElseNode = [KNode.Element, KNode.Attribute];
@@ -89,12 +90,17 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     try {
       const text = document.createTextNode("");
       if (parent) {
-        parent.appendChild(text);
+        if ((parent as any).insert && typeof (parent as any).insert === "function") {
+          (parent as any).insert(text);
+        } else {
+          parent.appendChild(text);
+        }
       }
 
-      effect(() => {
+      const stop = effect(() => {
         text.textContent = this.evaluateTemplateString(node.value);
       });
+      this.trackEffect(text, stop);
     } catch (e: any) {
       this.error(e.message || `${e}`, "text node");
     }
@@ -103,9 +109,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
     const attr = document.createAttribute(node.name);
     
-    effect(() => {
+    const stop = effect(() => {
       attr.value = this.evaluateTemplateString(node.value);
     });
+    this.trackEffect(attr, stop);
 
     if (parent) {
       (parent as HTMLElement).setAttributeNode(attr);
@@ -115,8 +122,17 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   public visitCommentKNode(node: KNode.Comment, parent?: Node): void {
     const result = new Comment(node.value);
     if (parent) {
-      parent.appendChild(result);
+      if ((parent as any).insert && typeof (parent as any).insert === "function") {
+        (parent as any).insert(result);
+      } else {
+        parent.appendChild(result);
+      }
     }
+  }
+
+  private trackEffect(target: any, stop: () => void) {
+    if (!target.$kasperEffects) target.$kasperEffects = [];
+    target.$kasperEffects.push(stop);
   }
 
   private findAttr(
@@ -137,46 +153,67 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private doIf(expressions: IfElseNode[], parent: Node): void {
-    const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
-    if ($if) {
-      this.createElement(expressions[0][0], parent);
-      return;
-    }
+    const boundary = new Boundary(parent, "if");
 
-    for (const expression of expressions.slice(1, expressions.length)) {
-      if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
-        const $elseif = this.execute((expression[1] as KNode.Attribute).value);
-        if ($elseif) {
-          this.createElement(expression[0], parent);
-          return;
-        } else {
-          continue;
-        }
-      }
-      if (this.findAttr(expression[0] as KNode.Element, ["@else"])) {
-        this.createElement(expression[0], parent);
+    const stop = effect(() => {
+      boundary.clear();
+
+      const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
+      if ($if) {
+        this.createElement(expressions[0][0], boundary as any);
         return;
       }
-    }
+
+      for (const expression of expressions.slice(1, expressions.length)) {
+        if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
+          const $elseif = this.execute((expression[1] as KNode.Attribute).value);
+          if ($elseif) {
+            this.createElement(expression[0], boundary as any);
+            return;
+          } else {
+            continue;
+          }
+        }
+        if (this.findAttr(expression[0] as KNode.Element, ["@else"])) {
+          this.createElement(expression[0], boundary as any);
+          return;
+        }
+      }
+    });
+    
+    this.trackEffect(boundary, stop);
   }
 
   private doEach(each: KNode.Attribute, node: KNode.Element, parent: Node) {
-    const tokens = this.scanner.scan((each as KNode.Attribute).value);
-    const [name, key, iterable] = this.interpreter.evaluate(
-      this.parser.foreach(tokens)
-    );
+    const boundary = new Boundary(parent, "each");
     const originalScope = this.interpreter.scope;
-    let index = 0;
-    for (const item of iterable) {
-      const scope: { [key: string]: any } = { [name]: item };
-      if (key) {
-        scope[key] = index;
+
+    const stop = effect(() => {
+      boundary.clear();
+      
+      const tokens = this.scanner.scan((each as KNode.Attribute).value);
+      const [name, key, iterable] = this.interpreter.evaluate(
+        this.parser.foreach(tokens)
+      );
+      
+      let index = 0;
+      for (const item of iterable) {
+        // Create a new scope that inherits from the current scope
+        // and provides the item and index
+        const scopeValues: any = { [name]: item };
+        if (key) {
+          scopeValues[key] = index;
+        }
+        
+        const itemScope = new Scope(originalScope, scopeValues);
+        this.interpreter.scope = itemScope;
+        this.createElement(node, boundary as any);
+        index += 1;
       }
-      this.interpreter.scope = new Scope(originalScope, scope);
-      this.createElement(node, parent);
-      index += 1;
-    }
-    this.interpreter.scope = originalScope;
+      this.interpreter.scope = originalScope;
+    });
+
+    this.trackEffect(boundary, stop);
   }
 
   private doWhile($while: KNode.Attribute, node: KNode.Element, parent: Node) {
@@ -202,7 +239,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       if (node.type === "element") {
         const $each = this.findAttr(node as KNode.Element, ["@each"]);
         if ($each) {
-          this.doEach($each, node as KNode.Element, parent);
+          this.doEach($each, node as KNode.Element, parent!);
           continue;
         }
 
@@ -228,19 +265,19 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             }
           }
 
-          this.doIf(expressions, parent);
+          this.doIf(expressions, parent!);
           continue;
         }
 
         const $while = this.findAttr(node as KNode.Element, ["@while"]);
         if ($while) {
-          this.doWhile($while, node as KNode.Element, parent);
+          this.doWhile($while, node as KNode.Element, parent!);
           continue;
         }
 
         const $let = this.findAttr(node as KNode.Element, ["@let"]);
         if ($let) {
-          this.doLet($let, node as KNode.Element, parent);
+          this.doLet($let, node as KNode.Element, parent!);
           continue;
         }
       }
@@ -265,7 +302,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       const element = isVoid ? parent : document.createElement(node.name);
       const restoreScope = this.interpreter.scope;
 
-      if (element) {
+      if (element && element !== parent) {
         this.interpreter.scope.set("$ref", element);
       }
 
@@ -321,7 +358,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
         this.interpreter.scope = restoreScope;
         if (parent) {
-          parent.appendChild(element);
+          if ((parent as any).insert && typeof (parent as any).insert === "function") {
+            (parent as any).insert(element);
+          } else {
+            parent.appendChild(element);
+          }
         }
         return element;
       }
@@ -360,28 +401,50 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
         for (const attr of shorthandAttributes) {
           const realName = (attr as KNode.Attribute).name.slice(1);
-          const value = this.execute((attr as KNode.Attribute).value);
-
-          if (value === false || value === null || value === undefined) {
-            // only remove if it's not a mergeable attribute that might have a static value
-            if (realName !== "class" && realName !== "style") {
-              (element as HTMLElement).removeAttribute(realName);
-            }
-          } else {
-            if (realName === "class") {
-              const existing = (element as HTMLElement).getAttribute("class");
-              const newValue = existing ? `${existing} ${value}` : value;
+          
+          if (realName === "class") {
+            let lastDynamicValue = "";
+            const stop = effect(() => {
+              const value = this.execute((attr as KNode.Attribute).value);
+              const staticClass = (element as HTMLElement).getAttribute("class") || "";
+              let currentClasses = staticClass.split(" ")
+                .filter(c => c !== lastDynamicValue && c !== "")
+                .join(" ");
+              const newValue = currentClasses ? `${currentClasses} ${value}` : value;
               (element as HTMLElement).setAttribute("class", newValue);
-            } else if (realName === "style") {
-              const existing = (element as HTMLElement).getAttribute("style");
-              const newValue = existing
-                ? `${existing.endsWith(";") ? existing : existing + ";"} ${value}`
-                : value;
-              (element as HTMLElement).setAttribute("style", newValue);
-            } else {
-              (element as HTMLElement).setAttribute(realName, value);
-            }
+              lastDynamicValue = value;
+            });
+            this.trackEffect(element, stop);
+          } else {
+            const stop = effect(() => {
+              const value = this.execute((attr as KNode.Attribute).value);
+
+              if (value === false || value === null || value === undefined) {
+                if (realName !== "style") {
+                  (element as HTMLElement).removeAttribute(realName);
+                }
+              } else {
+                if (realName === "style") {
+                  const existing = (element as HTMLElement).getAttribute("style");
+                  const newValue = existing && !existing.includes(value)
+                    ? `${existing.endsWith(";") ? existing : existing + ";"} ${value}`
+                    : value;
+                  (element as HTMLElement).setAttribute("style", newValue);
+                } else {
+                  (element as HTMLElement).setAttribute(realName, value);
+                }
+              }
+            });
+            this.trackEffect(element, stop);
           }
+        }
+      }
+
+      if (parent && !isVoid) {
+        if ((parent as any).insert && typeof (parent as any).insert === "function") {
+          (parent as any).insert(element);
+        } else {
+          parent.appendChild(element);
         }
       }
 
@@ -392,9 +455,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.createSiblings(node.children, element);
       this.interpreter.scope = restoreScope;
 
-      if (!isVoid && parent) {
-        parent.appendChild(element);
-      }
       return element;
     } catch (e: any) {
       this.error(e.message || `${e}`, node.name);
@@ -446,10 +506,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
 
-    if (this.parser.errors.length) {
-      this.error(`Template string  error: ${this.parser.errors[0]}`);
-    }
-
     let result = "";
     for (const expression of expressions) {
       result += `${this.interpreter.evaluate(expression)}`;
@@ -458,12 +514,32 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public destroy(container: Element): void {
-    const walk = (node: Node) => {
-      if ((node as any).$kasperInstance) {
-        const instance = (node as any).$kasperInstance;
+    const walk = (node: any) => {
+      // 1. Cleanup component instance
+      if (node.$kasperInstance) {
+        const instance = node.$kasperInstance;
         if (instance.$onDestroy) instance.$onDestroy();
         if (instance.$abortController) instance.$abortController.abort();
       }
+      
+      // 2. Cleanup effects attached to the node
+      if (node.$kasperEffects) {
+        node.$kasperEffects.forEach((stop: () => void) => stop());
+        node.$kasperEffects = [];
+      }
+
+      // 3. Cleanup effects on attributes
+      if (node.attributes) {
+        for (let i = 0; i < node.attributes.length; i++) {
+          const attr = node.attributes[i];
+          if (attr.$kasperEffects) {
+            attr.$kasperEffects.forEach((stop: () => void) => stop());
+            attr.$kasperEffects = [];
+          }
+        }
+      }
+
+      // 4. Recurse
       node.childNodes.forEach(walk);
     };
     container.childNodes.forEach(walk);
@@ -475,7 +551,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public error(message: string, tagName?: string): void {
-    const context = tagName ? ` in <${tagName}>` : "";
-    throw new Error(`Runtime Error${context} => ${message}`);
+    const cleanMessage = message.startsWith("Runtime Error") 
+      ? message 
+      : `Runtime Error: ${message}`;
+    
+    if (tagName && !cleanMessage.includes(`at <${tagName}>`)) {
+       throw new Error(`${cleanMessage}\n  at <${tagName}>`);
+    }
+
+    throw new Error(cleanMessage);
   }
 }

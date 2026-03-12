@@ -82,6 +82,7 @@ describe("Scanner", () => {
 
     it("! → Bang", () => expect(scanTypes("!")).toEqual([TokenType.Bang]));
     it("!= → BangEqual", () => expect(scanTypes("!=")).toEqual([TokenType.BangEqual]));
+    it("!== → BangEqualEqual", () => expect(scanTypes("!==")).toEqual([TokenType.BangEqualEqual]));
 
     it("? → Question", () => expect(scanTypes("?")).toEqual([TokenType.Question]));
     it("?? → QuestionQuestion", () => expect(scanTypes("??")).toEqual([TokenType.QuestionQuestion]));
@@ -89,7 +90,7 @@ describe("Scanner", () => {
 
     it("= → Equal", () => expect(scanTypes("=")).toEqual([TokenType.Equal]));
     it("== → EqualEqual", () => expect(scanTypes("==")).toEqual([TokenType.EqualEqual]));
-    it("=== → EqualEqual", () => expect(scanTypes("===")).toEqual([TokenType.EqualEqual]));
+    it("=== → EqualEqualEqual", () => expect(scanTypes("===")).toEqual([TokenType.EqualEqualEqual]));
     it("=> → Arrow", () => expect(scanTypes("=>")).toEqual([TokenType.Arrow]));
 
     it("+ → Plus", () => expect(scanTypes("+")).toEqual([TokenType.Plus]));
@@ -132,11 +133,8 @@ describe("Scanner", () => {
       ]);
     });
 
-    it("unterminated multiline comment records an error", () => {
-      const scanner = new Scanner();
-      scanner.scan("/* unterminated");
-      expect(scanner.errors).toHaveLength(1);
-      expect(scanner.errors[0]).toContain('Unterminated comment');
+    it("unterminated multiline comment throws", () => {
+      expect(() => new Scanner().scan("/* unterminated")).toThrow("Unterminated comment");
     });
   });
 
@@ -174,17 +172,12 @@ describe("Scanner", () => {
       expect(scanOne(`""`).literal).toBe("");
     });
 
-    it("unterminated double-quoted string records an error", () => {
-      const scanner = new Scanner();
-      scanner.scan(`"unterminated`);
-      expect(scanner.errors).toHaveLength(1);
-      expect(scanner.errors[0]).toContain("Unterminated string");
+    it("unterminated double-quoted string throws", () => {
+      expect(() => new Scanner().scan(`"unterminated`)).toThrow("Unterminated string");
     });
 
-    it("unterminated single-quoted string records an error", () => {
-      const scanner = new Scanner();
-      scanner.scan(`'unterminated`);
-      expect(scanner.errors).toHaveLength(1);
+    it("unterminated single-quoted string throws", () => {
+      expect(() => new Scanner().scan(`'unterminated`)).toThrow("Unterminated string");
     });
   });
 
@@ -297,30 +290,12 @@ describe("Scanner", () => {
   });
 
   describe("error handling", () => {
-    it("unexpected character records an error", () => {
-      const scanner = new Scanner();
-      scanner.scan("@");
-      expect(scanner.errors).toHaveLength(1);
-      expect(scanner.errors[0]).toContain("Unexpected character");
+    it("throws on unexpected character", () => {
+      expect(() => new Scanner().scan("@")).toThrow("Unexpected character");
     });
 
     it("error message includes line and column", () => {
-      const scanner = new Scanner();
-      scanner.scan("@");
-      expect(scanner.errors[0]).toMatch(/\(\d+:\d+\)/);
-    });
-
-    it("scanning continues after an error", () => {
-      const scanner = new Scanner();
-      const tokens = scanner.scan("@ 123");
-      expect(tokens.some((t) => t.type === TokenType.Number)).toBe(true);
-    });
-
-    it("stops after 100 errors", () => {
-      const scanner = new Scanner();
-      scanner.scan("@".repeat(102));
-      expect(scanner.errors.length).toBeLessThanOrEqual(102);
-      expect(scanner.errors.some((e) => e.includes("Error limit exceeded"))).toBe(true);
+      expect(() => new Scanner().scan("@")).toThrow(/\(\d+:\d+\)/);
     });
   });
 
@@ -381,7 +356,6 @@ describe("Scanner", () => {
       scanner.scan("1 + 2");
       const second = scanner.scan("x");
       expect(second).toHaveLength(2); // Identifier + EOF
-      expect(scanner.errors).toHaveLength(0);
     });
   });
 });

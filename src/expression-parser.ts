@@ -5,29 +5,13 @@ import { Token, TokenType } from "./types/token";
 export class ExpressionParser {
   private current: number;
   private tokens: Token[];
-  public errors: string[];
-  public errorLevel = 1;
 
   public parse(tokens: Token[]): Expr.Expr[] {
     this.current = 0;
     this.tokens = tokens;
-    this.errors = [];
     const expressions: Expr.Expr[] = [];
     while (!this.eof()) {
-      try {
-        expressions.push(this.expression());
-      } catch (e) {
-        if (e instanceof KasperError) {
-          this.errors.push(`Parse Error (${e.line}:${e.col}) => ${e.value}`);
-        } else {
-          this.errors.push(`${e}`);
-          if (this.errors.length > 100) {
-            this.errors.push("Parse Error limit exceeded");
-            return expressions;
-          }
-        }
-        this.synchronize();
-      }
+      expressions.push(this.expression());
     }
     return expressions;
   }
@@ -93,7 +77,6 @@ export class ExpressionParser {
   public foreach(tokens: Token[]): Expr.Expr {
     this.current = 0;
     this.tokens = tokens;
-    this.errors = [];
 
     const name = this.consume(
       TokenType.Identifier,
@@ -212,7 +195,9 @@ export class ExpressionParser {
     while (
       this.match(
         TokenType.BangEqual,
+        TokenType.BangEqualEqual,
         TokenType.EqualEqual,
+        TokenType.EqualEqualEqual,
         TokenType.Greater,
         TokenType.GreaterEqual,
         TokenType.Less,
@@ -285,10 +270,21 @@ export class ExpressionParser {
   private newKeyword(): Expr.Expr {
     if (this.match(TokenType.New)) {
       const keyword = this.previous();
-      const construct: Expr.Expr = this.call();
+      const construct: Expr.Expr = this.postfix();
       return new Expr.New(construct, keyword.line);
     }
-    return this.call();
+    return this.postfix();
+  }
+
+  private postfix(): Expr.Expr {
+    const expr = this.call();
+    if (this.match(TokenType.PlusPlus)) {
+      return new Expr.Postfix(expr, 1, expr.line);
+    }
+    if (this.match(TokenType.MinusMinus)) {
+      return new Expr.Postfix(expr, -1, expr.line);
+    }
+    return expr;
   }
 
   private call(): Expr.Expr {
@@ -365,12 +361,6 @@ export class ExpressionParser {
     }
     if (this.match(TokenType.Identifier)) {
       const identifier = this.previous();
-      if (this.match(TokenType.PlusPlus)) {
-        return new Expr.Postfix(identifier, 1, identifier.line);
-      }
-      if (this.match(TokenType.MinusMinus)) {
-        return new Expr.Postfix(identifier, -1, identifier.line);
-      }
       return new Expr.Variable(identifier, identifier.line);
     }
     if (this.match(TokenType.LeftParen)) {

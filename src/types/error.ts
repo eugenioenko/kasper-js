@@ -1,15 +1,11 @@
-export class KasperError {
-  public value: string;
+export class KasperError extends Error {
   public line: number;
   public col: number;
 
   constructor(value: string, line: number, col: number) {
-    this.value = value;
+    super(`Parse Error (${line}:${col}) => ${value}`);
+    this.name = "KasperError";
     this.line = line;
     this.col = col;
-  }
-
-  public toString(): string {
-    return this.value.toString();
   }
 }

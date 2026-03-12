@@ -7,7 +7,6 @@ export class TemplateParser {
   public line: number;
   public col: number;
   public source: string;
-  public errors: string[];
   public nodes: Node.KNode[];
 
   public parse(source: string): Node.KNode[] {
@@ -15,28 +14,14 @@ export class TemplateParser {
     this.line = 1;
     this.col = 1;
     this.source = source;
-    this.errors = [];
     this.nodes = [];
 
     while (!this.eof()) {
-      try {
-        const node = this.node();
-        if (node === null) {
-          continue;
-        }
-        this.nodes.push(node);
-      } catch (e) {
-        if (e instanceof KasperError) {
-          this.errors.push(`Parse Error (${e.line}:${e.col}) => ${e.value}`);
-        } else {
-          this.errors.push(`${e}`);
-          if (this.errors.length > 10) {
-            this.errors.push("Parse Error limit exceeded");
-            return this.nodes;
-          }
-        }
-        break;
+      const node = this.node();
+      if (node === null) {
+        continue;
       }
+      this.nodes.push(node);
     }
     this.source = "";
     return this.nodes;
@@ -215,14 +200,28 @@ export class TemplateParser {
   private text(): Node.KNode {
     const start = this.current;
     const line = this.line;
-    while (!this.peek("<") && !this.eof()) {
+    let depth = 0;
+    while (!this.eof()) {
+      if (this.match("{{")) { depth++; continue; }
+      if (depth > 0 && this.match("}}")) { depth--; continue; }
+      if (depth === 0 && this.peek("<")) { break; }
       this.advance();
     }
-    const text = this.source.slice(start, this.current).trim();
-    if (!text) {
+    const raw = this.source.slice(start, this.current).trim();
+    if (!raw) {
       return null;
     }
-    return new Node.Text(text, line);
+    return new Node.Text(this.decodeEntities(raw), line);
+  }
+
+  private decodeEntities(text: string): string {
+    return text
+      .replace(/&nbsp;/g, "\u00a0")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&amp;/g, "&"); // must be last to avoid double-decoding
   }
 
   private whitespace(): number {

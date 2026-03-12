@@ -11,6 +11,19 @@ describe("Component", () => {
     expect(component.transpiler).toBeUndefined();
   });
 
+  it("$doRender does nothing when transpiler is not set", () => {
+    const component = new Component();
+    expect(() => component.$doRender()).not.toThrow();
+  });
+
+  it("lifecycle hook methods exist and are callable", () => {
+    const component = new Component();
+    expect(() => component.$onInit()).not.toThrow();
+    expect(() => component.$onRender()).not.toThrow();
+    expect(() => component.$onChanges()).not.toThrow();
+    expect(() => component.$onDestroy()).not.toThrow();
+  });
+
   it("initializes with provided props", () => {
     const ref = document.createElement("div");
     const transpiler = new Transpiler();

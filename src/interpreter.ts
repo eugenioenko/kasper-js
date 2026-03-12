@@ -50,9 +50,23 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   }
 
   public visitPostfixExpr(expr: Expr.Postfix): any {
-    const value = this.scope.get(expr.name.lexeme);
+    const value = this.evaluate(expr.entity);
     const newValue = value + expr.increment;
-    this.scope.set(expr.name.lexeme, newValue);
+
+    if (expr.entity instanceof Expr.Variable) {
+      this.scope.set(expr.entity.name.lexeme, newValue);
+    } else if (expr.entity instanceof Expr.Get) {
+      const assign = new Expr.Set(
+        expr.entity.entity,
+        expr.entity.key,
+        new Expr.Literal(newValue, expr.line),
+        expr.line
+      );
+      this.evaluate(assign);
+    } else {
+      this.error(`Invalid left-hand side in postfix operation: ${expr.entity}`);
+    }
+
     return value;
   }
 
@@ -68,9 +82,6 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   private templateParse(source: string): string {
     const tokens = this.scanner.scan(source);
     const expressions = this.parser.parse(tokens);
-    if (this.parser.errors.length) {
-      this.error(`Template string  error: ${this.parser.errors[0]}`);
-    }
     let result = "";
     for (const expression of expressions) {
       result += this.evaluate(expression).toString();
@@ -121,8 +132,10 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       case TokenType.LessEqual:
         return left <= right;
       case TokenType.EqualEqual:
+      case TokenType.EqualEqualEqual:
         return left === right;
       case TokenType.BangEqual:
+      case TokenType.BangEqualEqual:
         return left !== right;
       default:
         this.error("Unknown binary operator " + expr.operator);

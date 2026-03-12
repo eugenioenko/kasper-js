@@ -6,8 +6,6 @@ export class Scanner {
   public source: string;
   /** contains the source code represented as list of tokens */
   public tokens: Token[];
-  /** List of errors from scanning */
-  public errors: string[];
   /** points to the current character being tokenized */
   private current: number;
   /** points to the start of the token  */
@@ -20,7 +18,6 @@ export class Scanner {
   public scan(source: string): Token[] {
     this.source = source;
     this.tokens = [];
-    this.errors = [];
     this.current = 0;
     this.start = 0;
     this.line = 1;
@@ -28,15 +25,7 @@ export class Scanner {
 
     while (!this.eof()) {
       this.start = this.current;
-      try {
-        this.getToken();
-      } catch (e) {
-        this.errors.push(`${e}`);
-        if (this.errors.length > 100) {
-          this.errors.push("Error limit exceeded");
-          return this.tokens;
-        }
-      }
+      this.getToken();
     }
     this.tokens.push(new Token(TokenType.Eof, "", null, this.line, 0));
     return this.tokens;
@@ -240,7 +229,9 @@ export class Scanner {
         break;
       case "!":
         this.addToken(
-          this.match("=") ? TokenType.BangEqual : TokenType.Bang,
+          this.match("=")
+            ? this.match("=") ? TokenType.BangEqualEqual : TokenType.BangEqual
+            : TokenType.Bang,
           null
         );
         break;
@@ -257,7 +248,7 @@ export class Scanner {
       case "=":
         if (this.match("=")) {
           this.addToken(
-            this.match("=") ? TokenType.EqualEqual : TokenType.EqualEqual,
+            this.match("=") ? TokenType.EqualEqualEqual : TokenType.EqualEqual,
             null
           );
           break;

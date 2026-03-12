@@ -4,12 +4,12 @@ import { Transpiler } from "./transpiler";
 
 export function execute(source: string): string {
   const parser = new TemplateParser();
-  const nodes = parser.parse(source);
-  if (parser.errors.length) {
-    return JSON.stringify(parser.errors);
+  try {
+    const nodes = parser.parse(source);
+    return JSON.stringify(nodes);
+  } catch (e) {
+    return JSON.stringify([e instanceof Error ? e.message : String(e)]);
   }
-  const result = JSON.stringify(nodes);
-  return result;
 }
 
 export function transpile(
@@ -161,7 +161,11 @@ export function KasperInit(config: AppConfig) {
   const root =
     typeof config.root === "string"
       ? document.querySelector(config.root)
-      : config.root || document.body;
+      : config.root;
+
+  if (!root) {
+    throw new Error(`Root element not found: ${config.root}`);
+  }
 
   const registry = normalizeRegistry(config.registry, parser);
   const transpiler = new Transpiler({ registry: registry });

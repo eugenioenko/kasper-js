@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { signal, effect } from "../src/signal";
+import { signal, effect, computed } from "../src/signal";
 
 describe("Signals", () => {
   it("holds a value", () => {
@@ -57,5 +57,65 @@ describe("Signals", () => {
     parent.value = "p2";
     // Parent re-run triggers a new child effect
     expect(spy).toHaveBeenCalledTimes(3);
+  });
+
+  it("computed updates when dependencies change", () => {
+    const firstName = signal("John");
+    const lastName = signal("Doe");
+    const fullName = computed(() => `${firstName.value} ${lastName.value}`);
+
+    expect(fullName.value).toBe("John Doe");
+
+    firstName.value = "Jane";
+    expect(fullName.value).toBe("Jane Doe");
+
+    lastName.value = "Smith";
+    expect(fullName.value).toBe("Jane Smith");
+  });
+
+  it("toString returns string representation of value", () => {
+    expect(signal(42).toString()).toBe("42");
+    expect(signal("hello").toString()).toBe("hello");
+    expect(signal(true).toString()).toBe("true");
+  });
+
+  it("peek returns value without tracking dependencies", () => {
+    const s = signal(99);
+    let effectRuns = 0;
+    effect(() => {
+      effectRuns++;
+      // read via peek — should NOT subscribe
+      s.peek();
+    });
+    expect(effectRuns).toBe(1);
+    s.value = 100;
+    // effect should not re-run because peek was used, not .value
+    expect(effectRuns).toBe(1);
+    expect(s.peek()).toBe(100);
+  });
+
+  it("effect disposer stops re-runs after cleanup", () => {
+    const s = signal(0);
+    let runs = 0;
+    const dispose = effect(() => {
+      s.value;
+      runs++;
+    });
+    expect(runs).toBe(1);
+    s.value = 1;
+    expect(runs).toBe(2);
+    dispose();
+    s.value = 2;
+    // should not re-run after disposal
+    expect(runs).toBe(2);
+  });
+
+  it("does not notify subscribers when value is set to the same value", () => {
+    const s = signal("same");
+    let runs = 0;
+    effect(() => { s.value; runs++; });
+    expect(runs).toBe(1);
+    s.value = "same";
+    expect(runs).toBe(1);
   });
 });

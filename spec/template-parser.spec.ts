@@ -24,13 +24,6 @@ describe("TemplateParser", () => {
       expect((nodes[0] as Node.Element).name).toBe("span");
     });
 
-    it("clears errors between parse() calls", () => {
-      const parser = new TemplateParser();
-      parser.parse("</orphan>");
-      expect(parser.errors).toHaveLength(1);
-      parser.parse("<div></div>");
-      expect(parser.errors).toHaveLength(0);
-    });
   });
 
   describe("text nodes", () => {
@@ -57,6 +50,46 @@ describe("TemplateParser", () => {
     it("text with mixed content", () => {
       const node = parseOne("Hello {{name}}!") as Node.Text;
       expect(node.value).toBe("Hello {{name}}!");
+    });
+
+    it("preserves < inside {{ }} expression (does not split at <)", () => {
+      const node = parseOne("{{a < b}}") as Node.Text;
+      expect(node.value).toBe("{{a < b}}");
+    });
+
+    it("preserves <= inside {{ }} expression", () => {
+      const node = parseOne("{{a <= b}}") as Node.Text;
+      expect(node.value).toBe("{{a <= b}}");
+    });
+
+    it("preserves < in expression mixed with surrounding text", () => {
+      const node = parseOne("result: {{a < b}}!") as Node.Text;
+      expect(node.value).toBe("result: {{a < b}}!");
+    });
+
+    it("decodes &nbsp; to non-breaking space", () => {
+      const node = parseOne("a&nbsp;b") as Node.Text;
+      expect(node.value).toBe("a\u00a0b");
+    });
+
+    it("decodes &amp; to &", () => {
+      const node = parseOne("a&amp;b") as Node.Text;
+      expect(node.value).toBe("a&b");
+    });
+
+    it("decodes &lt; and &gt;", () => {
+      const node = parseOne("a&lt;b&gt;c") as Node.Text;
+      expect(node.value).toBe("a<b>c");
+    });
+
+    it("decodes &quot; and &apos;", () => {
+      expect((parseOne('say &quot;hi&quot;') as Node.Text).value).toBe('say "hi"');
+      expect((parseOne("it&apos;s") as Node.Text).value).toBe("it's");
+    });
+
+    it("does not double-decode &amp;lt; (should become &lt;, not <)", () => {
+      const node = parseOne("&amp;lt;") as Node.Text;
+      expect(node.value).toBe("&lt;");
     });
   });
 
@@ -283,31 +316,27 @@ describe("TemplateParser", () => {
     });
   });
 
+  describe("regression", () => {
+    it("does not throw when < is used inside {{ }} (was silently broken)", () => {
+      expect(() => new TemplateParser().parse("<div>{{a < b}}</div>")).not.toThrow();
+    });
+
+    it("does not throw when <= is used inside {{ }}", () => {
+      expect(() => new TemplateParser().parse("<div>{{a <= b}}</div>")).not.toThrow();
+    });
+  });
+
   describe("error handling", () => {
-    it("records error for unexpected closing tag", () => {
-      const parser = new TemplateParser();
-      parser.parse("</div>");
-      expect(parser.errors).toHaveLength(1);
-      expect(parser.errors[0]).toContain("Unexpected closing tag");
+    it("throws on unexpected closing tag", () => {
+      expect(() => new TemplateParser().parse("</div>")).toThrow("Unexpected closing tag");
     });
 
-    it("records error for unclosed element", () => {
-      const parser = new TemplateParser();
-      parser.parse("<div>");
-      expect(parser.errors).toHaveLength(1);
+    it("throws on unclosed element", () => {
+      expect(() => new TemplateParser().parse("<div>")).toThrow();
     });
 
-    it("records error with line and column info", () => {
-      const parser = new TemplateParser();
-      parser.parse("</div>");
-      expect(parser.errors[0]).toMatch(/\(\d+:\d+\)/);
-    });
-
-    it("returns nodes parsed before the error", () => {
-      const parser = new TemplateParser();
-      const nodes = parser.parse("<span></span></orphan>");
-      expect(nodes.length).toBeGreaterThanOrEqual(1);
-      expect((nodes[0] as Node.Element).name).toBe("span");
+    it("thrown error message includes line and column info", () => {
+      expect(() => new TemplateParser().parse("</div>")).toThrow(/\(\d+:\d+\)/);
     });
   });
 });

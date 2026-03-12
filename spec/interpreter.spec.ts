@@ -56,6 +56,32 @@ describe("Interpreter", () => {
     });
   });
 
+  describe("postfix operators", () => {
+    it("increments variable and returns original value", () => {
+      const scope = { x: 10 };
+      expect(evaluate("x++", scope)).toBe(10);
+      expect(scope.x).toBe(11);
+    });
+
+    it("decrements variable and returns original value", () => {
+      const scope = { x: 10 };
+      expect(evaluate("x--", scope)).toBe(10);
+      expect(scope.x).toBe(9);
+    });
+
+    it("increments property access and returns original value", () => {
+      const scope = { obj: { val: 100 } };
+      expect(evaluate("obj.val++", scope)).toBe(100);
+      expect(scope.obj.val).toBe(101);
+    });
+
+    it("decrements indexed access and returns original value", () => {
+      const scope = { arr: [50] };
+      expect(evaluate("arr[0]--", scope)).toBe(50);
+      expect(scope.arr[0]).toBe(49);
+    });
+  });
+
   describe("assignment", () => {
     it("x = value sets scope and returns value", () => {
       const interp = makeInterp({ x: 0 });
@@ -118,6 +144,15 @@ describe("Interpreter", () => {
     it("!= uses strict inequality (!==)", () => {
       expect(evaluate("1 != 2")).toBe(true);
       expect(evaluate(`"1" != 1`)).toBe(true); // strict
+    });
+    it("=== strict equality", () => {
+      expect(evaluate("1 === 1")).toBe(true);
+      expect(evaluate(`"1" === 1`)).toBe(false);
+    });
+    it("!== strict inequality", () => {
+      expect(evaluate("1 !== 2")).toBe(true);
+      expect(evaluate(`"1" !== 1`)).toBe(true);
+      expect(evaluate("1 !== 1")).toBe(false);
     });
     it(">", () => expect(evaluate("3 > 2")).toBe(true));
     it(">=", () => expect(evaluate("3 >= 3")).toBe(true));

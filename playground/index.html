@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Kasper.js // Playground</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+  <script src="../dist/kasper.js"></script>
+  <script>window.EXAMPLES = [];</script>
+  <script src="./examples/todo.js"></script>
+  <script src="./examples/game.js"></script>
+  <script src="./examples/counter.js"></script>
+  <script src="./examples/stopwatch.js"></script>
+  <script src="./examples/colors.js"></script>
+  <script src="./examples/wizard.js"></script>
+  <script src="./examples/table.js"></script>
+  <script src="./examples/form.js"></script>
+  <script src="./examples/inventory.js"></script>
+  <script src="./examples/layout.js"></script>
+  <script src="./examples/api.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.9/ace.js"></script>
+  <style>
+    :root {
+      --bg-deep: #0d0e0f;
+      --bg-panel: #1a1c1e;
+      --border: #2a2d2f;
+      --accent: #3b82f6;
+      --text: #e0e0e0;
+      --text-dim: #666;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-deep);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .pg-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr 1fr;
+      height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .pg-sidebar {
+      background: #151718;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding-top: 10px;
+    }
+
+    .pg-explorer-title {
+      padding: 10px 20px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pg-example-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .pg-example-item {
+      padding: 8px 20px 8px 35px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #999;
+      transition: all 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: none;
+      /* File names aren't usually all caps */
+      letter-spacing: 0;
+      position: relative;
+    }
+
+    .pg-example-item::before {
+      content: '📄';
+      font-size: 10px;
+      opacity: 0.5;
+    }
+
+    .pg-example-item:hover {
+      background: #2a2d2e;
+      color: #ccc;
+    }
+
+    .pg-example-item.active {
+      background: #2d2f30;
+      color: #fff;
+    }
+
+    .pg-example-item.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent);
+    }
+
+    /* EDITOR PANE */
+    .pg-editor-pane {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pg-toolbar {
+      height: 48px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pg-tabs {
+      display: flex;
+      gap: 4px;
+      height: 100%;
+      align-items: flex-end;
+    }
+
+    .pg-tab {
+      padding: 8px 16px;
+      font-size: 11px;
+      background: #151617;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+      cursor: pointer;
+      color: var(--text-dim);
+    }
+
+    .pg-tab.active {
+      background: var(--bg-panel);
+      color: #fff;
+      border-top-color: var(--accent);
+    }
+
+    .btn-run {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-run:hover {
+      filter: brightness(1.2);
+    }
+
+    #editor {
+      flex-grow: 1;
+    }
+
+    /* PREVIEW PANE */
+    .pg-preview-pane {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    #render-area {
+      flex-grow: 1;
+      overflow: auto;
+    }
+
+    .pg-status-bar {
+      height: 24px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      background: var(--bg-deep);
+      border-top: 1px solid var(--border);
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    .pg-error {
+      margin: 16px;
+      padding: 16px;
+      background: #1a0a0a;
+      border: 1px solid #7f1d1d;
+      border-left: 3px solid #ef4444;
+      border-radius: 4px;
+      color: #fca5a5;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .pg-error-title {
+      color: #ef4444;
+      font-weight: 800;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="pg-layout">
+    <!-- sidebar -->
+    <aside class="pg-sidebar">
+      <div class="pg-explorer-title">
+        <span>📁</span> PROJECTS
+      </div>
+      <nav>
+        <ul id="example-list" class="pg-example-list">
+          <!-- Populated by JS -->
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- main editor -->
+    <main class="pg-editor-pane">
+      <div class="pg-toolbar">
+        <div id="tab-group" class="pg-tabs">
+          <button class="pg-tab active" data-tab="template">App.html</button>
+          <button class="pg-tab" data-tab="script">App.js</button>
+          <button class="pg-tab" data-tab="style">App.css</button>
+        </div>
+        <button id="run-btn" class="btn-run">RENDER</button>
+      </div>
+      <div id="editor"></div>
+    </main>
+
+    <!-- preview -->
+    <section class="pg-preview-pane">
+      <style id="injected-styles"></style>
+      <div id="render-area"></div>
+      <footer class="pg-status-bar" id="status-text">
+        READY_FOR_INITIALIZATION...
+      </footer>
+    </section>
+  </div>
+
+  <script src="./js/playground.js"></script>
+</body>
+
+</html>

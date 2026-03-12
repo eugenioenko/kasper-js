@@ -7,9 +7,6 @@ import { Viewer } from "../src/viewer";
 export function parse(source: string): string {
   const parser = new TemplateParser();
   const nodes = parser.parse(source);
-  if (parser.errors.length) {
-    return JSON.stringify(parser.errors);
-  }
   return JSON.stringify(nodes);
 }
 

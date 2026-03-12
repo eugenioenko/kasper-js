@@ -1,6 +1,7 @@
 import { TemplateParser } from "../src/template-parser";
 import { Transpiler } from "../src/transpiler";
 import { Viewer } from "../src/viewer";
+import { signal } from "../src/signal";
 
 function makeContainer(): HTMLElement {
   return document.createElement("div");
@@ -91,10 +92,10 @@ describe("Transpiler", () => {
       expect(container.querySelector("a > b > c")).not.toBeNull();
     });
 
-    it("self-closing element (explicit />) is not appended to parent container", () => {
-      // Transpiler returns self-closing elements early without appending to parent
+    it("self-closing element (explicit />) is appended to parent container", () => {
       const container = transpile("<br/>");
-      expect(container.childNodes).toHaveLength(0);
+      expect(container.childNodes).toHaveLength(1);
+      expect((container.firstChild as HTMLElement).tagName.toLowerCase()).toBe("br");
     });
   });
 
@@ -148,6 +149,22 @@ describe("Transpiler", () => {
       const container = transpile('<div class="static" @class="\'dynamic\'"></div>');
       const div = container.querySelector("div")!;
       expect(div.getAttribute("class")).toBe("static dynamic");
+    });
+
+    it("surgically swaps @class values when signal changes", () => {
+      const state = signal("selected");
+      const container = transpile('<div class="base" @class="state.value"></div>', { state });
+      const div = container.querySelector("div")!;
+      
+      expect(div.getAttribute("class")).toBe("base selected");
+      
+      state.value = "disabled";
+      expect(div.getAttribute("class")).toBe("base disabled");
+      expect(div.getAttribute("class")).not.toContain("selected");
+      
+      state.value = "focused";
+      expect(div.getAttribute("class")).toBe("base focused");
+      expect(div.getAttribute("class")).not.toContain("disabled");
     });
 
     it("merges static style and shorthand @style", () => {
@@ -225,6 +242,35 @@ describe("Transpiler", () => {
       // 'if' is not rendered. 'else' IS rendered because it's not consumed by doIf and evaluated normally.
       expect(container.textContent).toBe("else");
     });
+
+    it("updates @if content reactively when signal changes", () => {
+      const show = signal(true);
+      const container = transpile('<div @if="show.value">visible</div>', { show });
+      
+      expect(container.textContent).toBe("visible");
+      
+      show.value = false;
+      expect(container.textContent).toBe("");
+      
+      show.value = true;
+      expect(container.textContent).toBe("visible");
+    });
+
+    it("updates @each content reactively when array signal changes", () => {
+      const list = signal(["a", "b"]);
+      const container = transpile('<li @each="item of list.value">{{item}}</li>', { list });
+      
+      expect(container.querySelectorAll("li")).toHaveLength(2);
+      expect(container.textContent).toBe("ab");
+      
+      list.value = ["a", "b", "c"];
+      expect(container.querySelectorAll("li")).toHaveLength(3);
+      expect(container.textContent).toBe("abc");
+      
+      list.value = ["x"];
+      expect(container.querySelectorAll("li")).toHaveLength(1);
+      expect(container.textContent).toBe("x");
+    });
   });
 
   describe("nested directives", () => {
@@ -277,6 +323,32 @@ describe("Transpiler", () => {
     it("renders nothing for an empty array", () => {
       const container = transpile('<li @each="item of list">{{item}}</li>', { list: [] });
       expect(container.querySelectorAll("li")).toHaveLength(0);
+    });
+
+    it("evaluates < comparison between index and item inside @each", () => {
+      const source = '<div @each="step with index of list"><span>{{index < step}}</span></div>';
+      const container = transpile(source, { list: [0, 1, 2, 3] });
+      const spans = container.querySelectorAll("span");
+      // index < step: 0<0=false, 1<1=false, 2<2=false, 3<3=false
+      // Wait: list is [0,1,2,3], index is position (0,1,2,3), step is value (0,1,2,3) — all equal
+      // Use a list where values differ from indices to get meaningful results
+      const source2 = '<div @each="step with index of list"><span>{{index < step}}</span></div>';
+      const container2 = transpile(source2, { list: [5, 5, 5, 5] });
+      const spans2 = container2.querySelectorAll("span");
+      expect(spans2[0].textContent).toBe("true");   // 0 < 5
+      expect(spans2[1].textContent).toBe("true");   // 1 < 5
+      expect(spans2[2].textContent).toBe("true");   // 2 < 5
+      expect(spans2[3].textContent).toBe("true");   // 3 < 5
+    });
+
+    it("evaluates <= comparison inside @each with index", () => {
+      const source = '<div @each="step with index of list"><span>{{index <= step}}</span></div>';
+      const container = transpile(source, { list: [0, 1, 2, 3] });
+      const spans = container.querySelectorAll("span");
+      expect(spans[0].textContent).toBe("true");   // 0 <= 0
+      expect(spans[1].textContent).toBe("true");   // 1 <= 1
+      expect(spans[2].textContent).toBe("true");   // 2 <= 2
+      expect(spans[3].textContent).toBe("true");   // 3 <= 3
     });
 
     it("does not leak item into outer scope", () => {
@@ -408,16 +480,14 @@ describe("Transpiler", () => {
 
   describe("error handling", () => {
     it("throws error on invalid expression in interpolation", () => {
-      const parser = new TemplateParser();
-      // Expression parser should record error
-      expect(() => transpile("{{ 1 + }}")).toThrow(/Runtime Error.*Template string  error/);
+      expect(() => transpile("{{ 1 + }}")).toThrow("Parse Error");
     });
 
     it("includes the tag name in the error context", () => {
       const parser = new TemplateParser();
       // Trigger error inside a specific tag
       const source = '<div id="{{ 1 + }}"></div>';
-      expect(() => transpile(source)).toThrow(/Runtime Error in <div>/);
+      expect(() => transpile(source)).toThrow(/Runtime Error:.*at <div>/s);
     });
   });
 
