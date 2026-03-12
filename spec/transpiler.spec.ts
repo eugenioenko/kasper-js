@@ -753,6 +753,64 @@ describe("Transpiler", () => {
       });
     });
   });
+
+  describe("@ref", () => {
+    it("sets a property on the component instance after render", () => {
+      const parser = new TemplateParser();
+
+      class FormComp extends Component {
+        emailInput: HTMLElement | null = null;
+      }
+
+      const registry = {
+        "form-comp": {
+          selector: "form-comp",
+          component: FormComp as any,
+          template: document.createElement("div"),
+          nodes: parser.parse('<input @ref="emailInput" type="email" />'),
+        },
+      };
+
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      let instance: FormComp | null = null;
+
+      class Wrapper extends Component {
+        onRender() {
+          instance = (container.querySelector("form-comp") as any)?.$kasperInstance ?? null;
+        }
+      }
+      const outerRegistry = {
+        ...registry,
+        "wrap-comp": {
+          selector: "wrap-comp",
+          component: Wrapper as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<form-comp></form-comp>"),
+        },
+      };
+      const outerTranspiler = new Transpiler({ registry: outerRegistry });
+      outerTranspiler.transpile(parser.parse("<wrap-comp></wrap-comp>"), {}, container);
+
+      const formInstance = (container.querySelector("form-comp") as any)?.$kasperInstance as FormComp;
+      expect(formInstance.emailInput).not.toBeNull();
+      expect((formInstance.emailInput as HTMLElement).tagName.toLowerCase()).toBe("input");
+    });
+
+    it("sets a scope variable when used outside a component", () => {
+      const entity: any = { myDiv: null };
+      const container = transpile('<div @ref="myDiv"></div>', entity);
+      expect(entity.myDiv).not.toBeNull();
+      expect((entity.myDiv as HTMLElement).tagName.toLowerCase()).toBe("div");
+    });
+
+    it("does not set @ref as a DOM attribute", () => {
+      const entity: any = { myEl: null };
+      const container = transpile('<span @ref="myEl">text</span>', entity);
+      expect(container.querySelector("span")!.hasAttribute("ref")).toBe(false);
+      expect(container.querySelector("span")!.hasAttribute("@ref")).toBe(false);
+    });
+  });
 });
 
 describe("Viewer", () => {

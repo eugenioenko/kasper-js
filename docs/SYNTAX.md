@@ -16,6 +16,7 @@ Kasper templates are valid HTML extended with `{{ }}` interpolation and `@`-pref
    - [@attr (dynamic attributes)](#attr-dynamic-attributes)
    - [@class](#class)
    - [@style](#style)
+   - [@ref](#ref)
 3. [Void elements](#void-elements)
 4. [Components](#components)
    - [@: (argument passing)](#-argument-passing) — Kasper's convention for passing values to child components
@@ -255,6 +256,33 @@ Evaluates the expression and **merges** the result with any existing static `cla
 **Syntax:** `@style="<expr>"`
 
 Evaluates the expression and merges it with any existing static `style` attribute.
+
+---
+
+### @ref
+
+```html
+<input @ref="emailInput" type="email" />
+<canvas @ref="canvas"></canvas>
+```
+
+**Syntax:** `@ref="<propertyName>"`
+
+After the element is created and inserted into the DOM, sets `this.<propertyName>` on the component instance to the DOM element. The value is a plain property name — not an expression.
+
+```js
+class MyForm extends Component {
+  emailInput = null;
+
+  onRender() {
+    this.emailInput.focus();
+  }
+}
+```
+
+- The property is set before `onRender()` fires, so it is safe to access there.
+- `@ref` does not set any attribute on the DOM element.
+- Inside a `@each` loop, the property is overwritten on each iteration — it will hold the last element created.
 
 ---
 

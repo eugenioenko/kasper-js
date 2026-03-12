@@ -462,7 +462,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const name = (attr as KNode.Attribute).name;
           return (
             name.startsWith("@") &&
-            !["@if", "@elseif", "@else", "@each", "@while", "@let", "@key"].includes(
+            !["@if", "@elseif", "@else", "@each", "@while", "@let", "@key", "@ref"].includes(
               name
             ) &&
             !name.startsWith("@on:") &&
@@ -516,6 +516,17 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           (parent as any).insert(element);
         } else {
           parent.appendChild(element);
+        }
+      }
+
+      const refAttr = this.findAttr(node, ["@ref"]);
+      if (refAttr && !isVoid) {
+        const propName = refAttr.value.trim();
+        const instance = this.interpreter.scope.get("$instance");
+        if (instance) {
+          instance[propName] = element;
+        } else {
+          this.interpreter.scope.set(propName, element);
         }
       }
 
