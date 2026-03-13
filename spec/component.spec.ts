@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { Component } from "../src/component";
+import { signal } from "../src/signal";
 import { Transpiler } from "../src/transpiler";
 import { TemplateParser } from "../src/template-parser";
 
@@ -33,6 +34,67 @@ describe("Component", () => {
     expect(component.args).toBe(args);
     expect(component.ref).toBe(ref);
     expect(component.transpiler).toBe(transpiler);
+  });
+
+  describe("haunt", () => {
+    it("calls the callback when signal changes", () => {
+      const component = new Component();
+      const count = signal(0);
+      const calls: number[] = [];
+
+      component.haunt(count, (val) => calls.push(val));
+      count.value = 1;
+      count.value = 2;
+
+      expect(calls).toEqual([1, 2]);
+    });
+
+    it("stops the subscription when $watchStops are called", () => {
+      const component = new Component();
+      const count = signal(0);
+      const calls: number[] = [];
+
+      component.haunt(count, (val) => calls.push(val));
+      count.value = 1;
+
+      component.$watchStops.forEach((stop) => stop());
+      count.value = 2;
+
+      expect(calls).toEqual([1]);
+    });
+
+    it("cleans up haunt subscriptions on component destroy via transpiler", () => {
+      const parser = new TemplateParser();
+      const theme = signal("dark");
+      const calls: string[] = [];
+
+      class ThemedComponent extends Component {
+        onInit() {
+          this.haunt(theme, (val) => calls.push(val));
+        }
+      }
+
+      const registry = {
+        "themed-comp": {
+          selector: "themed-comp",
+          component: ThemedComponent as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<span></span>"),
+        },
+      };
+
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      transpiler.transpile(parser.parse("<themed-comp></themed-comp>"), {}, container);
+
+      theme.value = "light";
+      expect(calls).toEqual(["light"]);
+
+      transpiler.destroy(container);
+      theme.value = "dark";
+
+      expect(calls).toEqual(["light"]);
+    });
   });
 
   describe("Lifecycle hooks", () => {
