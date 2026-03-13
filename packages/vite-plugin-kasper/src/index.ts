@@ -24,6 +24,35 @@ function extractClassName(script: string): string | null {
   return match ? match[1] : null;
 }
 
+function extractImports(script: string): string[] {
+  const names: string[] = [];
+
+  // named: import { X, Y as Z } from '...'
+  const namedRe = /import\s*\{([^}]+)\}\s*from/g;
+  let match;
+  while ((match = namedRe.exec(script)) !== null) {
+    for (const item of match[1].split(",")) {
+      const parts = item.trim().split(/\s+as\s+/);
+      const name = parts[parts.length - 1].trim();
+      if (name) names.push(name);
+    }
+  }
+
+  // default: import X from '...'
+  const defaultRe = /import\s+(\w+)\s+from/g;
+  while ((match = defaultRe.exec(script)) !== null) {
+    names.push(match[1]);
+  }
+
+  // namespace: import * as X from '...'
+  const namespaceRe = /import\s*\*\s*as\s+(\w+)\s+from/g;
+  while ((match = namespaceRe.exec(script)) !== null) {
+    names.push(match[1]);
+  }
+
+  return [...new Set(names)];
+}
+
 function transformKasper(source: string, id: string): string {
   const { template, script, style } = parseBlocks(source);
   const className = extractClassName(script);
@@ -48,6 +77,11 @@ function transformKasper(source: string, id: string): string {
   parts.push(script);
 
   parts.push(`${className}.template = ${JSON.stringify(template)};`);
+
+  const imports = extractImports(script);
+  if (imports.length > 0) {
+    parts.push(`${className}.$imports = { ${imports.join(", ")} };`);
+  }
 
   return parts.join("\n\n");
 }

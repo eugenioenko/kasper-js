@@ -146,5 +146,33 @@ describe("Scope", () => {
       // undefined is treated as "not set" by the lookup
       expect(child.get("x")).toBe("from-parent");
     });
+
+    it("falls back to $imports on the component constructor", () => {
+      function formatDate() { return "2026-01-01"; }
+      class MyComponent { static $imports = { formatDate }; }
+      const instance = new MyComponent();
+      const scope = new Scope(null, instance);
+      expect(scope.get("formatDate")).toBe(formatDate);
+    });
+
+    it("resolves $imports through nested child scopes", () => {
+      function helper() { return 42; }
+      class MyComponent { static $imports = { helper }; }
+      const instance = new MyComponent();
+      const root = new Scope(null, instance);
+      const child = new Scope(root, { item: "x" });
+      expect(child.get("helper")).toBe(helper);
+    });
+
+    it("component instance property takes priority over $imports", () => {
+      function helper() { return "from-imports"; }
+      class MyComponent {
+        static $imports = { helper };
+        helper = () => "from-instance";
+      }
+      const instance = new MyComponent();
+      const scope = new Scope(null, instance);
+      expect(scope.get("helper")()).toBe("from-instance");
+    });
   });
 });

@@ -67,12 +67,38 @@ declare module '*.kasper' {
 }
 ```
 
+## Template scope — using imports in templates
+
+Any name imported in the `<script>` block is automatically available in the template. No need to re-declare imports as class fields.
+
+```html
+<template>
+  <p>{{formatDate(createdAt.value)}}</p>
+  <user-card @:user="currentUser.value" />
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+import { UserCard } from './UserCard.kasper';
+import { formatDate } from '../utils/date';
+
+export class ProfilePage extends Component {
+  createdAt = signal(new Date());
+}
+</script>
+```
+
+`formatDate` and `UserCard` are imported at module level — the plugin makes them available in the template automatically.
+
 ## How it works
 
 The plugin transforms a `.kasper` file into a TypeScript module:
 
 1. Extracts the `<template>` block and assigns it as `ClassName.template = "..."`
-2. Passes the `<script>` block through esbuild as TypeScript
-3. Injects `<style>` as a self-executing style tag
+2. Collects all imported names from the `<script>` block and assigns them as `ClassName.$imports = { ... }`
+3. Passes the `<script>` block through esbuild as TypeScript
+4. Injects `<style>` as a self-executing style tag
+
+At runtime, the scope resolver checks `$imports` as a fallback when a name is not found on the component instance — making imported functions, classes, and constants available in template expressions.
 
 The output is a standard ES module — no runtime overhead, no custom loader.
