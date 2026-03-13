@@ -410,6 +410,20 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           this.bindMethods(component);
           (element as any).$kasperInstance = component;
 
+          const componentNodes = this.registry[node.name].nodes!;
+          component.$render = () => {
+            this.destroy(element as HTMLElement);
+            (element as HTMLElement).innerHTML = "";
+            const scope = new Scope(restoreScope, component);
+            scope.set("$instance", component);
+            component.$slots = slots;
+            const prevScope = this.interpreter.scope;
+            this.interpreter.scope = scope;
+            this.createSiblings(componentNodes, element);
+            this.interpreter.scope = prevScope;
+            if (typeof component.onRender === "function") component.onRender();
+          };
+
           if (typeof component.onInit === "function") {
             component.onInit();
           }
@@ -421,7 +435,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         this.interpreter.scope.set("$instance", component);
 
         // create the children of the component
-        this.createSiblings(this.registry[node.name].nodes, element);
+        this.createSiblings(this.registry[node.name].nodes!, element);
 
         if (component && typeof component.onRender === "function") {
           component.onRender();

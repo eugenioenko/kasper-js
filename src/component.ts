@@ -17,6 +17,7 @@ export class Component {
   transpiler?: Transpiler;
   $abortController = new AbortController();
   $watchStops: Array<() => void> = [];
+  $render?: () => void;
 
   constructor(props?: ComponentArgs) {
     if (!props) {
@@ -43,10 +44,8 @@ export class Component {
   onChanges() {}
   onDestroy() {}
 
-  $doRender() {
-    if (!this.transpiler) {
-      return;
-    }
+  render() {
+    this.$render?.();
   }
 }
 

@@ -194,3 +194,41 @@ class LiveFeed extends Component {
   }
 }
 ```
+
+---
+
+## Manual rendering with render()
+
+By default, Kasper updates the DOM surgically through signals — only the parts that depend on changed values are updated. This is the recommended approach.
+
+In some cases you may want to skip signals entirely and trigger a full component re-render manually — for example when integrating with non-reactive data sources, third-party libraries, or imperative update patterns.
+
+Call `this.render()` to tear down and re-render the component's template:
+
+```ts
+export class Clock extends Component {
+  time = new Date().toLocaleTimeString();
+
+  onInit() {
+    setInterval(() => {
+      this.time = new Date().toLocaleTimeString();
+      this.render();
+    }, 1000);
+  }
+}
+```
+
+```html
+<template>
+  <p>{{time}}</p>
+</template>
+```
+
+`render()` will:
+1. Destroy existing child effects and DOM nodes inside the component
+2. Re-run the template against the current component state
+3. Call `onRender()` when done
+
+:::caution
+Prefer signals for reactivity — `render()` is a full teardown and rebuild of the component's DOM, which is more expensive than a surgical signal update.
+:::

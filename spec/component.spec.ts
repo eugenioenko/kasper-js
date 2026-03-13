@@ -12,9 +12,9 @@ describe("Component", () => {
     expect(component.transpiler).toBeUndefined();
   });
 
-  it("$doRender does nothing when transpiler is not set", () => {
+  it("render() does nothing when $render is not set", () => {
     const component = new Component();
-    expect(() => component.$doRender()).not.toThrow();
+    expect(() => component.render()).not.toThrow();
   });
 
   it("lifecycle hook methods exist and are callable", () => {
@@ -34,6 +34,68 @@ describe("Component", () => {
     expect(component.args).toBe(args);
     expect(component.ref).toBe(ref);
     expect(component.transpiler).toBe(transpiler);
+  });
+
+  describe("render", () => {
+    it("render() does nothing when $render is not set", () => {
+      const component = new Component();
+      expect(() => component.render()).not.toThrow();
+    });
+
+    it("render() re-renders component content", () => {
+      const parser = new TemplateParser();
+      let label = "first";
+
+      class ManualComponent extends Component {
+        getLabel() { return label; }
+      }
+
+      const registry = {
+        "manual-comp": {
+          selector: "manual-comp",
+          component: ManualComponent as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<span>{{getLabel()}}</span>"),
+        },
+      };
+
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      transpiler.transpile(parser.parse("<manual-comp></manual-comp>"), {}, container);
+      expect(container.textContent).toBe("first");
+
+      label = "second";
+      const instance = (container.querySelector("manual-comp") as any)?.$kasperInstance;
+      instance.render();
+      expect(container.textContent).toBe("second");
+    });
+
+    it("render() calls onRender after re-render", () => {
+      const parser = new TemplateParser();
+      let renderCount = 0;
+
+      class RenderCountComponent extends Component {
+        onRender() { renderCount++; }
+      }
+
+      const registry = {
+        "render-count-comp": {
+          selector: "render-count-comp",
+          component: RenderCountComponent as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<span></span>"),
+        },
+      };
+
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      transpiler.transpile(parser.parse("<render-count-comp></render-count-comp>"), {}, container);
+      expect(renderCount).toBe(1);
+
+      const instance = (container.querySelector("render-count-comp") as any)?.$kasperInstance;
+      instance.render();
+      expect(renderCount).toBe(2);
+    });
   });
 
   describe("haunt", () => {
