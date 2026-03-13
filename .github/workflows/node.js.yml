@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Build & Test
 
 on:
   push:
@@ -12,12 +12,14 @@ jobs:
     strategy:
       matrix:
         node-version: [24.x]
-        
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -26,6 +28,21 @@ jobs:
           cache: "pnpm"
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm lint
-      - run: pnpm test
+
+      - name: Build kasper-js
+        run: pnpm build
+
+      - name: Build vite-plugin-kasper
+        run: pnpm --filter vite-plugin-kasper build
+
+      - name: Build docs-web
+        run: pnpm --filter docs-web build
+
+      - name: Build template
+        run: pnpm --filter kasper-template build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
