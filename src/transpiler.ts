@@ -606,6 +606,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       const instance = node.$kasperInstance;
       if (instance.onDestroy) instance.onDestroy();
       if (instance.$abortController) instance.$abortController.abort();
+      if (instance.$watchStops) instance.$watchStops.forEach((stop: () => void) => stop());
     }
 
     // 2. Cleanup effects attached to the node

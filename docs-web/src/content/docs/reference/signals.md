@@ -122,21 +122,19 @@ No cleanup needed here — the signal is owned by the component and will be garb
 
 ### In components — external signals
 
-When watching a signal that outlives the component, the watcher holds a reference to the component via the callback closure. Call `stop()` in `onDestroy` to break that reference and allow the component to be garbage collected.
+When watching a signal that outlives the component, use `this.haunt()` instead of `onChange` directly. It registers the subscription and cleans it up automatically when the component is destroyed:
 
 ```js
 class MyComp extends Component {
   onInit() {
-    this._stop = globalTheme.onChange((theme) => {
+    this.haunt(globalTheme, (theme) => {
       this.applyTheme(theme);
     });
   }
-
-  onDestroy() {
-    this._stop();
-  }
 }
 ```
+
+No `onDestroy` needed.
 
 ---
 

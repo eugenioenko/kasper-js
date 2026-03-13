@@ -1,5 +1,8 @@
+import { Signal } from "./signal";
 import { Transpiler } from "./transpiler";
 import { KNode } from "./types/nodes";
+
+type Watcher<T> = (newValue: T, oldValue: T) => void;
 
 interface ComponentArgs {
   args: Record<string, any>;
@@ -13,6 +16,7 @@ export class Component {
   ref?: Node;
   transpiler?: Transpiler;
   $abortController = new AbortController();
+  $watchStops: Array<() => void> = [];
 
   constructor(props?: ComponentArgs) {
     if (!props) {
@@ -28,6 +32,10 @@ export class Component {
     if (props.transpiler) {
       this.transpiler = props.transpiler;
     }
+  }
+
+  haunt<T>(sig: Signal<T>, fn: Watcher<T>): void {
+    this.$watchStops.push(sig.onChange(fn));
   }
 
   onInit() {}
