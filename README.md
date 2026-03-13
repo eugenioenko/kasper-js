@@ -12,13 +12,13 @@ A lightweight component framework with fine-grained Signal-based reactivity. No 
 
 ## Why Kasper.js
 
-Most frameworks solve reactivity at the wrong layer. React re-runs render functions and diffs a virtual DOM tree. Vue re-runs component render functions when reactive data changes. Both approaches re-execute logic that didn't change and then reconcile the result with the real DOM.
+Fine-grained signals are not new — SolidJS pioneered direct signal-to-DOM binding, Angular adopted signals in v17, and Vue's Composition API moves in the same direction. The signal primitive itself is a solved problem.
 
-Kasper solves reactivity at the signal level. Each `{{expression}}`, `@if`, and `@each` binding registers its own fine-grained effect. When a signal changes, only the exact DOM text nodes, attributes, and structural boundaries that read that signal are updated — no diffing, no re-execution of component logic, no scheduler.
+Kasper's position is different: it is a complete, self-contained framework — components, router, slots, lifecycle, expression evaluator, template parser — in under 4000 lines of TypeScript with zero runtime dependencies. No virtual DOM, no scheduler, no compiler that requires a dedicated language server. The entire dependency graph at runtime is the framework itself.
 
-The template compiler is intentionally minimal. Directives are valid HTML attributes — no custom syntax, no JSX, no file-specific language extensions. Your editor parses Kasper templates as plain HTML. The expression evaluator is a custom recursive-descent parser (not eval, not a third-party parser) that handles a JavaScript subset including arrow functions, optional chaining (`?.`), nullish coalescing (`??`), pipeline operator (`|>`), spread, and template literals — without pulling in a single parse dependency.
+The design constraints are deliberate. Directives are valid HTML attributes, so templates parse as plain HTML without editor plugins or custom syntax highlighting. The expression evaluator is a custom recursive-descent parser — not `eval`, not `new Function`, not a third-party AST library — supporting arrow functions, optional chaining, nullish coalescing, pipeline operator, and spread without pulling in a single parse dependency. This matters beyond aesthetics: because no dynamic code execution primitives are used, Kasper works in environments with a strict Content Security Policy (`script-src 'self'`) out of the box — no CSP exemptions required. Each `{{expression}}`, `@if`, and `@each` binding registers its own effect directly against the DOM node it controls. When a signal changes, only that node is updated — no component re-render, no diffing pass, no scheduler queue.
 
-The reactivity core is ~100 lines. The full framework — signals, expression parser, template parser, transpiler, router, component lifecycle, and slot system — is under 3000 lines of TypeScript with zero runtime dependencies.
+The result is a framework you can read in an afternoon, understand completely, and trust in production. It is not trying to replace React or Angular for large teams with complex tooling requirements. It is for projects where the right answer is fewer moving parts.
 
 ---
 
@@ -633,21 +633,6 @@ export class ProfilePage extends Component {
 
 Kasper has **589 tests across 13 spec files**, all passing. Tests run directly against `src/` — no build step required. Coverage is measured with V8's native instrumentor via Vitest.
 
-```
- ✓ spec/scanner.spec.ts             103 tests  — tokenizer: all token types, edge cases, error recovery
- ✓ spec/interpreter.spec.ts         132 tests  — expression evaluation: operators, scope, arrow fns, edge cases
- ✓ spec/expression-parser.spec.ts    79 tests  — AST construction: precedence, optional chaining, pipeline, spread
- ✓ spec/transpiler.spec.ts           96 tests  — DOM rendering: directives, components, slots, lifecycle, cleanup
- ✓ spec/types.spec.ts                32 tests  — AST node types and expression type guards
- ✓ spec/scope.spec.ts                26 tests  — scope chain, $imports fallback, instance priority
- ✓ spec/template-parser.spec.ts      57 tests  — HTML parsing: self-closing, attributes, comments, nesting
- ✓ spec/component.spec.ts            17 tests  — lifecycle hooks, haunt(), render(), slot rendering
- ✓ spec/router.spec.ts               13 tests  — matchPath, navigate, guards, params, popstate, template integration
- ✓ spec/signal.spec.ts               17 tests  — reactivity: computed, effect, batch, onChange, peek
- ✓ spec/viewer.spec.ts               10 tests  — DOM inspection utilities
- ✓ spec/boundary.spec.ts              4 tests  — DOM boundary insert/clear/destroy lifecycle
- ✓ spec/kasper.spec.ts                3 tests  — App bootstrap and registry normalization
-```
 
 **Coverage:**
 
