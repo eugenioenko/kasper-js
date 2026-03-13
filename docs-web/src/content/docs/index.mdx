@@ -1,0 +1,41 @@
+---
+title: Kasper.js
+description: A lightweight component framework with fine-grained signal-based reactivity.
+template: splash
+hero:
+  title: Kasper.js
+  tagline: A lightweight component framework with fine-grained signal-based reactivity and single-file components.
+  actions:
+    - text: Get Started
+      link: /getting-started/installation/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/eugenioenko/kasper-js
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Kasper.js is a lightweight framework for building reactive web UIs. It sits between simple templating engines and full frameworks like Vue or React — small enough to understand completely, powerful enough for real applications.
+
+<CardGrid>
+  <Card title="Fine-grained Signals" icon="rocket">
+    Reactive primitives that update only the exact DOM nodes that depend on them. No virtual DOM, no diffing, no full re-renders.
+  </Card>
+  <Card title="Single-file Components" icon="document">
+    Write `<template>`, `<script>`, and `<style>` in a single `.kasper` file. Powered by a Vite plugin with full TypeScript support.
+  </Card>
+  <Card title="Rich Expression Language" icon="puzzle">
+    Arrow functions, pipeline operator `|>`, optional chaining, spread, and more — a proper AST-based expression interpreter, not eval.
+  </Card>
+  <Card title="Template Directives" icon="list-format">
+    `@if`, `@each`, `@while`, `@let`, `@on`, `@attr`, `@ref` — valid HTML attributes with surgical DOM updates and automatic cleanup.
+  </Card>
+  <Card title="TypeScript First" icon="approve-check">
+    Written in TypeScript, ships declaration files. Full type checking and autocomplete out of the box.
+  </Card>
+  <Card title="Tiny Bundle" icon="seti:compressed">
+    56KB minified. Signals, components, slots, lifecycle, and a full expression evaluator — no hidden dependencies.
+  </Card>
+</CardGrid>

@@ -30,9 +30,12 @@ function copyDir(src, dest) {
 
 copyDir(templateDir, targetDir);
 
-// Replace project name placeholder in package.json
+// Replace project name placeholder and workspace deps in package.json
 const pkgPath = join(targetDir, "package.json");
-const pkg = readFileSync(pkgPath, "utf-8").replace(/\{\{project-name\}\}/g, projectName);
+const pkg = readFileSync(pkgPath, "utf-8")
+  .replace(/"kasper-template"/g, `"${projectName}"`)
+  .replace(/"kasper-js": "workspace:\*"/g, '"kasper-js": "latest"')
+  .replace(/"vite-plugin-kasper": "workspace:\*"/g, '"vite-plugin-kasper": "latest"');
 writeFileSync(pkgPath, pkg);
 
 console.log(`\nScaffolded project in ${projectName}/\n`);

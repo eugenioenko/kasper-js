@@ -4,7 +4,7 @@ import { docsSchema } from '@astrojs/starlight/schema';
 
 export const collections = {
   docs: defineCollection({
-    loader: glob({ pattern: '**/*.md', base: './src/content/docs' }),
+    loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/docs' }),
     schema: docsSchema(),
   }),
 };

@@ -1,6 +1,8 @@
 ---
 title: Introduction
 description: What is Kasper.js and why use it?
+sidebar:
+  order: 1
 ---
 
 Kasper.js is a lightweight component framework for building reactive web UIs. It sits between simple templating engines and full frameworks like Vue or React — small enough to understand completely, powerful enough for real applications.

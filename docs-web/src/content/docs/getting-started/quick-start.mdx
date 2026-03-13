@@ -1,7 +1,11 @@
 ---
 title: Quick Start
 description: Build your first Kasper.js app in minutes.
+sidebar:
+  order: 3
 ---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 This guide walks you through building a simple counter app from scratch.
 
@@ -89,9 +93,23 @@ Create `index.html`:
 
 ## Run it
 
-```bash
-npm run dev
-```
+<Tabs>
+  <TabItem label="npm">
+  ```bash
+  npm run dev
+  ```
+  </TabItem>
+  <TabItem label="pnpm">
+  ```bash
+  pnpm dev
+  ```
+  </TabItem>
+  <TabItem label="yarn">
+  ```bash
+  yarn dev
+  ```
+  </TabItem>
+</Tabs>
 
 Open `http://localhost:5173` — you should see a counter that increments and decrements reactively.
 

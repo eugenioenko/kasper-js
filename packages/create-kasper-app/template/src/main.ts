@@ -1,5 +1,5 @@
 import { App as KasperApp } from './components/App.kasper';
-import { Counter } from './components/Counter.kasper';
+import { Example } from './components/Example.kasper';
 import { App } from 'kasper-js';
 
 App({
@@ -7,6 +7,6 @@ App({
   entry: 'app',
   registry: {
     app: { component: KasperApp, nodes: [] },
-    counter: { component: Counter, nodes: [] },
+    example: { component: Example, nodes: [] },
   },
 });

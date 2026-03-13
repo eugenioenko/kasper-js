@@ -4,8 +4,13 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
   integrations: [
     starlight({
+      customCss: ['./src/styles/custom.css'],
       title: 'Kasper.js',
-      description: 'A lightweight component framework with fine-grained Signal-based reactivity.',
+      description: 'A lightweight component framework with fine-grained signal-based reactivity.',
+      logo: {
+        src: './src/assets/kasper.svg',
+      },
+      favicon: '/kasper.svg',
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/eugenioenko/kasper-js' },
       ],

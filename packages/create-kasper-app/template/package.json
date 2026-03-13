@@ -1,5 +1,5 @@
 {
-  "name": "{{project-name}}",
+  "name": "kasper-template",
   "version": "0.0.1",
   "type": "module",
   "scripts": {
@@ -8,11 +8,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "kasper-js": "^1.0.0"
+    "kasper-js": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.4.5",
     "vite": "^6.0.0",
-    "vite-plugin-kasper": "^0.1.0"
+    "vite-plugin-kasper": "workspace:*"
   }
 }

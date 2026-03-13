@@ -16,7 +16,12 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
-  "keywords": ["vite-plugin", "kasper"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": ["vite-plugin", "kasper", "kasper-js", "sfc"],
   "author": "eugenioenko",
   "license": "MIT",
   "peerDependencies": {

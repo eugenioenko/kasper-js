@@ -1,6 +1,6 @@
 {
   "name": "kasper-js",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "A javascript template parser",
   "main": "./dist/kasper.js",
   "module": "./dist/kasper.js",
@@ -11,7 +11,6 @@
       "types": "./dist/types/index.d.ts"
     }
   },
-  "packageManager": "pnpm@10",
   "scripts": {
     "dev": "vite build --mode development --watch",
     "build": "vite build --mode development && vite build && tsc -p tsconfig.build.json",
@@ -22,14 +21,24 @@
     "cli": "node dist/@script",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sandbox": "pnpm --filter sandbox dev",
+    "sandbox": "pnpm --filter kasper-template dev",
+    "demo": "pnpm --filter create-kasper-app --filter sandbox dev",
     "docs": "pnpm --filter docs-web dev",
     "docs:build": "pnpm --filter docs-web build",
     "playground": "npx serve . -l 3000"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "javascript",
-    "interpreter"
+    "framework",
+    "signals",
+    "reactivity",
+    "components",
+    "vite"
   ],
   "author": "eugenioenko",
   "license": "MIT",

@@ -1,18 +1,42 @@
 ---
 title: Installation
 description: How to install Kasper.js in your project.
+sidebar:
+  order: 2
 ---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Scaffold a new project
 
 The fastest way to get started is with the official scaffold tool:
 
-```bash
-npm create kasper-app my-project
-cd my-project
-npm install
-npm run dev
-```
+<Tabs>
+  <TabItem label="npm">
+  ```bash
+  npm create kasper-app my-project
+  cd my-project
+  npm install
+  npm run dev
+  ```
+  </TabItem>
+  <TabItem label="pnpm">
+  ```bash
+  pnpm create kasper-app my-project
+  cd my-project
+  pnpm install
+  pnpm dev
+  ```
+  </TabItem>
+  <TabItem label="yarn">
+  ```bash
+  yarn create kasper-app my-project
+  cd my-project
+  yarn install
+  yarn dev
+  ```
+  </TabItem>
+</Tabs>
 
 This creates a new Vite project with the Kasper plugin configured and a working example component.
 
@@ -20,10 +44,26 @@ This creates a new Vite project with the Kasper plugin configured and a working 
 
 Install the framework and Vite plugin:
 
-```bash
-npm install kasper-js
-npm install -D vite-plugin-kasper
-```
+<Tabs>
+  <TabItem label="npm">
+  ```bash
+  npm install kasper-js
+  npm install -D vite-plugin-kasper
+  ```
+  </TabItem>
+  <TabItem label="pnpm">
+  ```bash
+  pnpm add kasper-js
+  pnpm add -D vite-plugin-kasper
+  ```
+  </TabItem>
+  <TabItem label="yarn">
+  ```bash
+  yarn add kasper-js
+  yarn add -D vite-plugin-kasper
+  ```
+  </TabItem>
+</Tabs>
 
 Add the plugin to your `vite.config.ts`:
 

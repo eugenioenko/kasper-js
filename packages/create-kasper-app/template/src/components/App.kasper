@@ -1,24 +1,163 @@
 <template>
-  <div class="app">
-    <h2>{{title}}</h2>
-    <counter></counter>
+  <div class="welcome" @if="!showExample.value">
+    <img src="/kasper.svg" alt="Kasper.js" class="logo" />
+    <h1>Kasper.js</h1>
+    <p class="tagline">A lightweight component framework with fine-grained signal-based reactivity.</p>
+
+    <div class="links">
+      <a href="https://kasperjs.top" target="_blank" class="link-card">
+        <span class="link-icon">📖</span>
+        <span class="link-body">
+          <strong>Documentation</strong>
+          <span>Guides, API reference and examples.</span>
+        </span>
+      </a>
+      <a href="https://github.com/eugenioenko/kasper-js" target="_blank" class="link-card">
+        <span class="link-icon">⭐</span>
+        <span class="link-body">
+          <strong>GitHub</strong>
+          <span>Star the repo, open issues, contribute.</span>
+        </span>
+      </a>
+      <a href="https://www.npmjs.com/package/kasper-js" target="_blank" class="link-card">
+        <span class="link-icon">📦</span>
+        <span class="link-body">
+          <strong>npm</strong>
+          <span>kasper-js &amp; vite-plugin-kasper packages.</span>
+        </span>
+      </a>
+      <a class="link-card" @on:click="showExample.value = true">
+        <span class="link-icon">🧪</span>
+        <span class="link-body">
+          <strong>Examples</strong>
+          <span>Explore signals, lists and conditionals in <code>Example.kasper</code>.</span>
+        </span>
+      </a>
+    </div>
+
+    <p class="hint">Edit <code>src/components/App.kasper</code> to get started.</p>
   </div>
+  <example @if="showExample.value"></example>
 </template>
 
 <script>
-import { Component } from 'kasper-js';
-import { Counter } from './Counter.kasper';
+  import { Component, signal } from 'kasper-js';
 
-export class App extends Component {
-  title = 'Kasper App';
-}
+  export class App extends Component {
+    showExample = signal(false);
+  }
 </script>
 
 <style>
-.app {
-  font-family: sans-serif;
-  max-width: 600px;
-  margin: 4rem auto;
-  text-align: center;
-}
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: #0d0e0f;
+    color: #e0e0e0;
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  .welcome {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem;
+    text-align: center;
+  }
+
+  .logo {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #fff 40%, #d41d67);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    color: #d4d4d4;
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+    text-align: left;
+  }
+
+  .link-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #1a1c1e;
+    border: 1px solid #2a2d2f;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .link-card:hover {
+    border-color: #d41d67;
+    background: #1f1013;
+  }
+
+  .link-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .link-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .link-body strong {
+    font-size: 0.95rem;
+    color: #fff;
+  }
+
+  .link-body span {
+    font-size: 0.8rem;
+    color: #666;
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: #9b9b9b;
+  }
+
+  .hint code {
+    margin-left: 5px;
+    margin-right: 5px;
+    display: inline-block;
+    background: #1a1c1e;
+    border: 1px solid #2a2d2f;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    color: #d41d67;
+  }
 </style>

@@ -3,12 +3,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](package.json)
 
-A lightweight component framework with fine-grained Signal-based reactivity and a Vite plugin for single-file components.
+A lightweight component framework with fine-grained signal-based reactivity and a Vite plugin for single-file components.
 
 ## Quick Start
 
 ```bash
+# npm
 npm create kasper-app my-project
+
+# pnpm
+pnpm create kasper-app my-project
+
+# yarn
+yarn create kasper-app my-project
+```
+
+```bash
 cd my-project
 npm install
 npm run dev
@@ -17,8 +27,17 @@ npm run dev
 ## Installation
 
 ```bash
+# npm
 npm install kasper-js
 npm install -D vite-plugin-kasper
+
+# pnpm
+pnpm add kasper-js
+pnpm add -D vite-plugin-kasper
+
+# yarn
+yarn add kasper-js
+yarn add -D vite-plugin-kasper
 ```
 
 ```ts

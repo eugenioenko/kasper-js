@@ -9,43 +9,43 @@
 </template>
 
 <script>
-import { signal, Component } from 'kasper-js';
+  import { signal, Component } from 'kasper-js';
 
-export class Counter extends Component {
-  count = signal(0);
+  export class Counter extends Component {
+    count = signal(0);
 
-  increment() {
-    this.count.value++;
+    increment() {
+      this.count.value++;
+    }
+
+    decrement() {
+      this.count.value--;
+    }
   }
-
-  decrement() {
-    this.count.value--;
-  }
-}
 </script>
 
 <style>
-.counter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
+  .counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
 
-.counter h1 {
-  font-size: 4rem;
-  margin: 0;
-}
+  .counter h1 {
+    font-size: 4rem;
+    margin: 0;
+  }
 
-.actions {
-  display: flex;
-  gap: 0.5rem;
-}
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
 
-.actions button {
-  font-size: 1.5rem;
-  width: 3rem;
-  height: 3rem;
-  cursor: pointer;
-}
+  .actions button {
+    font-size: 1.5rem;
+    width: 3rem;
+    height: 3rem;
+    cursor: pointer;
+  }
 </style>
