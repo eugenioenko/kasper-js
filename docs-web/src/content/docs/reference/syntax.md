@@ -377,7 +377,7 @@ Components can accept content from the parent via named or default slots.
 
 <!-- In panel-card template -->
 <div class="card">
-  <slot></slot>
+  <slot />
 </div>
 ```
 
@@ -386,20 +386,20 @@ Components can accept content from the parent via named or default slots.
 ```html
 <!-- In parent template -->
 <page-layout>
-  <header slot="header"><h1>Title</h1></header>
-  <p slot="footer">Footer text</p>
+  <header @slot="header"><h1>Title</h1></header>
+  <p @slot="footer">Footer text</p>
   <p>Default content</p>
 </page-layout>
 
 <!-- In page-layout template -->
 <div class="layout">
-  <div class="header"><slot name="header"></slot></div>
-  <div class="body"><slot></slot></div>
-  <div class="footer"><slot name="footer"></slot></div>
+  <div class="header"><slot @name="header" /></div>
+  <div class="body"><slot /></div>
+  <div class="footer"><slot @name="footer" /></div>
 </div>
 ```
 
-Any element with a `slot="<name>"` attribute is routed to the matching `<slot name="<name>">`. All other children go to the default `<slot>`.
+Any element with a `@slot="<name>"` attribute is routed to the matching `<slot @name="<name>">`. All other children go to the default `<slot>`.
 
 ---
 
@@ -622,13 +622,11 @@ kasper.App({
       selector: "template#my-app",  // <template> element to read innerHTML from
       component: MyApp,
       template: null,
-      nodes: [],
     },
     "user-card": {
       selector: "template#user-card",
       component: UserCard,
       template: null,
-      nodes: [],
     },
   },
 });

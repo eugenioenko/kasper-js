@@ -6,7 +6,7 @@ App({
   root: document.querySelector<HTMLElement>('#app')!,
   entry: 'app',
   registry: {
-    app: { component: KasperApp, nodes: [] },
-    example: { component: Example, nodes: [] },
+    app: { component: KasperApp },
+    example: { component: Example },
   },
 });

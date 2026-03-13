@@ -16,7 +16,7 @@ App({
   root: document.querySelector('#app'),
   entry: 'my-app',
   registry: {
-    'my-app': { component: MyApp, nodes: [] },
+    'my-app': { component: MyApp },
   },
 });
 ```

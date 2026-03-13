@@ -81,8 +81,8 @@ App({
   root: document.querySelector('#app'),
   entry: 'app',
   registry: {
-    counter: { component: Counter, nodes: [] },
-    greeting: { component: Greeting, nodes: [] },
+    counter: { component: Counter },
+    greeting: { component: Greeting },
   },
 });
 ```
