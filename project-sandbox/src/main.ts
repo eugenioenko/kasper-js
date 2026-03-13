@@ -1,0 +1,12 @@
+import { App as KasperApp } from './components/App.kasper';
+import { Example } from './components/Example.kasper';
+import { App } from 'kasper-js';
+
+App({
+  root: document.querySelector<HTMLElement>('#app')!,
+  entry: 'app',
+  registry: {
+    app: { component: KasperApp },
+    example: { component: Example },
+  },
+});

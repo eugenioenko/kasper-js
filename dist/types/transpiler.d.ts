@@ -1,5 +1,6 @@
 import { ComponentClass, ComponentRegistry } from "./component";
 import { RouteConfig } from "./router";
+import { Scope } from "./scope";
 import * as KNode from "./types/nodes";
 export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private scanner;
@@ -35,7 +36,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private destroyNode;
     destroy(container: Element): void;
     mountComponent(ComponentClass: ComponentClass, container: HTMLElement, params?: Record<string, string>): void;
-    extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>): RouteConfig[];
+    extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>, scope?: Scope): RouteConfig[];
     visitDoctypeKNode(_node: KNode.Doctype): void;
     error(message: string, tagName?: string): void;
 }
