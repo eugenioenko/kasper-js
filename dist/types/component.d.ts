@@ -1,5 +1,7 @@
+import { Signal } from "./signal";
 import { Transpiler } from "./transpiler";
 import { KNode } from "./types/nodes";
+type Watcher<T> = (newValue: T, oldValue: T) => void;
 interface ComponentArgs {
     args: Record<string, any>;
     ref?: Node;
@@ -11,12 +13,15 @@ export declare class Component {
     ref?: Node;
     transpiler?: Transpiler;
     $abortController: AbortController;
+    $watchStops: Array<() => void>;
+    $render?: () => void;
     constructor(props?: ComponentArgs);
+    haunt<T>(sig: Signal<T>, fn: Watcher<T>): void;
     onInit(): void;
     onRender(): void;
     onChanges(): void;
     onDestroy(): void;
-    $doRender(): void;
+    render(): void;
 }
 export type KasperEntity = Component | Record<string, any> | null | undefined;
 export type ComponentClass = {
@@ -27,7 +32,7 @@ export interface ComponentRegistry {
         selector?: string;
         component: ComponentClass;
         template?: Element | null;
-        nodes: KNode[];
+        nodes?: KNode[];
     };
 }
 export {};

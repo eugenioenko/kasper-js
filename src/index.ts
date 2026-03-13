@@ -2,6 +2,7 @@ import { Component } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { execute, transpile, Kasper, KasperInit } from "./kasper";
+import { navigate, Router } from "./router";
 import { Scanner } from "./scanner";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
@@ -10,4 +11,4 @@ import { signal, effect, computed, batch } from "./signal";
 
 
 export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, Viewer, signal, effect, computed, batch };
-export { execute, transpile, Kasper, KasperInit as App, Component };
+export { execute, transpile, Kasper, KasperInit as App, Component, navigate, Router };

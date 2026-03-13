@@ -1,10 +1,12 @@
-import { ComponentRegistry } from "./component";
+import { ComponentClass, ComponentRegistry } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
+import { Router, RouteConfig } from "./router";
 import { Scanner } from "./scanner";
 import { Scope } from "./scope";
 import { effect } from "./signal";
 import { Boundary } from "./boundary";
+import { TemplateParser } from "./template-parser";
 import * as KNode from "./types/nodes";
 
 type IfElseNode = [KNode.Element, KNode.Attribute];
@@ -16,11 +18,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private registry: ComponentRegistry = {};
 
   constructor(options?: { registry: ComponentRegistry }) {
-    if (!options) {
-      return;
-    }
+    this.registry["router"] = { component: Router, nodes: [] };
+    if (!options) return;
     if (options.registry) {
-      this.registry = options.registry;
+      this.registry = { ...this.registry, ...options.registry };
     }
   }
 
@@ -424,6 +425,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             if (typeof component.onRender === "function") component.onRender();
           };
 
+          if (node.name === "router" && component instanceof Router) {
+            component.setRoutes(this.extractRoutes(node.children));
+          }
+
           if (typeof component.onInit === "function") {
             component.onInit();
           }
@@ -646,6 +651,71 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   public destroy(container: Element): void {
     container.childNodes.forEach((child) => this.destroyNode(child));
+  }
+
+  public mountComponent(ComponentClass: ComponentClass, container: HTMLElement, params: Record<string, string> = {}): void {
+    this.destroy(container);
+    container.innerHTML = "";
+
+    const template = (ComponentClass as any).template;
+    if (!template) return;
+
+    const nodes = new TemplateParser().parse(template);
+    const host = document.createElement("div");
+    container.appendChild(host);
+
+    const component = new ComponentClass({ args: { params: params }, ref: host, transpiler: this });
+    this.bindMethods(component);
+    (host as any).$kasperInstance = component;
+
+    const componentNodes = nodes;
+    component.$render = () => {
+      this.destroy(host);
+      host.innerHTML = "";
+      const scope = new Scope(null, component);
+      scope.set("$instance", component);
+      const prev = this.interpreter.scope;
+      this.interpreter.scope = scope;
+      this.createSiblings(componentNodes, host);
+      this.interpreter.scope = prev;
+      if (typeof component.onRender === "function") component.onRender();
+    };
+
+    if (typeof component.onInit === "function") component.onInit();
+
+    const scope = new Scope(null, component);
+    scope.set("$instance", component);
+    const prev = this.interpreter.scope;
+    this.interpreter.scope = scope;
+    this.createSiblings(nodes, host);
+    this.interpreter.scope = prev;
+
+    if (typeof component.onRender === "function") component.onRender();
+  }
+
+  public extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>): RouteConfig[] {
+    const routes: RouteConfig[] = [];
+    for (const child of children) {
+      if (child.type !== "element") continue;
+      const el = child as KNode.Element;
+      if (el.name === "route") {
+        const pathAttr = this.findAttr(el, ["@path"]);
+        const componentAttr = this.findAttr(el, ["@component"]);
+        const guardAttr = this.findAttr(el, ["@guard"]);
+        if (!pathAttr || !componentAttr) continue;
+        const path = pathAttr.value;
+        const component = this.execute(componentAttr.value);
+        const guard = guardAttr ? this.execute(guardAttr.value) : parentGuard;
+        routes.push({ path: path, component: component, guard: guard });
+      }
+      if (el.name === "guard") {
+        const checkAttr = this.findAttr(el, ["@check"]);
+        if (!checkAttr) continue;
+        const check = this.execute(checkAttr.value);
+        routes.push(...this.extractRoutes(el.children, check));
+      }
+    }
+    return routes;
   }
 
   public visitDoctypeKNode(_node: KNode.Doctype): void {
