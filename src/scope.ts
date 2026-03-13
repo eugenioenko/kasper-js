@@ -19,13 +19,14 @@ export class Scope {
     if (typeof this.values[key] !== "undefined") {
       return this.values[key];
     }
-    if (this.parent !== null) {
-      return this.parent.get(key);
-    }
 
     const $imports = (this.values?.constructor as any)?.$imports;
     if ($imports && typeof $imports[key] !== "undefined") {
       return $imports[key];
+    }
+
+    if (this.parent !== null) {
+      return this.parent.get(key);
     }
 
     return window[key as keyof typeof window];

@@ -164,6 +164,19 @@ describe("Scope", () => {
       expect(child.get("helper")).toBe(helper);
     });
 
+    it("resolves $imports when the component scope itself has a parent", () => {
+      // Regression: components rendered inside another component get a scope with
+      // a parent (new Scope(parentScope, componentInstance)). $imports must be
+      // checked on the component scope before climbing to the parent, not only
+      // at the root scope where parent === null.
+      function Helper() { return 42; }
+      class ChildComponent { static $imports = { Helper }; }
+      const parentScope = new Scope(null, { parentValue: 1 });
+      const componentInstance = new ChildComponent();
+      const componentScope = new Scope(parentScope, componentInstance);
+      expect(componentScope.get("Helper")).toBe(Helper);
+    });
+
     it("component instance property takes priority over $imports", () => {
       function helper() { return "from-imports"; }
       class MyComponent {
