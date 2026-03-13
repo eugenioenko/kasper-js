@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'packages/docs-web/**'
+      - 'docs-web/**'
   workflow_dispatch:
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/docs-web/dist
+          path: docs-web/dist
 
   deploy:
     needs: build

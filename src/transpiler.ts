@@ -249,7 +249,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         if (indexKey) scopeValues[indexKey] = index;
         this.interpreter.scope = new Scope(originalScope, scopeValues);
         const key = this.execute(keyAttr.value);
-        newItems.push({ item, idx: index, key });
+        newItems.push({ item: item, idx: index, key: key });
         index++;
       }
 
