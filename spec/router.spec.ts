@@ -167,4 +167,32 @@ describe("Router template integration", () => {
     );
     expect(container.textContent).toContain("Home");
   });
+
+  it("resolves @component from $imports when router is inside a registered child component", () => {
+    // Regression: extractRoutes was called before the scope was switched to the
+    // component instance, so $imports on the component class was never consulted.
+    // @component="HomePage" would resolve to undefined when the component was
+    // rendered via the registry (as a child of another component).
+    Object.defineProperty(window, "location", { value: { pathname: "/" }, writable: true });
+    const parser = new TemplateParser();
+    const transpiler = new Transpiler();
+    const container = document.createElement("div");
+
+    class AppShell extends Component {
+      static $imports = { HomePage };
+      static template = `<router><route @path="/" @component="HomePage" /></router>`;
+    }
+
+    // Render a parent that contains AppShell as a registered child — this is
+    // the path where restoreScope is the parent scope, not AppShell's scope.
+    class Root extends Component {}
+    transpiler.registry["app-shell"] = { component: AppShell, nodes: parser.parse(AppShell.template) };
+
+    transpiler.transpile(
+      parser.parse(`<app-shell></app-shell>`),
+      new Root(),
+      container
+    );
+    expect(container.textContent).toContain("Home");
+  });
 });

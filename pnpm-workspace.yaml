@@ -3,3 +3,4 @@ packages:
   - 'packages/*'
   - 'packages/create-kasper-app/template'
   - 'docs-web'
+  - 'project-sandbox'

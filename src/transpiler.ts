@@ -426,7 +426,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           };
 
           if (node.name === "router" && component instanceof Router) {
-            component.setRoutes(this.extractRoutes(node.children));
+            const routeScope = new Scope(restoreScope, component);
+            component.setRoutes(this.extractRoutes(node.children, undefined, routeScope));
           }
 
           if (typeof component.onInit === "function") {
@@ -693,8 +694,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (typeof component.onRender === "function") component.onRender();
   }
 
-  public extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>): RouteConfig[] {
+  public extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>, scope?: Scope): RouteConfig[] {
     const routes: RouteConfig[] = [];
+    const prevScope = scope ? this.interpreter.scope : undefined;
+    if (scope) this.interpreter.scope = scope;
     for (const child of children) {
       if (child.type !== "element") continue;
       const el = child as KNode.Element;
@@ -715,6 +718,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         routes.push(...this.extractRoutes(el.children, check));
       }
     }
+    if (scope) this.interpreter.scope = prevScope;
     return routes;
   }
 
