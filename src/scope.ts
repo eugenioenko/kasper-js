@@ -23,7 +23,7 @@ export class Scope {
       return this.parent.get(key);
     }
 
-    const $imports = this.values?.constructor?.$imports;
+    const $imports = (this.values?.constructor as any)?.$imports;
     if ($imports && typeof $imports[key] !== "undefined") {
       return $imports[key];
     }
