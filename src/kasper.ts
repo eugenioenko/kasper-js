@@ -35,7 +35,6 @@ export function Kasper(ComponentClass: any) {
         selector: "template",
         component: ComponentClass,
         template: null,
-        nodes: [],
       },
     },
   });
@@ -73,7 +72,8 @@ function normalizeRegistry(
   const result = { ...registry };
   for (const key of Object.keys(registry)) {
     const entry = registry[key];
-    if (entry.nodes && entry.nodes.length > 0) {
+    if (!entry.nodes) entry.nodes = [];
+    if (entry.nodes.length > 0) {
       continue;
     }
     if (entry.selector) {

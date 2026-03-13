@@ -359,7 +359,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private createElement(node: KNode.Element, parent?: Node): Node | undefined {
     try {
       if (node.name === "slot") {
-        const nameAttr = this.findAttr(node, ["name"]);
+        const nameAttr = this.findAttr(node, ["@name"]);
         const name = nameAttr ? nameAttr.value : "default";
         const slots = this.interpreter.scope.get("$slots");
         if (slots && slots[name]) {
@@ -389,7 +389,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         const slots: Record<string, KNode.KNode[]> = { default: [] };
         for (const child of node.children) {
           if (child.type === "element") {
-            const slotAttr = this.findAttr(child as KNode.Element, ["slot"]);
+            const slotAttr = this.findAttr(child as KNode.Element, ["@slot"]);
             if (slotAttr) {
               const name = slotAttr.value;
               if (!slots[name]) slots[name] = [];

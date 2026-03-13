@@ -7,13 +7,13 @@ Slots allow a parent component to inject content into a child component's templa
 
 ## Default slot
 
-In the child component template, use `<slot>` as a placeholder:
+In the child component template, use `<slot />` as a placeholder:
 
 ```html
 <!-- Card.kasper -->
 <template>
   <div class="card">
-    <slot></slot>
+    <slot />
   </div>
 </template>
 ```
@@ -35,29 +35,29 @@ Use `name` to define multiple slots:
 <template>
   <div class="modal">
     <header>
-      <slot name="title"></slot>
+      <slot @name="title" />
     </header>
     <main>
-      <slot></slot>
+      <slot />
     </main>
     <footer>
-      <slot name="actions"></slot>
+      <slot @name="actions" />
     </footer>
   </div>
 </template>
 ```
 
-Pass content to named slots using the `slot` attribute:
+Pass content to named slots using the `@slot` attribute:
 
 ```html
 <modal>
-  <span slot="title">Confirm action</span>
+  <span @slot="title">Confirm action</span>
   <p>Are you sure you want to proceed?</p>
-  <div slot="actions">
+  <div @slot="actions">
     <button @on:click="confirm()">Yes</button>
     <button @on:click="cancel()">No</button>
   </div>
 </modal>
 ```
 
-Content without a `slot` attribute goes to the default slot.
+Content without a `@slot` attribute goes to the default slot.

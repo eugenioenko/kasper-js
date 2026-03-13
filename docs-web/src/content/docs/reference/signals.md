@@ -118,6 +118,8 @@ class MyComp extends Component {
 }
 ```
 
+No cleanup needed here — the signal is owned by the component and will be garbage collected along with it.
+
 ### In components — external signals
 
 When watching a signal that outlives the component, the watcher holds a reference to the component via the callback closure. Call `stop()` in `onDestroy` to break that reference and allow the component to be garbage collected.

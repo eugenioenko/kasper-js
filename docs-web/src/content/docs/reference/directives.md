@@ -17,7 +17,7 @@ description: Complete reference for all Kasper.js template directives.
 | `@elseif="expr"` | Else-if branch (must follow `@if` sibling) |
 | `@else` | Else branch (must follow `@if` or `@elseif` sibling) |
 | `@each="item of array"` | Render element for each item |
-| `@each="item, index of array"` | Render with index |
+| `@each="item with index of array"` | Render with index |
 | `@while="expr"` | Render while expression is truthy |
 | `@let="x = expr"` | Declare a scoped local variable |
 
@@ -55,5 +55,5 @@ description: Complete reference for all Kasper.js template directives.
 | Element | Description |
 |---|---|
 | `<slot>` | Default slot placeholder |
-| `<slot name="n">` | Named slot placeholder |
-| `slot="n"` attribute | Assign content to a named slot |
+| `<slot @name="n">` | Named slot placeholder |
+| `@slot="n"` attribute | Assign content to a named slot |

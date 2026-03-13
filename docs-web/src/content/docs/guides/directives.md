@@ -28,7 +28,7 @@ Render a list of items:
 With index:
 
 ```html
-<li @each="item, i of items">{{i}}: {{item.name}}</li>
+<li @each="item with i of items">{{i}}: {{item.name}}</li>
 ```
 
 The list re-renders reactively when the signal containing `items` changes.

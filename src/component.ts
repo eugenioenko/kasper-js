@@ -50,6 +50,6 @@ export interface ComponentRegistry {
     selector?: string;
     component: ComponentClass;
     template?: Element | null;
-    nodes: KNode[];
+    nodes?: KNode[];
   };
 }
