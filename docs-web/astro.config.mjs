@@ -16,7 +16,22 @@ export default defineConfig({
       ],
       sidebar: [
         { label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
-        { label: 'Guides', autogenerate: { directory: 'guides' } },
+        { 
+          label: 'Guides', 
+          items: [
+            { label: 'Components', link: '/guides/components/' },
+            { label: 'Template Syntax', link: '/guides/templates/' },
+            { label: 'Directives', link: '/guides/directives/' },
+            { label: 'Signals', link: '/guides/signals/' },
+            { label: 'State Management', link: '/guides/state-management/' },
+            { label: 'Component Lifecycle', link: '/guides/lifecycle/' },
+            { label: 'Styling', link: '/guides/styling/' },
+            { label: 'Slots', link: '/guides/slots/' },
+            { label: 'Routing', link: '/guides/routing/' },
+            { label: 'AI-Driven Development', link: '/guides/agents/' },
+            { label: 'Vite Integration', link: '/guides/vite/' }
+          ]
+        },
         { label: 'Reference', autogenerate: { directory: 'reference' } },
       ],
     }),
