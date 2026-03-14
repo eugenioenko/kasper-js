@@ -19,7 +19,7 @@ describe("Component", () => {
 
   it("lifecycle hook methods exist and are callable", () => {
     const component = new Component();
-    expect(() => component.onInit()).not.toThrow();
+    expect(() => component.onMount()).not.toThrow();
     expect(() => component.onRender()).not.toThrow();
     expect(() => component.onChanges()).not.toThrow();
     expect(() => component.onDestroy()).not.toThrow();
@@ -131,7 +131,7 @@ describe("Component", () => {
       const calls: string[] = [];
 
       class ThemedComponent extends Component {
-        onInit() {
+        onMount() {
           this.haunt(theme, (val) => calls.push(val));
         }
       }
@@ -160,13 +160,13 @@ describe("Component", () => {
   });
 
   describe("Lifecycle hooks", () => {
-    it("executes onInit and onRender when transpiled", () => {
+    it("executes onMount and onRender when transpiled", () => {
       const parser = new TemplateParser();
       let initCalled = false;
       let renderCalled = false;
 
       class LifecycleComponent extends Component {
-        onInit = () => { initCalled = true; };
+        onMount = () => { initCalled = true; };
         onRender = () => { renderCalled = true; };
       }
 

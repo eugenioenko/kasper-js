@@ -430,8 +430,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             component.setRoutes(this.extractRoutes(node.children, undefined, routeScope));
           }
 
-          if (typeof component.onInit === "function") {
-            component.onInit();
+          if (typeof component.onMount === "function") {
+            component.onMount();
           }
         }
         // Expose slots in component scope
@@ -682,7 +682,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       if (typeof component.onRender === "function") component.onRender();
     };
 
-    if (typeof component.onInit === "function") component.onInit();
+    if (typeof component.onMount === "function") component.onMount();
 
     const scope = new Scope(null, component);
     scope.set("$instance", component);

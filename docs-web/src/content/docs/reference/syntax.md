@@ -583,7 +583,7 @@ class MyComponent extends Component {
   loading = signal(false);
 
   // Lifecycle hooks
-  onInit()    {}  // called before first render
+  onMount()    {}  // called before first render
   onRender()  {}  // called after each render
   onChanges() {}  // called before re-render when state changes
   onDestroy() {}  // called when component is removed from DOM
@@ -598,7 +598,7 @@ class MyComponent extends Component {
 ### Lifecycle order
 
 On first mount:
-1. `onInit()`
+1. `onMount()`
 2. Template is rendered
 3. `onRender()`
 

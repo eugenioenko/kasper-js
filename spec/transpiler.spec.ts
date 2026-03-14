@@ -440,7 +440,7 @@ describe("Transpiler", () => {
       const destroyed: number[] = [];
       class Item extends Component {
         id = 0;
-        onInit() { this.id = this.args.id; }
+        onMount() { this.id = this.args.id; }
         onDestroy() { destroyed.push(this.id); }
       }
       const list = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
@@ -621,7 +621,7 @@ describe("Transpiler", () => {
     it("passes non-string args as their actual type", () => {
       const received: any[] = [];
       class TypeChecker extends Component {
-        onInit() { received.push(this.args.num, this.args.flag, this.args.obj); }
+        onMount() { received.push(this.args.num, this.args.flag, this.args.obj); }
       }
       const parser = new TemplateParser();
       const registry = {
@@ -650,7 +650,7 @@ describe("Transpiler", () => {
       const count = signal(0);
       let receivedSignal: any;
       class Watcher extends Component {
-        onInit() { receivedSignal = this.args.count; }
+        onMount() { receivedSignal = this.args.count; }
       }
       const parser = new TemplateParser();
       const registry = {

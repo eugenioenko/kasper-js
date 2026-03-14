@@ -3,7 +3,6 @@ title: Component Lifecycle
 description: Lifecycle hooks for Kasper.js components.
 ---
 
-
 Every Kasper component goes through a predictable lifecycle from creation to removal. Override these methods in your component class to hook into each phase.
 
 ---
@@ -12,21 +11,39 @@ Every Kasper component goes through a predictable lifecycle from creation to rem
 
 | Hook | When it fires |
 |---|---|
-| `onInit()` | Before the first render — use for setup, data fetching, initial state |
+| `onMount()` | After the first render — DOM is ready, args are populated |
 | `onRender()` | After every render — DOM is ready for querying/measuring |
 | `onChanges()` | Before a re-render triggered by a signal change |
 | `onDestroy()` | When the component is removed from the DOM — use for cleanup |
 
 ---
 
-## onInit()
+## constructor
 
-Called **once**, before the template is rendered into the DOM.
+If you need to run logic before anything else — before args, before the DOM, before the first render — you can use the standard JavaScript constructor. Call `super()` first to ensure the component initialises correctly:
+
+```js
+class MyComponent extends Component {
+  constructor(props) {
+    super(props);
+    // runs before everything — no args, no DOM
+    this.startedAt = Date.now();
+  }
+}
+```
+
+In practice, this is rarely needed. `onMount()` is the right place for setup in almost every case — prefer it over the constructor.
+
+---
+
+## onMount()
+
+Called **once**, after the first render. The DOM is ready and `this.args` is populated.
 
 Use it to:
-- Set initial signal values
 - Fetch data
 - Start timers or intervals
+- Set up third-party libraries
 - Subscribe to external events
 
 ```js
@@ -34,7 +51,7 @@ class UserProfile extends Component {
   user = signal(null);
   loading = signal(true);
 
-  onInit() {
+  onMount() {
     fetch('/api/user/1')
       .then(r => r.json())
       .then(data => {
@@ -45,34 +62,34 @@ class UserProfile extends Component {
 }
 ```
 
-At the time `onInit` fires, `this.args` is already populated — you can read component arguments immediately.
-
 ---
 
 ## onRender()
 
-Called **after** each render cycle. At this point the DOM nodes created by the template are attached and can be queried.
+Called **after every render cycle** — both the first render and every subsequent reactive update. The DOM is live and queryable at this point.
 
 Use it to:
-- Read layout measurements (e.g. `getBoundingClientRect`)
-- Initialize third-party libraries that require a real DOM node
-- Set focus on an input element
+- Scroll to a position after new content is added
+- Sync an external library's state after a data change
+- Read layout measurements after an update
 
 ```js
-class Modal extends Component {
+class LiveFeed extends Component {
   onRender() {
-    this.ref.querySelector('input')?.focus();
+    // Scroll to bottom every time new messages are added
+    const list = this.ref.querySelector('.feed');
+    if (list) list.scrollTop = list.scrollHeight;
   }
 }
 ```
 
-> `this.ref` is the component's root DOM element and is available inside `onRender`.
+> `onRender` fires on **every** render — including reactive signal updates. Do not use it for one-time DOM setup like setting focus or initialising a library. Use `onMount` for that.
 
 ---
 
 ## onChanges()
 
-Called **before** a re-render that was triggered by a reactive signal change. It is *not* called on the first render — only on subsequent updates.
+Called **before** a re-render triggered by a reactive signal change. It is *not* called on the first render — only on subsequent updates.
 
 Use it to:
 - Log or debug state changes
@@ -96,7 +113,7 @@ class DataGrid extends Component {
 Called **once**, when the component is about to be removed from the DOM. After this hook fires, all `@on:` event listeners are automatically aborted via `AbortController`.
 
 Use it to:
-- Clear timers or intervals started in `onInit`
+- Clear timers or intervals started in `onMount`
 - Cancel in-flight network requests
 - Unsubscribe from external event sources
 - Release any resources held by the component
@@ -106,7 +123,7 @@ class Ticker extends Component {
   time = signal(new Date());
   _timer = null;
 
-  onInit() {
+  onMount() {
     this._timer = setInterval(() => {
       this.time.value = new Date();
     }, 1000);
@@ -126,7 +143,7 @@ class Ticker extends Component {
 
 ```
 new ComponentClass()
-  └─ onInit()
+  └─ onMount()
   └─ template rendered into DOM
   └─ onRender()
 ```
@@ -169,7 +186,7 @@ class LiveFeed extends Component {
   messages = signal([]);
   _ws = null;
 
-  onInit() {
+  onMount() {
     this._ws = new WebSocket('wss://example.com/feed');
     this._ws.onmessage = (e) => {
       this.messages.value = [...this.messages.value, e.data];
@@ -209,7 +226,7 @@ Call `this.render()` to tear down and re-render the component's template:
 export class Clock extends Component {
   time = new Date().toLocaleTimeString();
 
-  onInit() {
+  onMount() {
     setInterval(() => {
       this.time = new Date().toLocaleTimeString();
       this.render();

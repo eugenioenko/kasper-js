@@ -65,7 +65,7 @@ Effects are the mechanism behind all template bindings — every `{{ }}` interpo
 class Logger extends Component {
   data = signal(null);
 
-  onInit() {
+  onMount() {
     const stop = effect(() => {
       if (this.data.value) console.log('data:', this.data.value);
     });
@@ -110,7 +110,7 @@ When watching a signal that lives on the component itself, no cleanup is needed.
 class MyComp extends Component {
   count = signal(0);
 
-  onInit() {
+  onMount() {
     this.count.onChange((newVal, oldVal) => {
       console.log(`count: ${oldVal} → ${newVal}`);
     });
@@ -126,7 +126,7 @@ When watching a signal that outlives the component, use `this.haunt()` instead o
 
 ```js
 class MyComp extends Component {
-  onInit() {
+  onMount() {
     this.haunt(globalTheme, (theme) => {
       this.applyTheme(theme);
     });
