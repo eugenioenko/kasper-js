@@ -6,9 +6,7 @@ import { navigate, Router } from "./router";
 import { Scanner } from "./scanner";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
-import { Viewer } from "./viewer";
 import { signal, effect, computed, batch } from "./signal";
 
-
-export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, Viewer, signal, effect, computed, batch };
+export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, signal, effect, computed, batch };
 export { execute, transpile, Kasper, KasperInit as App, Component, navigate, Router };

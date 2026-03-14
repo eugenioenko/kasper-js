@@ -1,7 +1,6 @@
 import { Component } from "../src/component";
 import { TemplateParser } from "../src/template-parser";
 import { Transpiler } from "../src/transpiler";
-import { Viewer } from "../src/viewer";
 import { signal } from "../src/signal";
 
 function makeContainer(): HTMLElement {
@@ -809,115 +808,6 @@ describe("Transpiler", () => {
       const container = transpile('<span @ref="myEl">text</span>', entity);
       expect(container.querySelector("span")!.hasAttribute("ref")).toBe(false);
       expect(container.querySelector("span")!.hasAttribute("@ref")).toBe(false);
-    });
-  });
-});
-
-describe("Viewer", () => {
-  function view(source: string): string {
-    const parser = new TemplateParser();
-    const nodes = parser.parse(source);
-    const viewer = new Viewer();
-    return viewer.transpile(nodes).join("");
-  }
-
-  describe("transpile()", () => {
-    it("returns an array of strings", () => {
-      const viewer = new Viewer();
-      const parser = new TemplateParser();
-      const result = viewer.transpile(parser.parse("<div></div><span></span>"));
-      expect(result).toHaveLength(2);
-      expect(typeof result[0]).toBe("string");
-    });
-
-    it("resets errors between calls", () => {
-      const viewer = new Viewer();
-      const parser = new TemplateParser();
-      viewer.transpile(parser.parse("<div></div>"));
-      viewer.transpile(parser.parse("<span></span>"));
-      expect(viewer.errors).toHaveLength(0);
-    });
-  });
-
-  describe("text nodes", () => {
-    it("renders plain text", () => {
-      expect(view("hello")).toBe("hello");
-    });
-
-    it("preserves interpolation syntax without evaluating it", () => {
-      expect(view("{{name}}")).toBe("{{name}}");
-    });
-  });
-
-  describe("element nodes", () => {
-    it("renders open and close tags", () => {
-      expect(view("<div></div>")).toBe("<div></div>");
-    });
-
-    it("renders self-closing element", () => {
-      expect(view("<br/>")).toBe("<br/>");
-    });
-
-    it("renders element with text child", () => {
-      expect(view("<p>hello</p>")).toBe("<p>hello</p>");
-    });
-
-    it("renders nested elements", () => {
-      expect(view("<div><span></span></div>")).toBe("<div><span></span></div>");
-    });
-
-    it("renders multiple root elements as joined string", () => {
-      expect(view("<div></div><span></span>")).toBe("<div></div><span></span>");
-    });
-  });
-
-  describe("attribute nodes", () => {
-    it("renders attribute with value", () => {
-      expect(view('<div class="foo"></div>')).toBe('<div class="foo"></div>');
-    });
-
-    it("renders boolean attribute without value", () => {
-      expect(view("<button disabled></button>")).toBe("<button disabled></button>");
-    });
-
-    it("renders multiple attributes", () => {
-      expect(view('<div id="a" class="b"></div>')).toBe('<div id="a" class="b"></div>');
-    });
-  });
-
-  describe("comment nodes", () => {
-    it("wraps comment value in delimiters", () => {
-      const result = view("<!-- note -->");
-      expect(result).toContain("note");
-      expect(result).toMatch(/<!--.*-->/s);
-    });
-  });
-
-  describe("doctype nodes", () => {
-    it("outputs a doctype declaration containing the value", () => {
-      const result = view("<!DOCTYPE html>");
-      expect(result.toLowerCase()).toContain("doctype");
-      expect(result).toContain("html");
-    });
-  });
-
-  describe("error handling", () => {
-    it("logs and stores error if evaluation fails", () => {
-      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const viewer = new Viewer();
-      // @ts-ignore - passing invalid node
-      const result = viewer.transpile([{ type: "invalid" }]);
-      expect(viewer.errors.length).toBeGreaterThan(0);
-      expect(spy).toHaveBeenCalled();
-      spy.mockRestore();
-    });
-  });
-
-  describe("complex structure", () => {
-    it("renders complex nested elements correctly", () => {
-      const source = '<div id="1" class="outer"><p>hello<span>world</span></p><!--comment--></div>';
-      const expected = '<div id="1" class="outer"><p>hello<span>world</span></p><!-- comment --></div>';
-      expect(view(source)).toBe(expected);
     });
   });
 });

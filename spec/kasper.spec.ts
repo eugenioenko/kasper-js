@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from "fs";
 import { join } from "path";
-import { parse, view } from "./helpers";
+import { parse } from "./helpers";
 
 describe("kasper template parser", () => {
   let target = "";
@@ -17,15 +17,6 @@ describe("kasper template parser", () => {
       encoding: "utf8",
     });
     expect(parse(source)).toEqual(target);
-  });
-
-  it("renders a file", () => {
-    const source = readFileSync(join(__dirname, "samples/sample1.txt"), {
-      encoding: "utf8",
-    });
-    expect(view(source).toLowerCase().replace(/\s+/g, "")).toEqual(
-      source.toLowerCase().replace(/\s+/g, "")
-    );
   });
 
   it("parses a file with random white spaces", () => {
