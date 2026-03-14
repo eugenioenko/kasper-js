@@ -35,6 +35,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     let proto = Object.getPrototypeOf(entity);
     while (proto && proto !== Object.prototype) {
       for (const key of Object.getOwnPropertyNames(proto)) {
+        if (Object.getOwnPropertyDescriptor(proto, key)?.get) continue;
         if (
           typeof entity[key] === "function" &&
           key !== "constructor" &&

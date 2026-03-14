@@ -9,7 +9,7 @@ Vite plugin: vite-plugin-kasper
 
 ---
 
-## Scaffold a new project
+## Scaffold a new project 
 
 ```bash
 npm create kasper-app@latest my-project
@@ -17,6 +17,9 @@ cd my-project
 npm install
 npm run dev
 ```
+
+The `npm create` command is non-interactive — it accepts the project name as an argument and generates the project immediately with no prompts.
+This is the preferred way.
 
 This generates a ready-to-use Vite project with the following structure:
 
@@ -31,6 +34,28 @@ my-project/
       App.kasper
       Counter.kasper
       Example.kasper
+```
+
+**`package.json`**
+```json
+{
+  "name": "my-project",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "kasper-js": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^6.0.0",
+    "vite-plugin-kasper": "latest"
+  }
+}
 ```
 
 **`vite.config.ts`**
@@ -132,6 +157,7 @@ export class MyComponent extends Component {
   double = computed(() => this.count.value * 2);
 
   // component args passed via @: attributes from parent
+  // Access via this.args.name in class code, or args.name directly in templates
   get title() { return this.args.title ?? 'Default'; }
 
   // lifecycle
@@ -151,7 +177,7 @@ export class MyComponent extends Component {
 ```
 
 `this.ref` — component root DOM element (available in onMount/onRender)
-`this.args` — object of values passed from parent via `@:name="expr"`
+`this.args` — object of values passed from parent via `@:name="expr"` (snapshot at mount — pass signals for reactivity)
 `this.$abortController` — AbortController used for @on: listeners
 
 ---
@@ -181,9 +207,13 @@ batch(() => {                      // flush effects once after all writes
 const unwatch = count.onChange((newVal, oldVal) => { ... });
 unwatch();  // unsubscribe
 
-// Arrays — reassignment triggers reactivity; in-place mutation does NOT
+// Signals use reference equality — only reassignment triggers reactivity
+// Arrays: reassign, never mutate in-place
 items.value = [...items.value, newItem];  // triggers ✓
 items.value.push(newItem);               // does NOT trigger ✗
+// Objects: same rule — mutating a nested property does NOT trigger
+user.value = { ...user.value, name: 'Alice' };  // triggers ✓
+user.value.name = 'Alice';                       // does NOT trigger ✗
 ```
 
 ---
@@ -198,7 +228,9 @@ items.value.push(newItem);               // does NOT trigger ✗
 <div @if="condition">...</div>
 <div @elseif="other">...</div>
 <div @else>...</div>
-<!-- @elseif and @else must be IMMEDIATELY adjacent siblings to @if — no elements between them -->
+<!-- @elseif and @else must be immediately adjacent siblings to @if — no elements between them -->
+<!-- Whitespace and newlines between them are fine — the parser strips whitespace-only text nodes -->
+<!-- Only real elements (tags) break the chain -->
 <!-- @if and @each are independent directives; they cannot be on the same element -->
 
 <!-- Lists — unkeyed (destroy/recreate) -->
@@ -213,12 +245,30 @@ items.value.push(newItem);               // does NOT trigger ✗
 <!-- While loop -->
 <div @while="condition">...</div>
 
-<!-- Local variable — scoped to element and children -->
+<!-- Local variable — sets a variable in the current scope -->
+<!-- Available to the element's children AND all subsequent siblings at the same level -->
+<!-- Nested @let can reference ancestor @let variables via the scope chain -->
+<!-- Multiple @let on siblings share the same scope — later ones can reference earlier ones -->
 <div @let="total = price * qty">{{total}}</div>
+<p>{{total}}</p>  <!-- also accessible here, total is in scope for all following siblings -->
 
 <!-- Two-way binding — there is no @bind directive -->
-<!-- Use @on:input to write back to a signal, @attr to reflect its value -->
-<input @on:input="name.value = $event.target.value" @attr="{ value: name.value }" />
+<!-- Pattern: @on:input/@on:change writes to signal; @attr-name reflects it back -->
+
+<!-- text input -->
+<input type="text" @value="name.value" @on:input="name.value = $event.target.value" />
+
+<!-- checkbox -->
+<input type="checkbox" @checked="agreed.value" @on:change="agreed.value = $event.target.checked" />
+
+<!-- select -->
+<select @value="color.value" @on:change="color.value = $event.target.value">
+  <option value="red">Red</option>
+  <option value="blue">Blue</option>
+</select>
+
+<!-- textarea -->
+<textarea @value="bio.value" @on:input="bio.value = $event.target.value"></textarea>
 
 <!-- Events -->
 <button @on:click="handler()">click</button>
@@ -227,20 +277,36 @@ items.value.push(newItem);               // does NOT trigger ✗
 <!-- modifiers: .prevent .stop .once .passive .capture -->
 <!-- $event is the only implicit variable in event handlers — it holds the raw DOM event -->
 
-<!-- Dynamic attributes — class and style are merged -->
+<!-- Attribute binding shorthand — @attr-name="expr" works for ANY valid HTML attribute -->
+<!-- This is a general mechanism, not a list of special directives -->
+<input @value="name.value" @placeholder="hint" />
+<a @href="url" @aria-label="linkLabel">link</a>
+<button @disabled="isLoading">Submit</button>
+
+<!-- Object form — @attr="{ ... }" binds multiple attributes at once; class and style are merged -->
 <div @attr="{ class: isActive ? 'active' : '', disabled: isDisabled }"></div>
 <div @class="isActive ? 'active' : ''"></div>
 <div @style="{ color: textColor }"></div>
-<!-- @attr uses setAttribute — reliable for most attributes -->
+<!-- Both forms use setAttribute — reliable for most attributes -->
 <!-- Exception: boolean DOM properties (checked, selected) diverge from their attribute after user interaction -->
 <!-- For checkboxes, drive state through the signal and let @each recreate the element, or set .checked via @ref -->
-<input type="checkbox" @on:change="todo.done.value = $event.target.checked" @attr="{ checked: todo.done.value }" />
+<input type="checkbox" @on:change="todo.done.value = $event.target.checked" @checked="todo.done.value" />
 
-<!-- DOM ref — captures element into component property -->
+<!-- DOM ref — assigns the HTMLElement to a component property -->
+<!-- Available by onMount (set during DOM creation, before onMount fires) -->
+<!-- Type is HTMLElement — declare the property for TypeScript: inputEl!: HTMLInputElement -->
+<!-- Avoid @ref inside @each — the property is overwritten each iteration, leaving only the last element -->
 <input @ref="inputEl" />
 
-<!-- Component args -->
-<user-card @:name="user.name" @:avatar="user.avatar"></user-card>
+<!-- Component args — evaluated ONCE at mount time, not reactive -->
+<!-- Passing signal.value gives the child a snapshot; parent re-renders do NOT update child args -->
+<!-- To pass reactive data, pass the signal itself and read .value inside the child -->
+<user-card @:name="user.name" @:items="todos"></user-card>
+<!-- child reads: this.args.name (string snapshot), this.args.items.value (reactive signal) -->
+<!-- Missing args return undefined — always use ?? for defaults: this.args.title ?? 'Default' -->
+<!-- In templates, args.propName resolves directly — no getter needed -->
+<!-- TypeScript: use getters for typed access with defaults -->
+<!--   get title(): string { return this.args.title ?? 'Default'; } -->
 ```
 
 ---
@@ -265,51 +331,82 @@ items.value.push(newItem);               // does NOT trigger ✗
 </modal>
 ```
 
+Slots do NOT support fallback/default content — if the parent passes nothing for a slot, that slot renders empty.
+
+`$slots` is available inside a component's template — it is a plain object keyed by slot name.
+Named slots (`@slot="title"`) are `undefined` when not passed; the default slot is always present as an array.
+
+```
+$slots.title      // undefined if no <x @slot="title"> was passed — use for @if checks on named slots
+$slots.default    // always an array (may be empty) — use $slots.default.length to check if anything was passed
+```
+
+To provide fallback UI when a slot is empty:
+
+```html
+<!-- named slot fallback — undefined when not passed, so @if works directly -->
+<div @if="$slots.title"><slot @name="title" /></div>
+<div @else><h2>Default Title</h2></div>
+
+<!-- default slot fallback — always an array, check .length -->
+<div @if="$slots.default.length"><slot /></div>
+<div @else><p>No content provided.</p></div>
+```
+
 ---
 
 ## Router
 
+The router lives inside a `.kasper` component (typically `App.kasper`).
+All page components referenced in `@component` must be imported in that same file's `<script>` block.
+
 ```html
-<router>
-  <route @path="/" @component="HomePage" />
-  <route @path="/users/:id" @component="UserPage" />
-  <route @path="/login" @component="LoginPage" />
+<!-- App.kasper -->
+<template>
+  <router>
+    <route @path="/" @component="HomePage" />
+    <route @path="/users/:id" @component="UserPage" />
+    <route @path="/login" @component="LoginPage" />
 
-  <guard @check="checkAuth">
-    <route @path="/dashboard" @component="DashboardPage" />
-    <route @path="/settings" @component="SettingsPage" />
-
-    <guard @check="checkAdmin">
-      <route @path="/admin" @component="AdminPage" />
+    <guard @check="checkAuth">
+      <route @path="/dashboard" @component="DashboardPage" />
+      <route @path="/settings" @component="SettingsPage" />
     </guard>
-  </guard>
 
-  <route @path="*" @component="NotFound" />
-</router>
-```
+    <route @path="*" @component="NotFound" />
+  </router>
+</template>
 
-```ts
-import { navigate } from 'kasper-js';
-navigate('/dashboard');
+<script>
+import { Component, navigate } from 'kasper-js';
+import { HomePage } from './HomePage.kasper';
+import { UserPage } from './UserPage.kasper';
+import { LoginPage } from './LoginPage.kasper';
+import { DashboardPage } from './DashboardPage.kasper';
+import { SettingsPage } from './SettingsPage.kasper';
+import { NotFound } from './NotFound.kasper';
 
-// Route params
-export class UserPage extends Component {
-  onMount() {
-    const { id } = this.args.params;
-  }
-}
-
-// Guard — async, returns Promise<boolean>
 async function checkAuth(): Promise<boolean> {
   const user = await fetchCurrentUser();
   if (!user) { navigate('/login'); return false; }
   return true;
 }
+
+export class App extends Component {}
+</script>
+```
+
+```ts
+// Route params — available via this.args.params in the matched component
+export class UserPage extends Component {
+  onMount() {
+    const { id } = this.args.params;
+  }
+}
 ```
 
 `<route>` and `<guard>` are config nodes — they never render themselves.
 Routes matched in order. Use `@path="*"` last as catch-all.
-All components referenced in `@component` must be imported in the script block.
 
 ---
 
@@ -326,6 +423,7 @@ export const isLoggedIn = computed(() => currentUser.value !== null);
 
 export async function login(credentials) {
   currentUser.value = await api.login(credentials);
+  navigate('/dashboard');  // navigate() is a plain import — usable anywhere, not just in components
 }
 ```
 

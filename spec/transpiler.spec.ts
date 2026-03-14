@@ -135,6 +135,16 @@ describe("Transpiler", () => {
       expect(div.hasAttribute("@class")).toBe(false);
     });
 
+    it("supports shorthand binding for hyphenated attributes like @aria-label", () => {
+      const container = transpile('<button @aria-label="labelText" @data-id="itemId"></button>', {
+        labelText: "Close dialog",
+        itemId: "42"
+      });
+      const btn = container.querySelector("button")!;
+      expect(btn.getAttribute("aria-label")).toBe("Close dialog");
+      expect(btn.getAttribute("data-id")).toBe("42");
+    });
+
     it("removes shorthand attribute if value is false/null/undefined", () => {
       const container = transpile('<div @disabled="isDisabled" @title="myTitle"></div>', {
         isDisabled: false,
@@ -645,6 +655,32 @@ describe("Transpiler", () => {
       expect(received[2]).toEqual({ x: 1 });
     });
 
+    it("getter returning a function arg is accessible and callable via the getter", () => {
+      const onDelete = () => "deleted";
+      let instance: any;
+      class WithGetter extends Component {
+        get onDelete() { return this.args.onDelete; }
+        onMount() { instance = this; }
+      }
+      const parser = new TemplateParser();
+      const registry = {
+        "x-getter": {
+          selector: "",
+          component: WithGetter as any,
+          template: null,
+          nodes: parser.parse("<span></span>"),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      transpiler.transpile(
+        parser.parse('<x-getter @:onDelete="onDelete"></x-getter>'),
+        { onDelete },
+        makeContainer()
+      );
+      expect(instance.onDelete).toBe(onDelete);
+      expect(instance.onDelete()).toBe("deleted");
+    });
+
     it("passes a signal reference as an arg", () => {
       const count = signal(0);
       let receivedSignal: any;
@@ -709,6 +745,77 @@ describe("Transpiler", () => {
       const handler = vi.fn();
       const container = transpile('<button @on:click="handler()"></button>', { handler });
       expect(container.querySelector("button")!.hasAttribute("@on:click")).toBe(false);
+    });
+
+    describe("form input binding", () => {
+      it("text input: @on:input updates signal, @value reflects it", () => {
+        const name = signal("initial");
+        const container = transpile(
+          '<input type="text" @value="name.value" @on:input="name.value = $event.target.value" />',
+          { name }
+        );
+        const input = container.querySelector("input")! as HTMLInputElement;
+        expect(input.getAttribute("value")).toBe("initial");
+
+        input.value = "updated";
+        input.dispatchEvent(new Event("input"));
+        expect(name.value).toBe("updated");
+      });
+
+      it("checkbox: @on:change updates signal, @checked reflects it", () => {
+        const agreed = signal(false);
+        const container = transpile(
+          '<input type="checkbox" @checked="agreed.value" @on:change="agreed.value = $event.target.checked" />',
+          { agreed }
+        );
+        const input = container.querySelector("input")! as HTMLInputElement;
+        expect(input.getAttribute("checked")).toBeNull();
+
+        input.checked = true;
+        input.dispatchEvent(new Event("change"));
+        expect(agreed.value).toBe(true);
+      });
+
+      it("select: @on:change updates signal, @value reflects it", () => {
+        const color = signal("red");
+        const container = transpile(
+          '<select @value="color.value" @on:change="color.value = $event.target.value"><option value="red">Red</option><option value="blue">Blue</option></select>',
+          { color }
+        );
+        const select = container.querySelector("select")! as HTMLSelectElement;
+        expect(select.getAttribute("value")).toBe("red");
+
+        select.value = "blue";
+        select.dispatchEvent(new Event("change"));
+        expect(color.value).toBe("blue");
+      });
+
+      it("textarea: @on:input updates signal, @value reflects it", () => {
+        const bio = signal("hello");
+        const container = transpile(
+          '<textarea @value="bio.value" @on:input="bio.value = $event.target.value"></textarea>',
+          { bio }
+        );
+        const textarea = container.querySelector("textarea")! as HTMLTextAreaElement;
+        expect(textarea.getAttribute("value")).toBe("hello");
+
+        textarea.value = "world";
+        textarea.dispatchEvent(new Event("input"));
+        expect(bio.value).toBe("world");
+      });
+
+      it("text input: signal update reflects back into the DOM attribute", () => {
+        const name = signal("first");
+        const container = transpile(
+          '<input type="text" @value="name.value" @on:input="name.value = $event.target.value" />',
+          { name }
+        );
+        const input = container.querySelector("input")! as HTMLInputElement;
+        expect(input.getAttribute("value")).toBe("first");
+
+        name.value = "second";
+        expect(input.getAttribute("value")).toBe("second");
+      });
     });
 
     describe("modifiers", () => {

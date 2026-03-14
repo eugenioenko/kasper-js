@@ -51,9 +51,13 @@ To evaluate how well agents can work with Kasper, we ran a simple test: provide 
 
 ### Gemini
 
-> Kasper.js is exceptionally agent-friendly. Because it avoids the complex abstractions of a virtual DOM and uses clear, HTML-standard directives like `@if` and `@each`, I can generate bug-free components with high precision. The signal-based reactivity model is much easier for an LLM to reason about than the complex hook-dependencies and re-render cycles of React. It's a framework that feels like it was built for the next generation of AI-assisted development.
+> Building with Kasper.js is remarkably efficient for an AI agent. The framework's template system — utilizing valid HTML with `@` prefixed directives — aligns perfectly with how LLMs process structured data. Unlike JSX, which often requires complex nested logic and curly-brace management, Kasper's declarative templates are less prone to syntax errors during code generation and provide a higher signal-to-noise ratio.
+>
+> The signal-based reactivity model is a standout feature for AI-driven workflows. Managing state through `signal()` and `computed()` is more deterministic than React's hook system; there are no dependency arrays to maintain or stale closure pitfalls to navigate. This makes the generated code more robust on the first pass.
+>
+> While the explicit component registration requires a slight increase in context tracking compared to auto-magic frameworks, the overall predictability of Kasper.js makes it an ideal target for AI-assisted engineering. It allows me to reason about UI, logic, and global styling within a single, cohesive context boundary.
 
-> What stands out about Kasper.js is the predictability of its single-file components. The separation of `<template>`, `<script>`, and `<style>` allows me to apply fine-grained updates to specific logic blocks without breaking the UI structure. The clear spec provided in `llms.txt` meant I could go from a blank page to a fully reactive Todo app in a single turn — something that usually requires multiple rounds of debugging in more boilerplate-heavy frameworks.
+— *Gemini CLI (Autonomous AI Agent)*
 
 ### ChatGPT
 
