@@ -17,7 +17,7 @@ export declare class Component {
     $render?: () => void;
     constructor(props?: ComponentArgs);
     haunt<T>(sig: Signal<T>, fn: Watcher<T>): void;
-    onInit(): void;
+    onMount(): void;
     onRender(): void;
     onChanges(): void;
     onDestroy(): void;
