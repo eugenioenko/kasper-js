@@ -20,19 +20,21 @@ Every Kasper component goes through a predictable lifecycle from creation to rem
 
 ## constructor
 
-If you need to run logic before anything else — before args, before the DOM, before the first render — you can use the standard JavaScript constructor. Call `super()` first to ensure the component initialises correctly:
+If you need to run logic before the first render — before the DOM is ready — you can use the standard JavaScript constructor. 
+
+**`this.args` is already populated** in the constructor, so you can use incoming properties to initialise your state signals immediately.
 
 ```js
 class MyComponent extends Component {
   constructor(props) {
     super(props);
-    // runs before everything — no args, no DOM
-    this.startedAt = Date.now();
+    // this.args is available here!
+    this.initialCount = signal(this.args.count ?? 0);
   }
 }
 ```
 
-In practice, this is rarely needed. `onMount()` is the right place for setup in almost every case — prefer it over the constructor.
+While `this.args` is available, `this.ref` (the DOM element) is not yet attached. `onMount()` remains the recommended place for most setup logic, especially anything requiring DOM access.
 
 ---
 

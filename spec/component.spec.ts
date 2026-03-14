@@ -36,6 +36,19 @@ describe("Component", () => {
     expect(component.transpiler).toBe(transpiler);
   });
 
+  it("makes this.args available in the constructor", () => {
+    const args = { initialValue: 42 };
+    class TestComponent extends Component {
+      valueFromConstructor: number;
+      constructor(props: any) {
+        super(props);
+        this.valueFromConstructor = this.args.initialValue;
+      }
+    }
+    const component = new TestComponent({ args });
+    expect(component.valueFromConstructor).toBe(42);
+  });
+
   describe("render", () => {
     it("render() does nothing when $render is not set", () => {
       const component = new Component();
