@@ -64,11 +64,6 @@ export class Signal<T> {
 
   toString() { return String(this.value); }
   peek() { return this._value; }
-
-  /**
-   * The ghostly way to peek. 👻
-   */
-  scry() { return this._value; }
 }
 
 export function effect(fn: Listener, options?: SignalOptions) {

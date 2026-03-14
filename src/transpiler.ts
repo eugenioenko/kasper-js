@@ -1,4 +1,4 @@
-import { ComponentClass, ComponentRegistry, setActiveComponent } from "./component";
+import { ComponentClass, ComponentRegistry } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { Router, RouteConfig } from "./router";
@@ -626,9 +626,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (node.$kasperInstance) {
       const instance = node.$kasperInstance;
       if (instance.onDestroy) {
-        setActiveComponent(instance);
         instance.onDestroy();
-        setActiveComponent(null);
       }
       if (instance.$abortController) instance.$abortController.abort();
     }
@@ -683,14 +681,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.interpreter.scope = scope;
       this.createSiblings(componentNodes, host);
       this.interpreter.scope = prev;
-      setActiveComponent(component);
       if (typeof component.onRender === "function") component.onRender();
-      setActiveComponent(null);
     };
 
-    setActiveComponent(component);
     if (typeof component.onMount === "function") component.onMount();
-    setActiveComponent(null);
 
     const scope = new Scope(null, component);
     scope.set("$instance", component);
@@ -699,9 +693,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     this.createSiblings(nodes, host);
     this.interpreter.scope = prev;
 
-    setActiveComponent(component);
     if (typeof component.onRender === "function") component.onRender();
-    setActiveComponent(null);
   }
 
   public extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>, scope?: Scope): RouteConfig[] {

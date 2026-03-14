@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { signal, effect, computed } from "../src/signal";
-import { Component, haunt } from "../src/component";
+import { Component } from "../src/component";
 
 describe("AbortSignal Cleanup & Architecture", () => {
   describe("Signal Primitives with AbortSignal", () => {
@@ -110,95 +110,6 @@ describe("AbortSignal Cleanup & Architecture", () => {
       comp.$abortController.abort();
       s.value = 20;
       expect(double.value).toBe(20);
-    });
-  });
-
-  describe("haunt() Magic Function", () => {
-    it("throws if called outside lifecycle context", () => {
-      expect(() => haunt(() => {})).toThrow("Kasper Error: haunt()");
-    });
-
-    it("registers effect via haunt() when 1 arg provided", () => {
-      const s = signal(0);
-      let runs = 0;
-      const comp = new Component();
-
-      // Simulate being inside lifecycle
-      import("../src/component").then(({ setActiveComponent }) => {
-        setActiveComponent(comp);
-        haunt(() => {
-          s.value;
-          runs++;
-        });
-        setActiveComponent(null);
-
-        expect(runs).toBe(1);
-        s.value = 1;
-        expect(runs).toBe(2);
-
-        comp.$abortController.abort();
-        s.value = 2;
-        expect(runs).toBe(2);
-      });
-    });
-
-    it("registers watch via haunt() when 2 args provided", () => {
-      const s = signal(0);
-      const spy = vi.fn();
-      const comp = new Component();
-
-      import("../src/component").then(({ setActiveComponent }) => {
-        setActiveComponent(comp);
-        haunt(s, spy);
-        setActiveComponent(null);
-
-        s.value = 1;
-        expect(spy).toHaveBeenCalledTimes(1);
-
-        comp.$abortController.abort();
-        s.value = 2;
-        expect(spy).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    it("throws if called after an await in async lifecycle", async () => {
-      const comp = new Component();
-      const { setActiveComponent } = await import("../src/component");
-
-      setActiveComponent(comp);
-      await Promise.resolve(); // Context is lost!
-      
-      // We need to manually clear it in the transpiler usually, 
-      // but in this test let's see what happens if we call it.
-      // Wait, the transpiler clears it AFTER calling the hook.
-      // So in a real async hook:
-      // setActiveComponent(comp)
-      // await hook() 
-      // setActiveComponent(null)
-      
-      // If hook is: async () => { await 1; haunt() }
-      // haunt will be called AFTER the transpiler has already set context to null.
-      
-      setActiveComponent(null); // Simulate transpiler finishing its sync part
-      
-      expect(() => haunt(() => {})).toThrow("👻 Kasper Error: haunt()");
-    });
-  });
-
-  describe("Quirky Features", () => {
-    it("scry() is an alias for peek()", () => {
-      const s = signal(42);
-      expect(s.scry()).toBe(42);
-      
-      let runs = 0;
-      effect(() => {
-        s.scry();
-        runs++;
-      });
-      
-      expect(runs).toBe(1);
-      s.value = 100;
-      expect(runs).toBe(1); // Should not subscribe
     });
   });
 
