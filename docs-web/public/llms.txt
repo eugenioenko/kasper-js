@@ -153,28 +153,27 @@ import { Component, signal } from 'kasper-js';
 
 export class MyComponent extends Component {
   count = signal(0);
+  // Class field computed — declare AFTER the signals it depends on
+  double = this.computed(() => this.count.value * 2);
 
-  // lifecycle
-  onMount()   {}  // once, after first render — DOM ready, args populated
-  onRender()  {}  // after every render cycle
-  onChanges() {}  // before each reactive re-render (not first mount)
-  onDestroy() {}  // when removed from DOM
+  // component args passed via @: attributes from parent
+  // Access via this.args.name in class code, or args.name directly in templates
+  get title() { return this.args.title ?? 'Default'; }
 
+  // Lifecycle hooks
   onMount() {
-    // 1. Explicit effect (auto-cleans via AbortSignal)
-    // Always safe, even after 'await'
+    // Runs once — DOM ready, args populated
+    // this.effect / this.watch / this.computed all auto-clean on destroy
     this.effect(() => {
-      console.log('Syncing count:', this.count.value);
+      console.log('count is now:', this.count.value);  // re-runs when count changes
     });
-
-    // 2. Explicit watch (auto-cleans, provides old value)
     this.watch(this.count, (newVal, oldVal) => {
-      console.log(`Changed from ${oldVal} to ${newVal}`);
+      console.log(`Changed from ${oldVal} to ${newVal}`);  // does NOT run immediately
     });
   }
-
-  // Self-cleaning computed signal tied to component lifecycle
-  double = this.computed(() => this.count.value * 2);
+  onRender()  {}  // after every render cycle — do not use for one-time setup
+  onChanges() {}  // before each reactive re-render (not first mount)
+  onDestroy() {}  // when removed from DOM
 
   // Manual re-render (prefer signals)
   refresh() { this.render(); }
@@ -414,7 +413,7 @@ Signals are plain ES module exports — no store class needed:
 
 ```ts
 // store/user.ts
-import { signal, computed } from 'kasper-js';
+import { signal, computed, navigate } from 'kasper-js';
 
 export const currentUser = signal<User | null>(null);
 export const isLoggedIn = computed(() => currentUser.value !== null);
