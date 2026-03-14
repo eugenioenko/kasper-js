@@ -1,8 +1,38 @@
-import { Signal } from "./signal";
+import { Signal, SignalOptions, effect as rawEffect, computed as rawComputed } from "./signal";
 import { Transpiler } from "./transpiler";
 import { KNode } from "./types/nodes";
 
 type Watcher<T> = (newValue: T, oldValue: T) => void;
+
+let activeComponent: Component | null = null;
+
+/**
+ * Internal helper to set the active component context during lifecycle hooks.
+ * @internal
+ */
+export function setActiveComponent(comp: Component | null) {
+  activeComponent = comp;
+}
+
+/**
+ * The ghostly way to add reactive logic to a component. 👻
+ * 
+ * - `haunt(() => ...)` -> Creates a reactive effect.
+ * - `haunt(sig, (new, old) => ...)` -> Creates a signal watcher.
+ * 
+ * Must be called synchronously inside a component lifecycle hook (onMount, onRender, etc).
+ */
+export function haunt(arg1: any, arg2?: any): void {
+  if (!activeComponent) {
+    throw new Error("👻 Kasper Error: haunt() must be called synchronously inside a component lifecycle hook (onMount, onRender, etc.)");
+  }
+
+  if (typeof arg1 === "function") {
+    activeComponent.effect(arg1);
+  } else {
+    activeComponent.watch(arg1, arg2);
+  }
+}
 
 interface ComponentArgs {
   args: Record<string, any>;
@@ -16,7 +46,6 @@ export class Component {
   ref?: Node;
   transpiler?: Transpiler;
   $abortController = new AbortController();
-  $watchStops: Array<() => void> = [];
   $render?: () => void;
 
   constructor(props?: ComponentArgs) {
@@ -35,8 +64,35 @@ export class Component {
     }
   }
 
+  /**
+   * Alias for `watch` - keeps the Kasper spirit alive! 👻
+   */
   haunt<T>(sig: Signal<T>, fn: Watcher<T>): void {
-    this.$watchStops.push(sig.onChange(fn));
+    this.watch(sig, fn);
+  }
+
+  /**
+   * Creates a reactive effect tied to the component's lifecycle.
+   * Runs immediately and re-runs when any signal dependency changes.
+   */
+  effect(fn: () => void): void {
+    rawEffect(fn, { signal: this.$abortController.signal });
+  }
+
+  /**
+   * Watches a specific signal for changes.
+   * Does NOT run immediately.
+   */
+  watch<T>(sig: Signal<T>, fn: Watcher<T>): void {
+    sig.onChange(fn, { signal: this.$abortController.signal });
+  }
+
+  /**
+   * Creates a computed signal tied to the component's lifecycle.
+   * The internal effect is automatically cleaned up when the component is destroyed.
+   */
+  computed<T>(fn: () => T): Signal<T> {
+    return rawComputed(fn, { signal: this.$abortController.signal });
   }
 
   onMount() {}

@@ -9,6 +9,10 @@ const pendingWatchers: Array<() => void> = [];
 
 type Watcher<T> = (newValue: T, oldValue: T) => void;
 
+export interface SignalOptions {
+  signal?: AbortSignal;
+}
+
 export class Signal<T> {
   private _value: T;
   private subscribers = new Set<Listener>();
@@ -44,9 +48,14 @@ export class Signal<T> {
     }
   }
 
-  onChange(fn: Watcher<T>): () => void {
+  onChange(fn: Watcher<T>, options?: SignalOptions): () => void {
+    if (options?.signal?.aborted) return () => {};
     this.watchers.add(fn);
-    return () => this.watchers.delete(fn);
+    const stop = () => this.watchers.delete(fn);
+    if (options?.signal) {
+      options.signal.addEventListener("abort", stop, { once: true });
+    }
+    return stop;
   }
 
   unsubscribe(fn: Listener) {
@@ -55,9 +64,15 @@ export class Signal<T> {
 
   toString() { return String(this.value); }
   peek() { return this._value; }
+
+  /**
+   * The ghostly way to peek. 👻
+   */
+  scry() { return this._value; }
 }
 
-export function effect(fn: Listener) {
+export function effect(fn: Listener, options?: SignalOptions) {
+  if (options?.signal?.aborted) return () => {};
   const effectObj = {
     fn: () => {
       effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
@@ -76,14 +91,27 @@ export function effect(fn: Listener) {
   };
 
   effectObj.fn();
-  return () => {
+  const stop = () => {
     effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
     effectObj.deps.clear();
   };
+
+  if (options?.signal) {
+    options.signal.addEventListener("abort", stop, { once: true });
+  }
+
+  return stop;
 }
 
 export function signal<T>(initialValue: T): Signal<T> {
   return new Signal(initialValue);
+}
+
+/**
+ * Functional alias for signal.onChange()
+ */
+export function watch<T>(sig: Signal<T>, fn: Watcher<T>, options?: SignalOptions): () => void {
+  return sig.onChange(fn, options);
 }
 
 export function batch(fn: () => void): void {
@@ -104,10 +132,10 @@ export function batch(fn: () => void): void {
   }
 }
 
-export function computed<T>(fn: () => T): Signal<T> {
+export function computed<T>(fn: () => T, options?: SignalOptions): Signal<T> {
   const s = signal<T>(undefined as any);
   effect(() => {
     s.value = fn();
-  });
+  }, options);
   return s;
 }

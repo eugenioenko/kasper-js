@@ -149,16 +149,10 @@ All imports in the script block are available in the template.
 ## Component class
 
 ```ts
-import { Component, signal, computed } from 'kasper-js';
+import { Component, signal } from 'kasper-js';
 
 export class MyComponent extends Component {
-  // reactive state
   count = signal(0);
-  double = computed(() => this.count.value * 2);
-
-  // component args passed via @: attributes from parent
-  // Access via this.args.name in class code, or args.name directly in templates
-  get title() { return this.args.title ?? 'Default'; }
 
   // lifecycle
   onMount()   {}  // once, after first render — DOM ready, args populated
@@ -166,49 +160,53 @@ export class MyComponent extends Component {
   onChanges() {}  // before each reactive re-render (not first mount)
   onDestroy() {}  // when removed from DOM
 
-  // subscribe to external signal — auto-released on destroy
   onMount() {
-    this.haunt(externalSignal, (newVal, oldVal) => { ... });
+    // 1. Explicit effect (auto-cleans via AbortSignal)
+    // Always safe, even after 'await'
+    this.effect(() => {
+      console.log('Syncing count:', this.count.value);
+    });
+
+    // 2. Explicit watch (auto-cleans, provides old value)
+    this.watch(this.count, (newVal, oldVal) => {
+      console.log(`Changed from ${oldVal} to ${newVal}`);
+    });
   }
 
-  // manual re-render (prefer signals)
+  // Self-cleaning computed signal tied to component lifecycle
+  double = this.computed(() => this.count.value * 2);
+
+  // Manual re-render (prefer signals)
   refresh() { this.render(); }
 }
 ```
 
 `this.ref` — component root DOM element (available in onMount/onRender)
 `this.args` — object of values passed from parent via `@:name="expr"` (snapshot at mount — pass signals for reactivity)
-`this.$abortController` — AbortController used for @on: listeners
+`this.$abortController` — AbortController used for automatic cleanup of all reactive methods.
 
 ---
 
 ## Signals
 
 ```ts
-import { signal, computed, effect, batch } from 'kasper-js';
+import { signal, computed, effect, watch, batch } from 'kasper-js';
 
 const count = signal(0);          // writable signal
 count.value;                       // read
 count.value = 5;                   // write
 count.peek();                      // read without tracking dependency
 
-const double = computed(() => count.value * 2);  // derived, read-only
-
-const stop = effect(() => {        // runs immediately, re-runs on change
-  console.log(count.value);
-});
-stop();                            // unsubscribe
+// standalone effect/watch (returns stop function, manual cleanup required if outside component)
+const stopEffect = effect(() => console.log(count.value));
+const stopWatch = watch(count, (n, o) => console.log(n));
 
 batch(() => {                      // flush effects once after all writes
   count.value++;
   count.value++;
 });
 
-const unwatch = count.onChange((newVal, oldVal) => { ... });
-unwatch();  // unsubscribe
-
-// Signals use reference equality — only reassignment triggers reactivity
-// Arrays: reassign, never mutate in-place
+// Rules: Only reassignment triggers reactivity (strict equality ===)
 items.value = [...items.value, newItem];  // triggers ✓
 items.value.push(newItem);               // does NOT trigger ✗
 // Objects: same rule — mutating a nested property does NOT trigger
@@ -427,6 +425,31 @@ export async function login(credentials) {
 }
 ```
 
+### Persistent Stores
+
+Global signals can be synced with external APIs (like `localStorage`) using the standalone `effect()`.
+
+```ts
+// store/theme.ts
+import { signal, effect } from 'kasper-js';
+
+// 1. Initialize from external source
+const saved = localStorage.getItem('kasper-theme');
+export const theme = signal(saved || 'light');
+
+// 2. Sync changes back (Global side-effect)
+// This effect runs immediately (initial sync) and on every change.
+effect(() => {
+  localStorage.setItem('kasper-theme', theme.value);
+  document.body.className = `theme-${theme.value}`;
+});
+
+// 3. Actions
+export function toggleTheme() {
+  theme.value = theme.value === 'light' ? 'dark' : 'light';
+}
+```
+
 ```ts
 // Navbar.kasper
 import { Component } from 'kasper-js';
@@ -437,7 +460,7 @@ export class Navbar extends Component {
   loggedIn = isLoggedIn;
 
   onMount() {
-    this.haunt(currentUser, (user) => {
+    this.watch(currentUser, (user) => {
       // runs on change, auto-cleaned up on destroy
     });
   }
@@ -475,7 +498,7 @@ declare module '*.kasper' {
 - One component per `.kasper` file
 - All components used in `@component` or as tags must be imported in the script block
 - `@on:` listeners are cleaned up automatically on destroy via AbortController
-- `haunt()` subscriptions are cleaned up automatically on destroy
+- `this.effect()`, `this.watch()`, and `this.computed()` are auto-cleaned via AbortController
 - `onRender` fires on every render — do not use for one-time setup, use `onMount`
 - Prefer signals for reactivity over calling `this.render()`
 - `<style>` blocks are global — prefix class names to avoid collisions

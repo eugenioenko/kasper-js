@@ -111,7 +111,7 @@ describe("Component", () => {
       expect(calls).toEqual([1, 2]);
     });
 
-    it("stops the subscription when $watchStops are called", () => {
+    it("stops the subscription when component is destroyed", () => {
       const component = new Component();
       const count = signal(0);
       const calls: number[] = [];
@@ -119,7 +119,7 @@ describe("Component", () => {
       component.haunt(count, (val) => calls.push(val));
       count.value = 1;
 
-      component.$watchStops.forEach((stop) => stop());
+      component.$abortController.abort();
       count.value = 2;
 
       expect(calls).toEqual([1]);

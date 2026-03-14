@@ -38,6 +38,7 @@ const count = signal(0);
 count.value;        // read
 count.value = 1;    // write
 count.peek();       // read without tracking
+count.scry();       // ghostly peek alias 👻
 count.onChange((newVal, oldVal) => {}); // watch
 ```
 
@@ -57,6 +58,17 @@ Run a function reactively. Returns a stop function.
 ```ts
 const stop = effect(() => {
   console.log(count.value);
+});
+stop(); // cleanup
+```
+
+### watch(sig, fn)
+
+Watch a specific signal for changes. Unlike `effect()`, it does not run immediately. Returns a stop function.
+
+```ts
+const stop = watch(count, (newVal, oldVal) => {
+  console.log(`Changed: ${newVal}`);
 });
 stop(); // cleanup
 ```
@@ -89,10 +101,35 @@ class Component {
   onRender(): void {}
   onChanges(): void {}
   onDestroy(): void {}
+
+  // Reactive methods (Auto-cleaning)
+  effect(fn: () => void): void;
+  watch<T>(sig: Signal<T>, fn: (newVal: T, oldVal: T) => void): void;
+  computed<T>(fn: () => T): Signal<T>;
+  haunt<T>(sig: Signal<T>, fn: (newVal: T, oldVal: T) => void): void; // watch alias
 }
 ```
 
-### Lifecycle order
+### haunt(arg1, arg2?)
+
+The "magic" standalone helper for reactive logic inside components. 👻
+
+- **`haunt(() => ...)`**: Creates a reactive effect.
+- **`haunt(sig, (new, old) => ...)`**: Creates a signal watcher.
+
+**Constraint**: Must be called **synchronously** inside a component lifecycle hook (e.g., `onMount`). If called outside a valid component context (or after an `await`), it will throw an error.
+
+```ts
+import { Component, haunt } from 'kasper-js';
+
+export class MyComponent extends Component {
+  onMount() {
+    haunt(() => console.log(this.count.value));
+  }
+}
+```
+
+## Lifecycle order
 
 1. `onMount()` — before first render
 2. Template is transpiled into DOM
