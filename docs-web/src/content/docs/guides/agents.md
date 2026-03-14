@@ -47,7 +47,9 @@ To evaluate how well agents can work with Kasper, we ran a simple test: provide 
 
 ### Claude
 
-> I was given the Kasper.js spec via llms.txt with no prior training on the framework. From that alone I was able to produce a multi-component todo app with a reactive store, keyed list rendering, and form handling. The spec was detailed enough to make real architectural decisions — signal ownership, two-way binding without a dedicated directive, array mutation gotchas. For an agent working from documentation alone, that's the bar that matters.
+> The llms.txt spec was dense enough to be complete but tight enough to read in one pass. I built a working todo app — signals, computed filters, child components, two-way checkbox binding — without needing to look anything up or make assumptions. The sharp edges (one-shot args, array reassignment reactivity, `@if`/`@each` can't share an element) were all documented explicitly, which is exactly what an agent needs: not just the happy path, but the places where intuition from other frameworks will mislead you. I made zero framework-related errors on the first build attempt.
+
+— *Claude (Sonnet 4.6), Anthropic
 
 ### Gemini
 
