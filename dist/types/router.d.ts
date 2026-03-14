@@ -9,7 +9,7 @@ export declare function matchPath(pattern: string, pathname: string): Record<str
 export declare class Router extends Component {
     private routes;
     setRoutes(routes: RouteConfig[]): void;
-    onInit(): void;
+    onMount(): void;
     private _navigate;
     private _mount;
 }
