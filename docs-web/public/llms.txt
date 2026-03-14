@@ -1,0 +1,384 @@
+# Kasper.js — AI Reference
+
+Kasper.js is a lightweight component framework with fine-grained signal-based reactivity. 
+No virtual DOM. Templates are valid HTML with `@` prefixed directives. Expressions use `{{ }}`. Zero runtime dependencies. Single-file components (`.kasper`) require the `vite-plugin-kasper` Vite plugin.
+
+Full docs: https://kasperjs.top
+npm: kasper-js
+Vite plugin: vite-plugin-kasper
+
+---
+
+## Scaffold a new project
+
+```bash
+npm create kasper-app@latest my-project
+cd my-project
+npm install
+npm run dev
+```
+
+This generates a ready-to-use Vite project with the following structure:
+
+```
+my-project/
+  index.html
+  vite.config.ts
+  src/
+    main.ts
+    kasper.d.ts
+    components/
+      App.kasper
+      Counter.kasper
+      Example.kasper
+```
+
+**`vite.config.ts`**
+```ts
+import { defineConfig } from 'vite';
+import kasper from 'vite-plugin-kasper';
+
+export default defineConfig({
+  plugins: [kasper()],
+});
+```
+
+**`src/kasper.d.ts`** — required for TypeScript to recognise `.kasper` imports:
+```ts
+declare module '*.kasper' {
+  import type { Component } from 'kasper-js';
+  type AnyComponent = new (...args: any[]) => Component;
+  const exports: Record<string, AnyComponent>;
+  export = exports;
+}
+```
+
+**`src/main.ts`**
+```ts
+import { App as KasperApp } from './components/App.kasper';
+import { Example } from './components/Example.kasper';
+import { App } from 'kasper-js';
+
+App({
+  root: document.querySelector<HTMLElement>('#app')!,
+  entry: 'app',
+  registry: {
+    app: { component: KasperApp },
+    example: { component: Example },
+  },
+});
+```
+
+Every component used as a tag in templates must be registered in the `registry`. 
+The registry key is the HTML tag name used in templates.
+
+---
+
+## Bootstrap
+
+```ts
+import { App } from 'kasper-js';
+import { MyApp } from './App.kasper';
+
+App({
+  root: document.querySelector('#app'),
+  entry: 'my-app',
+  registry: {
+    'my-app': { component: MyApp },
+  },
+});
+```
+
+---
+
+## Single-file component (.kasper)
+
+```html
+<!-- Counter.kasper -->
+<template>
+  <div>
+    <p>{{count.value}}</p>
+    <button @on:click="increment()">+</button>
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+export class Counter extends Component {
+  count = signal(0);
+  increment() { this.count.value++; }
+}
+</script>
+
+<style>
+/* injected globally into <head> */
+</style>
+```
+
+The Vite plugin attaches `Counter.template` and `Counter.$imports` automatically. 
+All imports in the script block are available in the template.
+
+---
+
+## Component class
+
+```ts
+import { Component, signal, computed } from 'kasper-js';
+
+export class MyComponent extends Component {
+  // reactive state
+  count = signal(0);
+  double = computed(() => this.count.value * 2);
+
+  // component args passed via @: attributes from parent
+  get title() { return this.args.title ?? 'Default'; }
+
+  // lifecycle
+  onMount()   {}  // once, after first render — DOM ready, args populated
+  onRender()  {}  // after every render cycle
+  onChanges() {}  // before each reactive re-render (not first mount)
+  onDestroy() {}  // when removed from DOM
+
+  // subscribe to external signal — auto-released on destroy
+  onMount() {
+    this.haunt(externalSignal, (newVal, oldVal) => { ... });
+  }
+
+  // manual re-render (prefer signals)
+  refresh() { this.render(); }
+}
+```
+
+`this.ref` — component root DOM element (available in onMount/onRender)
+`this.args` — object of values passed from parent via `@:name="expr"`
+`this.$abortController` — AbortController used for @on: listeners
+
+---
+
+## Signals
+
+```ts
+import { signal, computed, effect, batch } from 'kasper-js';
+
+const count = signal(0);          // writable signal
+count.value;                       // read
+count.value = 5;                   // write
+count.peek();                      // read without tracking dependency
+
+const double = computed(() => count.value * 2);  // derived, read-only
+
+const stop = effect(() => {        // runs immediately, re-runs on change
+  console.log(count.value);
+});
+stop();                            // unsubscribe
+
+batch(() => {                      // flush effects once after all writes
+  count.value++;
+  count.value++;
+});
+
+const unwatch = count.onChange((newVal, oldVal) => { ... });
+unwatch();  // unsubscribe
+
+// Arrays — reassignment triggers reactivity; in-place mutation does NOT
+items.value = [...items.value, newItem];  // triggers ✓
+items.value.push(newItem);               // does NOT trigger ✗
+```
+
+---
+
+## Template directives
+
+```html
+<!-- Interpolation — only the text node updates -->
+<p>{{expression}}</p>
+
+<!-- Conditionals — DOM Boundaries, no wrapper element -->
+<div @if="condition">...</div>
+<div @elseif="other">...</div>
+<div @else>...</div>
+<!-- @elseif and @else must be IMMEDIATELY adjacent siblings to @if — no elements between them -->
+<!-- @if and @each are independent directives; they cannot be on the same element -->
+
+<!-- Lists — unkeyed (destroy/recreate) -->
+<li @each="item of items.value">{{item.name}}</li>
+
+<!-- Lists — with index -->
+<li @each="item with i of items.value">{{i}}: {{item.name}}</li>
+
+<!-- Lists — keyed reconciliation (reuses DOM nodes, use for dynamic lists) -->
+<li @each="item of items.value" @key="item.id">{{item.name}}</li>
+
+<!-- While loop -->
+<div @while="condition">...</div>
+
+<!-- Local variable — scoped to element and children -->
+<div @let="total = price * qty">{{total}}</div>
+
+<!-- Two-way binding — there is no @bind directive -->
+<!-- Use @on:input to write back to a signal, @attr to reflect its value -->
+<input @on:input="name.value = $event.target.value" @attr="{ value: name.value }" />
+
+<!-- Events -->
+<button @on:click="handler()">click</button>
+<input @on:input="handle($event)" />       <!-- $event is the native DOM Event -->
+<form @on:submit.prevent="submit()">...</form>
+<!-- modifiers: .prevent .stop .once .passive .capture -->
+<!-- $event is the only implicit variable in event handlers — it holds the raw DOM event -->
+
+<!-- Dynamic attributes — class and style are merged -->
+<div @attr="{ class: isActive ? 'active' : '', disabled: isDisabled }"></div>
+<div @class="isActive ? 'active' : ''"></div>
+<div @style="{ color: textColor }"></div>
+<!-- @attr uses setAttribute — reliable for most attributes -->
+<!-- Exception: boolean DOM properties (checked, selected) diverge from their attribute after user interaction -->
+<!-- For checkboxes, drive state through the signal and let @each recreate the element, or set .checked via @ref -->
+<input type="checkbox" @on:change="todo.done.value = $event.target.checked" @attr="{ checked: todo.done.value }" />
+
+<!-- DOM ref — captures element into component property -->
+<input @ref="inputEl" />
+
+<!-- Component args -->
+<user-card @:name="user.name" @:avatar="user.avatar"></user-card>
+```
+
+---
+
+## Slots
+
+```html
+<!-- Child component defines slots -->
+<template>
+  <div class="modal">
+    <slot @name="title" />   <!-- named slot -->
+    <slot />                  <!-- default slot -->
+    <slot @name="actions" />
+  </div>
+</template>
+
+<!-- Parent fills slots -->
+<modal>
+  <h2 @slot="title">Hello</h2>
+  <p>Content goes to default slot.</p>
+  <button @slot="actions">OK</button>
+</modal>
+```
+
+---
+
+## Router
+
+```html
+<router>
+  <route @path="/" @component="HomePage" />
+  <route @path="/users/:id" @component="UserPage" />
+  <route @path="/login" @component="LoginPage" />
+
+  <guard @check="checkAuth">
+    <route @path="/dashboard" @component="DashboardPage" />
+    <route @path="/settings" @component="SettingsPage" />
+
+    <guard @check="checkAdmin">
+      <route @path="/admin" @component="AdminPage" />
+    </guard>
+  </guard>
+
+  <route @path="*" @component="NotFound" />
+</router>
+```
+
+```ts
+import { navigate } from 'kasper-js';
+navigate('/dashboard');
+
+// Route params
+export class UserPage extends Component {
+  onMount() {
+    const { id } = this.args.params;
+  }
+}
+
+// Guard — async, returns Promise<boolean>
+async function checkAuth(): Promise<boolean> {
+  const user = await fetchCurrentUser();
+  if (!user) { navigate('/login'); return false; }
+  return true;
+}
+```
+
+`<route>` and `<guard>` are config nodes — they never render themselves.
+Routes matched in order. Use `@path="*"` last as catch-all.
+All components referenced in `@component` must be imported in the script block.
+
+---
+
+## State management
+
+Signals are plain ES module exports — no store class needed:
+
+```ts
+// store/user.ts
+import { signal, computed } from 'kasper-js';
+
+export const currentUser = signal<User | null>(null);
+export const isLoggedIn = computed(() => currentUser.value !== null);
+
+export async function login(credentials) {
+  currentUser.value = await api.login(credentials);
+}
+```
+
+```ts
+// Navbar.kasper
+import { Component } from 'kasper-js';
+import { currentUser, isLoggedIn } from '../store/user';
+
+export class Navbar extends Component {
+  user = currentUser;       // template reads user.value
+  loggedIn = isLoggedIn;
+
+  onMount() {
+    this.haunt(currentUser, (user) => {
+      // runs on change, auto-cleaned up on destroy
+    });
+  }
+}
+```
+
+---
+
+## Vite setup
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import kasper from 'vite-plugin-kasper';
+
+export default defineConfig({
+  plugins: [kasper()],
+});
+```
+
+```ts
+// src/kasper.d.ts — TypeScript declaration for .kasper imports
+declare module '*.kasper' {
+  import type { Component } from 'kasper-js';
+  type AnyComponent = new (...args: any[]) => Component;
+  const exports: Record<string, AnyComponent>;
+  export = exports;
+}
+```
+
+---
+
+## Key rules
+
+- One component per `.kasper` file
+- All components used in `@component` or as tags must be imported in the script block
+- `@on:` listeners are cleaned up automatically on destroy via AbortController
+- `haunt()` subscriptions are cleaned up automatically on destroy
+- `onRender` fires on every render — do not use for one-time setup, use `onMount`
+- Prefer signals for reactivity over calling `this.render()`
+- `<style>` blocks are global — prefix class names to avoid collisions
+- Use `@key` on `@each` whenever the list can change order or be partially updated
