@@ -158,7 +158,7 @@ parent list/condition changes → component removed
 Kasper handles several things automatically so you don't have to:
 
 - **Event listeners** added via `@on:` are bound to the component's `AbortController` and removed automatically on destroy. You only need `onDestroy` for listeners you attach manually (e.g. `window.addEventListener`).
-- **Reactive effects** registered through the framework are stopped automatically. Only effects you create manually with `kasper.effect()` outside a component need explicit cleanup.
+- **Reactive effects** registered through the framework are stopped automatically. Only effects you create manually with `effect()` outside a component need explicit cleanup.
 
 ---
 

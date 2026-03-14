@@ -564,7 +564,7 @@ Unresolved names fall through to `window` — so `Math`, `Date`, `JSON`, `consol
 Signals are the reactive primitive. All `{{ }}` bindings and directive expressions automatically track the signals they read — no manual subscription needed.
 
 ```js
-const count = kasper.signal(0);
+const count = signal(0);
 count.value        // read — subscribes the current effect
 count.value = 5    // write — notifies all subscribers
 count.peek()       // read without subscribing
@@ -579,8 +579,8 @@ For the full signals API — `signal`, `computed`, `effect`, `onChange` — see 
 ```js
 class MyComponent extends Component {
   // Reactive state
-  items = kasper.signal([]);
-  loading = kasper.signal(false);
+  items = signal([]);
+  loading = signal(false);
 
   // Lifecycle hooks
   onInit()    {}  // called before first render
@@ -614,7 +614,7 @@ On destroy (component removed):
 ### KasperInit (recommended)
 
 ```js
-kasper.App({
+App({
   root: "#app",         // CSS selector or HTMLElement for the mount point
   entry: "my-app",      // tag name of the root component
   registry: {

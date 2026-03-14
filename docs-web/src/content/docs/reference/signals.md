@@ -11,7 +11,7 @@ Signals are the reactive primitive in Kasper. They hold a value and notify subsc
 ## signal()
 
 ```js
-const count = kasper.signal(0);
+const count = signal(0);
 
 count.value        // read — subscribes the current effect
 count.value = 5    // write — notifies all subscribers
@@ -27,7 +27,7 @@ Use `peek()` when you need the current value without creating a reactive depende
 ## computed()
 
 ```js
-const double = kasper.computed(() => count.value * 2);
+const double = computed(() => count.value * 2);
 
 double.value  // always count.value * 2
 ```
@@ -36,8 +36,8 @@ double.value  // always count.value * 2
 
 ```js
 class Cart extends Component {
-  items = kasper.signal([]);
-  total = kasper.computed(() =>
+  items = signal([]);
+  total = computed(() =>
     this.items.value.reduce((sum, item) => sum + item.price, 0)
   );
 }
@@ -50,7 +50,7 @@ Computed signals are lazy — they only re-evaluate when their value is read aft
 ## effect()
 
 ```js
-const stop = kasper.effect(() => {
+const stop = effect(() => {
   console.log('count is', count.value);
 });
 
@@ -63,10 +63,10 @@ Effects are the mechanism behind all template bindings — every `{{ }}` interpo
 
 ```js
 class Logger extends Component {
-  data = kasper.signal(null);
+  data = signal(null);
 
   onInit() {
-    const stop = kasper.effect(() => {
+    const stop = effect(() => {
       if (this.data.value) console.log('data:', this.data.value);
     });
 
@@ -108,7 +108,7 @@ When watching a signal that lives on the component itself, no cleanup is needed.
 
 ```js
 class MyComp extends Component {
-  count = kasper.signal(0);
+  count = signal(0);
 
   onInit() {
     this.count.onChange((newVal, oldVal) => {
@@ -144,8 +144,8 @@ Signals are typically declared as class fields and accessed via `this`:
 
 ```js
 class Counter extends Component {
-  count = kasper.signal(0);
-  double = kasper.computed(() => this.count.value * 2);
+  count = signal(0);
+  double = computed(() => this.count.value * 2);
 
   increment() {
     this.count.value++;
