@@ -86,7 +86,7 @@ App({
 - **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template — no configuration object needed.
 - **Slots** — default and named content transclusion via `<slot />` and `@slot`. Named slots use `@name` / `@slot` for attribute consistency across the framework.
 - **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
-- **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. Use `this.haunt(signal, fn)` to subscribe to an external signal — subscriptions are released automatically when the component is destroyed.
+- **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. 
 - **Manual rendering** — `this.render()` triggers a full template teardown and rebuild for cases where imperative updates are preferred over reactive bindings. Prefer signals for normal use; `render()` exists for third-party library integration and non-reactive data sources.
 - **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function` — compatible with strict Content Security Policies out of the box.
 - **TypeScript** — fully typed throughout. Declaration files generated separately. `.kasper` files typed via ambient module declaration.
@@ -317,7 +317,7 @@ export class DataTable extends Component {
   onDestroy() {
     // Fires when removed from DOM.
     // @on: listeners are cleaned up automatically via AbortController.
-    // haunt() subscriptions are released automatically.
+    // this.watch() and this.effect subscriptions are released automatically.
     // Manual timers, WebSocket connections, etc. go here.
   }
 }
@@ -346,7 +346,7 @@ signal.value changes
 parent @if / @each removes the component
   └─ onDestroy()
   └─ @on: listeners aborted (AbortController)
-  └─ haunt() subscriptions released
+  └─ this.effect() / this.watch() / this.computed() stopped
   └─ reactive effects stopped
 ```
 
@@ -518,19 +518,19 @@ export class ProductCard extends Component {
 
 ### Subscribing to external signals
 
-Use `this.haunt()` to subscribe to an external signal inside a component. The subscription is released automatically when the component is destroyed — no `onDestroy` cleanup needed:
+Use `this.watch()` to subscribe to an external signal inside a component. The subscription is released automatically when the component is destroyed — no `onDestroy` cleanup needed:
 
 ```ts
 export class Navbar extends Component {
   onMount() {
-    this.haunt(currentUser, (user) => {
+    this.watch(currentUser, (user) => {
       console.log('session changed', user);
     });
   }
 }
 ```
 
-Calling `onChange` directly on a global signal inside a component works but leaks — the subscription outlives the component. `haunt` is always preferred inside components.
+Calling `onChange` directly on a global signal inside a component works but leaks — the subscription outlives the component. `this.watch()` is always preferred inside components.
 
 ---
 

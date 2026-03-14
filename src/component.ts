@@ -34,10 +34,6 @@ export class Component {
     }
   }
 
-  haunt<T>(sig: Signal<T>, fn: Watcher<T>): void {
-    this.watch(sig, fn);
-  }
-
   /**
    * Creates a reactive effect tied to the component's lifecycle.
    * Runs immediately and re-runs when any signal dependency changes.
@@ -62,10 +58,10 @@ export class Component {
     return rawComputed(fn, { signal: this.$abortController.signal });
   }
 
-  onMount() {}
-  onRender() {}
-  onChanges() {}
-  onDestroy() {}
+  onMount() { }
+  onRender() { }
+  onChanges() { }
+  onDestroy() { }
 
   render() {
     this.$render?.();
@@ -74,7 +70,7 @@ export class Component {
 
 export type KasperEntity = Component | Record<string, any> | null | undefined;
 
-export type ComponentClass = { new (args?: ComponentArgs): Component };
+export type ComponentClass = { new(args?: ComponentArgs): Component };
 export interface ComponentRegistry {
   [tagName: string]: {
     selector?: string;

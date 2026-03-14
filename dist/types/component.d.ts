@@ -13,10 +13,23 @@ export declare class Component {
     ref?: Node;
     transpiler?: Transpiler;
     $abortController: AbortController;
-    $watchStops: Array<() => void>;
     $render?: () => void;
     constructor(props?: ComponentArgs);
-    haunt<T>(sig: Signal<T>, fn: Watcher<T>): void;
+    /**
+     * Creates a reactive effect tied to the component's lifecycle.
+     * Runs immediately and re-runs when any signal dependency changes.
+     */
+    effect(fn: () => void): void;
+    /**
+     * Watches a specific signal for changes.
+     * Does NOT run immediately.
+     */
+    watch<T>(sig: Signal<T>, fn: Watcher<T>): void;
+    /**
+     * Creates a computed signal tied to the component's lifecycle.
+     * The internal effect is automatically cleaned up when the component is destroyed.
+     */
+    computed<T>(fn: () => T): Signal<T>;
     onMount(): void;
     onRender(): void;
     onChanges(): void;

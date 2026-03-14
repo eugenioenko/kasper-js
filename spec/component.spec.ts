@@ -30,7 +30,7 @@ describe("Component", () => {
     const transpiler = new Transpiler();
     const args = { foo: "bar" };
     const component = new Component({ args, ref, transpiler });
-    
+
     expect(component.args).toBe(args);
     expect(component.ref).toBe(ref);
     expect(component.transpiler).toBe(transpiler);
@@ -111,67 +111,6 @@ describe("Component", () => {
     });
   });
 
-  describe("haunt", () => {
-    it("calls the callback when signal changes", () => {
-      const component = new Component();
-      const count = signal(0);
-      const calls: number[] = [];
-
-      component.haunt(count, (val) => calls.push(val));
-      count.value = 1;
-      count.value = 2;
-
-      expect(calls).toEqual([1, 2]);
-    });
-
-    it("stops the subscription when component is destroyed", () => {
-      const component = new Component();
-      const count = signal(0);
-      const calls: number[] = [];
-
-      component.haunt(count, (val) => calls.push(val));
-      count.value = 1;
-
-      component.$abortController.abort();
-      count.value = 2;
-
-      expect(calls).toEqual([1]);
-    });
-
-    it("cleans up haunt subscriptions on component destroy via transpiler", () => {
-      const parser = new TemplateParser();
-      const theme = signal("dark");
-      const calls: string[] = [];
-
-      class ThemedComponent extends Component {
-        onMount() {
-          this.haunt(theme, (val) => calls.push(val));
-        }
-      }
-
-      const registry = {
-        "themed-comp": {
-          selector: "themed-comp",
-          component: ThemedComponent as any,
-          template: document.createElement("div"),
-          nodes: parser.parse("<span></span>"),
-        },
-      };
-
-      const transpiler = new Transpiler({ registry });
-      const container = document.createElement("div");
-      transpiler.transpile(parser.parse("<themed-comp></themed-comp>"), {}, container);
-
-      theme.value = "light";
-      expect(calls).toEqual(["light"]);
-
-      transpiler.destroy(container);
-      theme.value = "dark";
-
-      expect(calls).toEqual(["light"]);
-    });
-  });
-
   describe("Lifecycle hooks", () => {
     it("executes onMount and onRender when transpiled", () => {
       const parser = new TemplateParser();
@@ -193,9 +132,9 @@ describe("Component", () => {
       };
       const transpiler = new Transpiler({ registry });
       const container = document.createElement("div");
-      
+
       transpiler.transpile(parser.parse("<test-comp></test-comp>"), {}, container);
-      
+
       expect(initCalled).toBe(true);
       expect(renderCalled).toBe(true);
     });
@@ -221,9 +160,9 @@ describe("Component Integration", () => {
     };
     const transpiler = new Transpiler({ registry });
     const container = document.createElement("div");
-    
+
     transpiler.transpile(parser.parse(`<greet-comp @:name="'Kasper'"></greet-comp>`), {}, container);
-    
+
     expect(container.textContent).toContain("Hello Kasper");
   });
 
@@ -243,11 +182,11 @@ describe("Component Integration", () => {
         nodes: parser.parse("<div>parent<child-comp></child-comp></div>"),
       },
     };
-    
+
     const transpiler = new Transpiler({ registry });
     const container = document.createElement("div");
     transpiler.transpile(parser.parse("<parent-comp></parent-comp>"), {}, container);
-    
+
     expect(container.querySelector("parent-comp")).not.toBeNull();
     expect(container.querySelector("child-comp")).not.toBeNull();
     expect(container.textContent).toContain("parentchild");

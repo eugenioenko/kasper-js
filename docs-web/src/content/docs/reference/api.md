@@ -38,7 +38,6 @@ const count = signal(0);
 count.value;        // read
 count.value = 1;    // write
 count.peek();       // read without tracking
-count.scry();       // ghostly peek alias 👻
 count.onChange((newVal, oldVal) => {}); // watch
 ```
 
@@ -106,36 +105,17 @@ class Component {
   effect(fn: () => void): void;
   watch<T>(sig: Signal<T>, fn: (newVal: T, oldVal: T) => void): void;
   computed<T>(fn: () => T): Signal<T>;
-  haunt<T>(sig: Signal<T>, fn: (newVal: T, oldVal: T) => void): void; // watch alias
-}
-```
-
-### haunt(arg1, arg2?)
-
-The "magic" standalone helper for reactive logic inside components. 👻
-
-- **`haunt(() => ...)`**: Creates a reactive effect.
-- **`haunt(sig, (new, old) => ...)`**: Creates a signal watcher.
-
-**Constraint**: Must be called **synchronously** inside a component lifecycle hook (e.g., `onMount`). If called outside a valid component context (or after an `await`), it will throw an error.
-
-```ts
-import { Component, haunt } from 'kasper-js';
-
-export class MyComponent extends Component {
-  onMount() {
-    haunt(() => console.log(this.count.value));
-  }
 }
 ```
 
 ## Lifecycle order
 
-1. `onMount()` — before first render
+1. Constructor — runs before framework setup
 2. Template is transpiled into DOM
-3. `onRender()` — after first render, DOM available
-4. `onChanges()` — on arg changes
-5. `onDestroy()` — on removal
+3. `onMount()` — once, after first render, DOM ready, args populated
+4. `onRender()` — after every render cycle
+5. `onChanges()` — before each reactive re-render (not first mount)
+6. `onDestroy()` — when removed from DOM
 
 ## Utilities
 

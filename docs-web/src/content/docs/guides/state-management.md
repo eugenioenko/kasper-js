@@ -105,21 +105,17 @@ Each file is independently importable. Components only import what they need.
 
 ## Component Subscriptions
 
-When a component needs to react to a global signal, use **`this.watch()`**, **`this.effect()`**, or the magic **`haunt()`** helper. These are automatically cleaned up when the component is destroyed.
+When a component needs to react to a global signal, use **`this.watch()`** or **`this.effect()`**. These are automatically cleaned up when the component is destroyed.
 
 ```ts
-import { Component, haunt } from 'kasper-js';
+import { Component } from 'kasper-js';
 import { currentUser } from '../store/user';
 
 export class Navbar extends Component {
   onMount() {
-    // Branded way: haunt() creates a watcher when passed a signal + callback
-    haunt(currentUser, (user) => {
+    this.watch(currentUser, (user) => {
       console.log('User changed:', user);
     });
-
-    // Explicit way: always safe
-    this.watch(currentUser, (user) => { ... });
   }
 }
 ```

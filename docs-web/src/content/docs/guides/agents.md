@@ -12,7 +12,7 @@ Kasper publishes a dense API reference at [kasperjs.top/llms.txt](https://kasper
 The file covers the full API in a compact, prose-free format designed for agent context windows:
 
 - Bootstrap and project structure
-- Component class — signals, lifecycle, args, `haunt()`
+- Component class — signals, lifecycle, args, `this.effect()`, `this.watch()`
 - All template directives with examples
 - Router — routes, guards, params, `navigate()`
 - State management pattern

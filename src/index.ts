@@ -1,4 +1,4 @@
-export { Component } from "./component";
+import { Component } from "./component";
 import { ExpressionParser } from "./expression-parser";
 import { Interpreter } from "./interpreter";
 import { execute, transpile, Kasper, KasperInit } from "./kasper";

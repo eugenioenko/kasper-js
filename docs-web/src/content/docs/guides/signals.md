@@ -31,13 +31,12 @@ export class Counter extends Component {
 </script>
 ```
 
-### peek() and scry()
+### peek()
 
-Sometimes you want to read a signal's value without subscribing to it (so the effect doesn't re-run when the signal changes). Use `peek()` or its ghostly alias, `scry()`.
+Sometimes you want to read a signal's value without subscribing to it (so the effect doesn't re-run when the signal changes). Use `peek()`.
 
 ```ts
 const val = this.count.peek();
-const sameVal = this.count.scry(); // 👻 Ghostly peek
 ```
 
 ## Component Reactivity (Auto-Cleaning)
@@ -75,23 +74,6 @@ A `computed` signal is a derived value. When created via `this.computed()`, the 
 ```ts
 export class Sidebar extends Component {
   isExpanded = this.computed(() => globalState.sidebarOpen.value);
-}
-```
-
-### haunt() 👻
-
-The `haunt()` function is a "magic" standalone helper that can act as both an effect or a watch.
-
-**Important**: `haunt()` must be called **synchronously** inside a lifecycle hook (`onMount`, `onRender`, etc.).
-
-```ts
-import { Component, haunt } from 'kasper-js';
-
-export class MyComponent extends Component {
-  onMount() {
-    haunt(() => console.log(this.count.value)); // Effect
-    haunt(this.count, (newVal, oldVal) => { ... }); // Watch
-  }
 }
 ```
 
