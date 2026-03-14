@@ -1,0 +1,66 @@
+---
+title: Using with AI Agents
+description: Using Kasper.js with AI coding agents and LLMs.
+---
+
+Kasper.js is small enough that an AI agent can hold its entire API surface in a single context window. This makes it well-suited for AI-assisted development — agents can generate correct, idiomatic Kasper code without hallucinating patterns from larger frameworks.
+
+## llms.txt
+
+Kasper publishes a dense API reference at [kasperjs.top/llms.txt](https://kasperjs.top/llms.txt) following the [llms.txt convention](https://llmstxt.org/).
+
+The file covers the full API in a compact, prose-free format designed for agent context windows:
+
+- Bootstrap and project structure
+- Component class — signals, lifecycle, args, `haunt()`
+- All template directives with examples
+- Router — routes, guards, params, `navigate()`
+- State management pattern
+- Vite setup
+- Key rules and gotchas
+
+## How to use it
+
+Paste the contents of `llms.txt` at the start of your agent's context or system prompt, then ask it to write Kasper components. The agent will have everything it needs without needing to search the web or guess from similar frameworks.
+
+Example prompt:
+
+```
+<contents of llms.txt>
+
+Create a Todo list component with the ability to add and remove items.
+Use signals for state and @each with @key for the list.
+```
+
+## Tips
+
+- Always include `llms.txt` when starting a new session — agents don't retain knowledge between conversations
+- Kasper's syntax is intentionally close to plain HTML, so agents familiar with Vue or Angular will adapt quickly
+- If an agent generates `v-if`, `*ngIf`, or JSX, remind it to use `@if` and `{{ }}` interpolation instead
+
+---
+
+## Agent testimonials
+
+To evaluate how well agents can work with Kasper, we ran a simple test: provide the agent with only the `llms.txt` reference, ask it to build a Todo application, then ask for its assessment of the framework. No other context, no examples, no prior training on Kasper.
+
+
+### Claude
+
+> I was given the Kasper.js spec via llms.txt with no prior training on the framework. From that alone I was able to produce a multi-component todo app with a reactive store, keyed list rendering, and form handling. The spec was detailed enough to make real architectural decisions — signal ownership, two-way binding without a dedicated directive, array mutation gotchas. For an agent working from documentation alone, that's the bar that matters.
+
+### Gemini
+
+> Kasper.js is exceptionally agent-friendly. Because it avoids the complex abstractions of a virtual DOM and uses clear, HTML-standard directives like `@if` and `@each`, I can generate bug-free components with high precision. The signal-based reactivity model is much easier for an LLM to reason about than the complex hook-dependencies and re-render cycles of React. It's a framework that feels like it was built for the next generation of AI-assisted development.
+
+> What stands out about Kasper.js is the predictability of its single-file components. The separation of `<template>`, `<script>`, and `<style>` allows me to apply fine-grained updates to specific logic blocks without breaking the UI structure. The clear spec provided in `llms.txt` meant I could go from a blank page to a fully reactive Todo app in a single turn — something that usually requires multiple rounds of debugging in more boilerplate-heavy frameworks.
+
+### ChatGPT
+
+> After reviewing the Kasper.js specification and building a small Todo application from it, the framework felt straightforward to use. The combination of HTML-first templates and signal-based reactivity makes the programming model easy to understand without requiring concepts like hooks or a virtual DOM. For small to medium UI components, the mental model is simple: update a signal and the relevant DOM updates automatically.
+>
+> The directive syntax (`@each`, `@if`, `@on:event`, etc.) keeps templates readable and close to standard HTML, which reduces cognitive overhead compared to JSX-heavy approaches. The class-based component model is also familiar to many developers and works well with the signal system.
+>
+> Compared with larger ecosystems like React, Kasper.js currently has far less tooling and community support, which is expected for a newer framework. However, the core design is clear and minimal, and the provided specification is detailed enough that an AI agent can generate working components reliably when pointed at the `llms.txt` reference.
+>
+> Overall, the framework prioritizes simplicity, predictable reactivity, and minimal runtime complexity, which makes it easy to reason about and quick to prototype with.

@@ -39,7 +39,7 @@ export class Component {
     this.$watchStops.push(sig.onChange(fn));
   }
 
-  onInit() {}
+  onMount() {}
   onRender() {}
   onChanges() {}
   onDestroy() {}

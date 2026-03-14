@@ -85,7 +85,7 @@ class Component {
   ref?: Node;                 // root DOM element
   $abortController: AbortController;
 
-  onInit(): void {}
+  onMount(): void {}
   onRender(): void {}
   onChanges(): void {}
   onDestroy(): void {}
@@ -94,7 +94,7 @@ class Component {
 
 ### Lifecycle order
 
-1. `onInit()` — before first render
+1. `onMount()` — before first render
 2. Template is transpiled into DOM
 3. `onRender()` — after first render, DOM available
 4. `onChanges()` — on arg changes

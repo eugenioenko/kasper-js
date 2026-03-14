@@ -34,7 +34,7 @@ export class Router extends Component {
     this.routes = routes;
   }
 
-  onInit(): void {
+  onMount(): void {
     window.addEventListener("popstate", () => this._navigate(), {
       signal: this.$abortController.signal,
     });

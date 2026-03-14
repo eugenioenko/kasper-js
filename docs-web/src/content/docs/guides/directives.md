@@ -33,6 +33,20 @@ With index:
 
 The list re-renders reactively when the signal containing `items` changes.
 
+## @key
+
+Add `@key` to `@each` to enable keyed reconciliation. When the list changes, Kasper matches new items to existing DOM nodes by key — reusing and reordering them rather than destroying and recreating the entire list:
+
+```html
+<ul>
+  <li @each="item of items.value" @key="item.id">{{item.name}}</li>
+</ul>
+```
+
+Without `@key`, every signal update destroys and recreates all list nodes. With `@key`, only added items create new DOM nodes — existing ones are reused. Use it whenever the list can be reordered, filtered, or partially updated.
+
+The key expression is evaluated in the item's scope and must be unique across the list. Typically `item.id` or another stable identifier.
+
 ## @while
 
 Render elements while a condition is true:

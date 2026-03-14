@@ -117,7 +117,7 @@ Signals and computed values owned by a component are garbage collected when the 
 export class Timer extends Component {
   private stopEffect: () => void;
 
-  onInit() {
+  onMount() {
     this.stopEffect = effect(() => {
       // some side effect
     });

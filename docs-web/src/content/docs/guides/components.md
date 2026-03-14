@@ -50,16 +50,16 @@ Args are evaluated as expressions — you can pass signals, arrays, objects, or 
 
 ```ts
 export class MyComponent extends Component {
-  onInit() {
-    // Called before first render — set up state here
+  onMount() {
+    // Called once after first render — DOM is ready, args are populated
   }
 
   onRender() {
-    // Called after first render — DOM is available
+    // Called after every render — first mount and every reactive update
   }
 
   onChanges() {
-    // Called when args change
+    // Called before each reactive re-render (not on first mount)
   }
 
   onDestroy() {
@@ -109,7 +109,7 @@ Use `@ref` to capture specific child elements:
 export class MyForm extends Component {
   inputEl: HTMLInputElement;
 
-  onRender() {
+  onMount() {
     this.inputEl.focus();
   }
 }

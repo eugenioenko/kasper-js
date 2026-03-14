@@ -86,7 +86,7 @@ For `onChange` on a global signal, use `this.haunt()` instead of calling `onChan
 
 ```ts
 export class Navbar extends Component {
-  onInit() {
+  onMount() {
     this.haunt(currentUser, (user) => {
       console.log('user changed', user);
     });

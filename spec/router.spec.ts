@@ -74,7 +74,7 @@ describe("Router", () => {
   function mountRouter(routes: any[]) {
     const router = new Router({ args: {}, ref: container, transpiler });
     router.setRoutes(routes);
-    router.onInit();
+    router.onMount();
     return router;
   }
 

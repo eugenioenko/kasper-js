@@ -42,7 +42,7 @@ Use `:segment` in `@path` to define dynamic segments. Params are passed to the c
 
 ```ts
 export class UserPage extends Component {
-  onInit() {
+  onMount() {
     const id = this.args.params.id;
   }
 }

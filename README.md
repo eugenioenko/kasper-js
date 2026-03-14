@@ -16,7 +16,7 @@ Fine-grained signals are not new — SolidJS pioneered direct signal-to-DOM bind
 
 Kasper's position is different: it is a complete, self-contained framework — components, router, slots, lifecycle, expression evaluator, template parser — in under 4000 lines of TypeScript with zero runtime dependencies. No virtual DOM, no scheduler, no compiler that requires a dedicated language server. The entire dependency graph at runtime is the framework itself.
 
-The design constraints are deliberate. Directives are valid HTML attributes, so templates parse as plain HTML without editor plugins or custom syntax highlighting. The expression evaluator is a custom recursive-descent parser — not `eval`, not `new Function`, not a third-party AST library — supporting arrow functions, optional chaining, nullish coalescing, pipeline operator, and spread without pulling in a single parse dependency. This matters beyond aesthetics: because no dynamic code execution primitives are used, Kasper works in environments with a strict Content Security Policy (`script-src 'self'`) out of the box — no CSP exemptions required. Each `{{expression}}`, `@if`, and `@each` binding registers its own effect directly against the DOM node it controls. When a signal changes, only that node is updated — no component re-render, no diffing pass, no scheduler queue.
+The design constraints are deliberate. Directives are valid HTML attributes, so templates parse as plain HTML without editor plugins or custom syntax highlighting. The expression evaluator is a custom recursive-descent parser — not `eval`, not `new Function`, not a third-party AST library — supporting arrow functions, optional chaining, nullish coalescing, pipeline operator, and spread without pulling in a single parse dependency. Each `{{expression}}`, `@if`, and `@each` binding registers its own effect directly against the DOM node it controls. When a signal changes, only that node is updated — no component re-render, no diffing pass, no scheduler queue.
 
 The result is a framework you can read in an afternoon, understand completely, and trust in production. It is not trying to replace React or Angular for large teams with complex tooling requirements. It is for projects where the right answer is fewer moving parts.
 
@@ -85,10 +85,10 @@ App({
 - **Event modifiers** — `@on:submit.prevent`, `@on:click.stop`, `@on:click.once`, `@on:scroll.passive`, `@on:click.capture`. All `@on:` listeners are registered via the component's `AbortController` and removed automatically on destroy.
 - **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template — no configuration object needed.
 - **Slots** — default and named content transclusion via `<slot />` and `@slot`. Named slots use `@name` / `@slot` for attribute consistency across the framework.
-- **Lifecycle hooks** — `onInit`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onInit` fires before render with `args` already populated. `onRender` fires after each render cycle when the DOM is ready. `onChanges` fires before each reactive re-render, not on first mount.
+- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
 - **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. Use `this.haunt(signal, fn)` to subscribe to an external signal — subscriptions are released automatically when the component is destroyed.
 - **Manual rendering** — `this.render()` triggers a full template teardown and rebuild for cases where imperative updates are preferred over reactive bindings. Prefer signals for normal use; `render()` exists for third-party library integration and non-reactive data sources.
-- **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function`.
+- **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function` — compatible with strict Content Security Policies out of the box.
 - **TypeScript** — fully typed throughout. Declaration files generated separately. `.kasper` files typed via ambient module declaration.
 - **Zero dependencies** — no runtime dependencies. Ships as a single ES module. Vite plugin is the only dev-time tooling required.
 
@@ -289,8 +289,9 @@ export class DataTable extends Component {
   loading = signal(true);
   error   = signal<string | null>(null);
 
-  async onInit() {
-    // Fires before first render. args is already populated.
+  async onMount() {
+    // Fires once after first render. DOM is ready, args are populated.
+    // Use for data fetching, timers, third-party lib init, focus management.
     try {
       this.rows.value = await fetchRows(this.args.endpoint);
     } catch (e) {
@@ -301,9 +302,10 @@ export class DataTable extends Component {
   }
 
   onRender() {
-    // Fires after every render cycle. DOM is live and queryable.
-    // Use for measurements, focus management, third-party lib init.
-    this.ref.querySelector<HTMLInputElement>('input[autofocus]')?.focus();
+    // Fires after every render cycle — first render and every reactive update.
+    // Use for things that must run on each update: scroll sync, external state.
+    // Do not use for one-time setup — that belongs in onMount.
+    console.log('table rendered, rows:', this.rows.value.length);
   }
 
   onChanges() {
@@ -325,11 +327,10 @@ export class DataTable extends Component {
 
 **First mount:**
 ```
-new ComponentClass()
-  └─ args populated
-  └─ onInit()
+new ComponentClass()   ← constructor runs here if needed
   └─ template rendered into DOM
-  └─ onRender()
+  └─ onMount()         ← DOM ready, args populated, runs once
+  └─ onRender()        ← also fires here, and on every subsequent update
 ```
 
 **Reactive update:**
@@ -357,7 +358,7 @@ For cases where imperative re-rendering is preferable to signal-driven updates (
 export class Clock extends Component {
   time = new Date().toLocaleTimeString();
 
-  onInit() {
+  onMount() {
     setInterval(() => {
       this.time = new Date().toLocaleTimeString();
       this.render(); // tears down and rebuilds the component's template
@@ -425,7 +426,7 @@ Dynamic segments are passed to the component via `this.args.params`:
 export class UserPage extends Component {
   user = signal<User | null>(null);
 
-  async onInit() {
+  async onMount() {
     const { id } = this.args.params;
     this.user.value = await fetchUser(id);
   }
@@ -521,7 +522,7 @@ Use `this.haunt()` to subscribe to an external signal inside a component. The su
 
 ```ts
 export class Navbar extends Component {
-  onInit() {
+  onMount() {
     this.haunt(currentUser, (user) => {
       console.log('session changed', user);
     });
