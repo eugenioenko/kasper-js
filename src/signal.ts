@@ -103,7 +103,7 @@ export function signal<T>(initialValue: T): Signal<T> {
 }
 
 /**
- * Functional alias for signal.onChange()
+ * Functional alias for Signal.onChange()
  */
 export function watch<T>(sig: Signal<T>, fn: Watcher<T>, options?: SignalOptions): () => void {
   return sig.onChange(fn, options);

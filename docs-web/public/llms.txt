@@ -189,7 +189,7 @@ export class MyComponent extends Component {
 ## Signals
 
 ```ts
-import { signal, computed, effect, watch, batch } from 'kasper-js';
+import { signal, computed, effect, batch } from 'kasper-js';
 
 const count = signal(0);          // writable signal
 count.value;                       // read
@@ -205,7 +205,11 @@ batch(() => {                      // flush effects once after all writes
   count.value++;
 });
 
-// Rules: Only reassignment triggers reactivity (strict equality ===)
+const unwatch = count.onChange((newVal, oldVal) => { ... });
+unwatch();  // unsubscribe
+
+// Signals use reference equality — only reassignment triggers reactivity
+// Arrays: reassign, never mutate in-place
 items.value = [...items.value, newItem];  // triggers ✓
 items.value.push(newItem);               // does NOT trigger ✗
 // Objects: same rule — mutating a nested property does NOT trigger

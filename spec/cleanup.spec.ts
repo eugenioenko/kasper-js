@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { signal, effect, computed } from "../src/signal";
+import { signal, effect, computed, watch } from "../src/signal";
 import { Component } from "../src/component";
 
 describe("AbortSignal Cleanup & Architecture", () => {
@@ -50,6 +50,20 @@ describe("AbortSignal Cleanup & Architecture", () => {
       s.value = 30;
       // Computed value should be stale/stopped
       expect(double.value).toBe(40); 
+    });
+
+    it("stops standalone watch when AbortSignal is aborted", () => {
+      const s = signal(0);
+      const controller = new AbortController();
+      const spy = vi.fn();
+
+      watch(s, spy, { signal: controller.signal });
+      s.value = 1;
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      controller.abort();
+      s.value = 2;
+      expect(spy).toHaveBeenCalledTimes(1); // Should not run again
     });
 
     it("immediately stops if AbortSignal is already aborted", () => {

@@ -118,13 +118,18 @@ HTML string
 ## Signals
 
 ```ts
-import { signal, computed, effect, batch } from 'kasper-js';
+import { signal, computed, effect, watch, batch } from 'kasper-js';
 
 const count = signal(0);
 const double = computed(() => count.value * 2);
 
 // effect runs immediately and re-runs whenever count changes
-const stop = effect(() => console.log(`double is ${double.value}`));
+const stopEffect = effect(() => console.log(`double is ${double.value}`));
+
+// watch runs only on change and provides old value
+const stopWatch = watch(count, (newVal, oldVal) => {
+  console.log(`${oldVal} → ${newVal}`);
+});
 
 // batch defers effect flushes until the callback returns
 batch(() => {
@@ -132,16 +137,20 @@ batch(() => {
   count.value++;
 }); // effect fires once, not twice
 
-stop(); // unsubscribe
+stopEffect(); // unsubscribe
+stopWatch(); // unsubscribe
 
 // peek() reads the current value without registering a dependency
 const current = count.peek();
 
-// onChange() watches for changes with old and new value
-const unwatch = count.onChange((newVal, oldVal) => {
-  console.log(`${oldVal} → ${newVal}`);
-});
-unwatch(); // unsubscribe
+// Signals use reference equality — only reassignment triggers reactivity
+// Arrays: reassign, never mutate in-place
+items.value = [...items.value, newItem]; // triggers ✓
+items.value.push(newItem);               // does NOT trigger ✗
+
+// Objects: same rule — mutating a nested property does NOT trigger
+user.value = { ...user.value, name: 'Alice' }; // triggers ✓
+user.value.name = 'Alice';                     // does NOT trigger ✗
 ```
 
 Signals declared as component fields are garbage-collected when the component is destroyed. Effects created with `effect()` return a stop function — call it in `onDestroy` if you create one outside the framework's tracking. Template bindings are cleaned up automatically.
