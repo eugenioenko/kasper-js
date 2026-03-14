@@ -68,7 +68,7 @@ Declare a local template variable:
 </div>
 ```
 
-Variables declared with `@let` are scoped to the element and its children.
+Variables declared with `@let` are available to the element's children and all subsequent siblings at the same level. Nested `@let` can reference ancestor variables, and sibling `@let` declarations can reference earlier ones in the same parent.
 
 ## @on
 
@@ -86,7 +86,23 @@ Event listeners are automatically removed when the component is destroyed.
 
 ## @attr
 
-Bind dynamic attributes as an object:
+There are three ways to bind dynamic attributes:
+
+**Interpolation** — `{{ }}` works inside any regular attribute value and is reactive:
+
+```html
+<input value="{{name.value}}" placeholder="{{hint}}" />
+```
+
+**Shorthand** — `@name="expr"` binds a single attribute from an expression:
+
+```html
+<input @value="name.value" />
+<input type="checkbox" @checked="todo.done.value" />
+<button @disabled="isLoading">Submit</button>
+```
+
+**Object form** — `@attr="{ ... }"` binds multiple attributes at once:
 
 ```html
 <div @attr="{ class: isActive ? 'active' : '', 'aria-label': label }"></div>
