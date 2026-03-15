@@ -506,7 +506,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         const name = nameAttr ? nameAttr.value : "default";
         const slots = this.interpreter.scope.get("$slots");
         if (slots && slots[name]) {
+          const prev = this.interpreter.scope;
+          // Restore the scope where the slot content was defined (Lexical Scoping).
+          // We store the scope reference directly on the Array instance to avoid changing signatures.
+          if (slots[name].scope) this.interpreter.scope = slots[name].scope;
           this.createSiblings(slots[name], parent);
+          this.interpreter.scope = prev;
         }
         return undefined;
       }
@@ -529,14 +534,20 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         );
         const args = this.createComponentArgs(argsAttr as KNode.Attribute[]);
 
-        // Capture children for slots
-        const slots: Record<string, KNode.KNode[]> = { default: [] };
+        // Capture children for slots. 
+        // We use a plain object keyed by slot name. Each value is an Array of KNodes.
+        // To support lexical scoping, we attach the current scope to the Array instance.
+        const slots: Record<string, any> = { default: [] };
+        slots.default.scope = this.interpreter.scope;
         for (const child of node.children) {
           if (child.type === "element") {
             const slotAttr = this.findAttr(child as KNode.Element, ["@slot"]);
             if (slotAttr) {
               const name = slotAttr.value;
-              if (!slots[name]) slots[name] = [];
+              if (!slots[name]) {
+                slots[name] = [];
+                slots[name].scope = this.interpreter.scope;
+              }
               slots[name].push(child);
               continue;
             }
