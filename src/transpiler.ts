@@ -7,6 +7,7 @@ import { Scope } from "./scope";
 import { effect } from "./signal";
 import { Boundary } from "./boundary";
 import { TemplateParser } from "./template-parser";
+import { queueUpdate, flushSync } from "./scheduler";
 import * as KNode from "./types/nodes";
 
 type IfElseNode = [KNode.Element, KNode.Attribute];
@@ -85,12 +86,22 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     entity: any,
     container: Element
   ): Node {
-    this.destroy(container);
-    container.innerHTML = "";
-    this.bindMethods(entity);
-    this.interpreter.scope.init(entity);
-    this.createSiblings(nodes, container);
-    return container;
+    this.isRendering = true;
+    try {
+      this.destroy(container);
+      container.innerHTML = "";
+      this.bindMethods(entity);
+      this.interpreter.scope.init(entity);
+      
+      flushSync(() => {
+        this.createSiblings(nodes, container);
+        this.triggerRender();
+      });
+      
+      return container;
+    } finally {
+      this.isRendering = false;
+    }
   }
 
   public visitElementKNode(node: KNode.Element, parent?: Node): void {
@@ -109,7 +120,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       }
 
       const stop = this.scopedEffect(() => {
-        text.textContent = this.evaluateTemplateString(node.value);
+        const newValue = this.evaluateTemplateString(node.value);
+        const instance = this.interpreter.scope.get("$instance");
+        if (instance) {
+          queueUpdate(instance, () => {
+            text.textContent = newValue;
+          });
+        } else {
+          text.textContent = newValue;
+        }
       });
       this.trackEffect(text, stop);
     } catch (e: any) {
@@ -426,16 +445,25 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
           const componentNodes = this.registry[node.name].nodes!;
           component.$render = () => {
-            this.destroy(element as HTMLElement);
-            (element as HTMLElement).innerHTML = "";
-            const scope = new Scope(restoreScope, component);
-            scope.set("$instance", component);
-            component.$slots = slots;
-            const prevScope = this.interpreter.scope;
-            this.interpreter.scope = scope;
-            this.createSiblings(componentNodes, element);
-            this.interpreter.scope = prevScope;
-            if (typeof component.onRender === "function") component.onRender();
+            this.isRendering = true;
+            try {
+              this.destroy(element as HTMLElement);
+              (element as HTMLElement).innerHTML = "";
+              const scope = new Scope(restoreScope, component);
+              scope.set("$instance", component);
+              component.$slots = slots;
+              const prevScope = this.interpreter.scope;
+              this.interpreter.scope = scope;
+              
+              flushSync(() => {
+                this.createSiblings(componentNodes, element);
+                if (typeof component.onRender === "function") component.onRender();
+              });
+              
+              this.interpreter.scope = prevScope;
+            } finally {
+              this.isRendering = false;
+            }
           };
 
           if (node.name === "router" && component instanceof Router) {
@@ -454,11 +482,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         this.interpreter.scope.set("$instance", component);
 
         // create the children of the component
-        this.createSiblings(this.registry[node.name].nodes!, element);
+        flushSync(() => {
+          this.createSiblings(this.registry[node.name].nodes!, element);
 
-        if (component && typeof component.onRender === "function") {
-          component.onRender();
-        }
+          if (component && typeof component.onRender === "function") {
+            component.onRender();
+          }
+        });
 
         this.interpreter.scope = restoreScope;
         if (parent) {
@@ -510,33 +540,50 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             let lastDynamicValue = "";
             const stop = this.scopedEffect(() => {
               const value = this.execute((attr as KNode.Attribute).value);
-              const staticClass = (element as HTMLElement).getAttribute("class") || "";
-              const currentClasses = staticClass.split(" ")
-                .filter(c => c !== lastDynamicValue && c !== "")
-                .join(" ");
-              const newValue = currentClasses ? `${currentClasses} ${value}` : value;
-              (element as HTMLElement).setAttribute("class", newValue);
-              lastDynamicValue = value;
+              const instance = this.interpreter.scope.get("$instance");
+              const task = () => {
+                const staticClass = (element as HTMLElement).getAttribute("class") || "";
+                const currentClasses = staticClass.split(" ")
+                  .filter(c => c !== lastDynamicValue && c !== "")
+                  .join(" ");
+                const newValue = currentClasses ? `${currentClasses} ${value}` : value;
+                (element as HTMLElement).setAttribute("class", newValue);
+                lastDynamicValue = value;
+              };
+
+              if (instance) {
+                queueUpdate(instance, task);
+              } else {
+                task();
+              }
             });
             this.trackEffect(element, stop);
           } else {
             const stop = this.scopedEffect(() => {
               const value = this.execute((attr as KNode.Attribute).value);
-
-              if (value === false || value === null || value === undefined) {
-                if (realName !== "style") {
-                  (element as HTMLElement).removeAttribute(realName);
-                }
-              } else {
-                if (realName === "style") {
-                  const existing = (element as HTMLElement).getAttribute("style");
-                  const newValue = existing && !existing.includes(value)
-                    ? `${existing.endsWith(";") ? existing : existing + ";"} ${value}`
-                    : value;
-                  (element as HTMLElement).setAttribute("style", newValue);
+              const instance = this.interpreter.scope.get("$instance");
+              const task = () => {
+                if (value === false || value === null || value === undefined) {
+                  if (realName !== "style") {
+                    (element as HTMLElement).removeAttribute(realName);
+                  }
                 } else {
-                  (element as HTMLElement).setAttribute(realName, value);
+                  if (realName === "style") {
+                    const existing = (element as HTMLElement).getAttribute("style");
+                    const newValue = existing && !existing.includes(value)
+                      ? `${existing.endsWith(";") ? existing : existing + ";"} ${value}`
+                      : value;
+                    (element as HTMLElement).setAttribute("style", newValue);
+                  } else {
+                    (element as HTMLElement).setAttribute(realName, value);
+                  }
                 }
+              };
+
+              if (instance) {
+                queueUpdate(instance, task);
+              } else {
+                task();
               }
             });
             this.trackEffect(element, stop);
@@ -685,15 +732,24 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
     const componentNodes = nodes;
     component.$render = () => {
-      this.destroy(host);
-      host.innerHTML = "";
-      const scope = new Scope(null, component);
-      scope.set("$instance", component);
-      const prev = this.interpreter.scope;
-      this.interpreter.scope = scope;
-      this.createSiblings(componentNodes, host);
-      this.interpreter.scope = prev;
-      if (typeof component.onRender === "function") component.onRender();
+      this.isRendering = true;
+      try {
+        this.destroy(host);
+        host.innerHTML = "";
+        const scope = new Scope(null, component);
+        scope.set("$instance", component);
+        const prev = this.interpreter.scope;
+        this.interpreter.scope = scope;
+        
+        flushSync(() => {
+          this.createSiblings(componentNodes, host);
+          if (typeof component.onRender === "function") component.onRender();
+        });
+        
+        this.interpreter.scope = prev;
+      } finally {
+        this.isRendering = false;
+      }
     };
 
     if (typeof component.onMount === "function") component.onMount();
@@ -702,7 +758,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     scope.set("$instance", component);
     const prev = this.interpreter.scope;
     this.interpreter.scope = scope;
-    this.createSiblings(nodes, host);
+    
+    flushSync(() => {
+      this.createSiblings(nodes, host);
+      if (typeof component.onRender === "function") component.onRender();
+    });
+    
     this.interpreter.scope = prev;
 
     if (typeof component.onRender === "function") component.onRender();
@@ -734,6 +795,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
     if (scope) this.interpreter.scope = prevScope;
     return routes;
+  }
+
+  private triggerRender(): void {
+    if (this.isRendering) return;
+    const instance = this.interpreter.scope.get("$instance");
+    if (instance && typeof instance.onRender === "function") {
+      instance.onRender();
+    }
   }
 
   public visitDoctypeKNode(_node: KNode.Doctype): void {

@@ -7,6 +7,7 @@ import { Scanner } from "./scanner";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 import { signal, effect, computed, batch, watch } from "./signal";
+import { nextTick } from "./scheduler";
 
-export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, signal, effect, computed, batch, watch };
+export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, signal, effect, computed, batch, watch, nextTick };
 export { execute, transpile, Kasper, bootstrap as App, Component, navigate, Router };

@@ -171,7 +171,7 @@ export class MyComponent extends Component {
       console.log(`Changed from ${oldVal} to ${newVal}`);  // does NOT run immediately
     });
   }
-  onRender()  {}  // after every render cycle — do not use for one-time setup
+  onRender()  {}  // after every render cycle — both mount and reactive updates
   onChanges() {}  // before each reactive re-render (not first mount)
   onDestroy() {}  // when removed from DOM
 
@@ -183,6 +183,18 @@ export class MyComponent extends Component {
 `this.ref` — component root DOM element (available in onMount/onRender)
 `this.args` — object of values passed from parent via `@:name="expr"` (snapshot at mount — pass signals for reactivity)
 `this.$abortController` — AbortController used for automatic cleanup of all reactive methods.
+
+---
+
+## Utilities
+
+```ts
+import { nextTick } from 'kasper-js';
+
+// Wait for the next framework update cycle (microtask)
+// Useful for interacting with the DOM after a signal change
+await nextTick(); 
+```
 
 ---
 
@@ -504,5 +516,6 @@ declare module '*.kasper' {
 - `this.effect()`, `this.watch()`, and `this.computed()` are auto-cleaned via AbortController
 - `onRender` fires on every render — do not use for one-time setup, use `onMount`
 - Prefer signals for reactivity over calling `this.render()`
+- Reactive updates are batched into microtasks; use `await nextTick()` to wait for DOM updates.
 - `<style>` blocks are global — prefix class names to avoid collisions
 - Use `@key` on `@each` whenever the list can change order or be partially updated

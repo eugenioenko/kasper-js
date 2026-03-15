@@ -181,6 +181,36 @@ Kasper handles several things automatically so you don't have to:
 
 ---
 
+## Waiting for Updates
+
+### nextTick()
+
+Because Kasper batches reactive updates into microtasks for performance and lifecycle consistency, the DOM is not updated immediately after you change a signal.
+
+If you need to execute code after the DOM has been updated (e.g., to focus an element or measure its size), use the `nextTick()` utility.
+
+```js
+import { nextTick, signal } from 'kasper-js';
+
+class Search extends Component {
+  showInput = signal(false);
+
+  async toggle() {
+    this.showInput.value = true;
+    
+    // Wait for the framework to render the input
+    await nextTick();
+    
+    // Now the DOM is ready!
+    this.ref.querySelector('input').focus();
+  }
+}
+```
+
+`nextTick()` returns a Promise that resolves after all pending component updates (`onChanges` -> DOM Update -> `onRender`) have finished.
+
+---
+
 ## Example: Full Lifecycle
 
 ```js

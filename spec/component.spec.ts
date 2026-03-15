@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { Component } from "../src/component";
 import { signal } from "../src/signal";
+import { nextTick } from "../src/scheduler";
 import { Transpiler } from "../src/transpiler";
 import { TemplateParser } from "../src/template-parser";
 
@@ -139,7 +140,7 @@ describe("Component", () => {
       expect(renderCalled).toBe(true);
     });
 
-    it("calls onChanges and onRender on reactive signal updates", async () => {
+    it("calls onChanges and onRender on batched reactive updates", async () => {
       const parser = new TemplateParser();
       const count = signal(0);
       let changesCalled = 0;
@@ -163,14 +164,23 @@ describe("Component", () => {
 
       transpiler.transpile(parser.parse("<reactive-comp></reactive-comp>"), { count }, container);
 
-      // Initial mount
+      // Initial mount - onRender called by transpiler/bootstrap manually
       expect(renderCalled).toBe(1);
       expect(changesCalled).toBe(0);
 
-      // Trigger update
+      // Trigger multiple updates
       count.value = 1;
-      await Promise.resolve(); // Wait for effect
+      count.value = 2;
+      
+      // DOM should NOT be updated yet
+      expect(container.textContent).toBe("0");
+      expect(changesCalled).toBe(0);
+      expect(renderCalled).toBe(1);
 
+      await nextTick();
+
+      // DOM updated and hooks called ONCE
+      expect(container.textContent).toBe("2");
       expect(changesCalled).toBe(1);
       expect(renderCalled).toBe(2);
     });
