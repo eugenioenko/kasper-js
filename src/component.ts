@@ -4,27 +4,27 @@ import { KNode } from "./types/nodes";
 
 type Watcher<T> = (newValue: T, oldValue: T) => void;
 
-interface ComponentArgs {
-  args: Record<string, any>;
+interface ComponentArgs<TArgs extends Record<string, any> = Record<string, any>> {
+  args: TArgs;
   ref?: Node;
   transpiler?: Transpiler;
 }
 
-export class Component {
+export class Component<TArgs extends Record<string, any> = Record<string, any>> {
   static template?: string;
-  args: Record<string, any> = {};
+  args: TArgs = {} as TArgs;
   ref?: Node;
   transpiler?: Transpiler;
   $abortController = new AbortController();
   $render?: () => void;
 
-  constructor(props?: ComponentArgs) {
+  constructor(props?: ComponentArgs<TArgs>) {
     if (!props) {
-      this.args = {};
+      this.args = {} as TArgs;
       return;
     }
     if (props.args) {
-      this.args = props.args || {};
+      this.args = props.args;
     }
     if (props.ref) {
       this.ref = props.ref;
@@ -70,7 +70,7 @@ export class Component {
 
 export type KasperEntity = Component | Record<string, any> | null | undefined;
 
-export type ComponentClass = { new(args?: ComponentArgs): Component };
+export type ComponentClass = { new(args?: ComponentArgs<any>): Component };
 export interface ComponentRegistry {
   [tagName: string]: {
     selector?: string;

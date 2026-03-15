@@ -2,19 +2,19 @@ import { Signal } from "./signal";
 import { Transpiler } from "./transpiler";
 import { KNode } from "./types/nodes";
 type Watcher<T> = (newValue: T, oldValue: T) => void;
-interface ComponentArgs {
-    args: Record<string, any>;
+interface ComponentArgs<TArgs extends Record<string, any> = Record<string, any>> {
+    args: TArgs;
     ref?: Node;
     transpiler?: Transpiler;
 }
-export declare class Component {
+export declare class Component<TArgs extends Record<string, any> = Record<string, any>> {
     static template?: string;
-    args: Record<string, any>;
+    args: TArgs;
     ref?: Node;
     transpiler?: Transpiler;
     $abortController: AbortController;
     $render?: () => void;
-    constructor(props?: ComponentArgs);
+    constructor(props?: ComponentArgs<TArgs>);
     /**
      * Creates a reactive effect tied to the component's lifecycle.
      * Runs immediately and re-runs when any signal dependency changes.
@@ -38,7 +38,7 @@ export declare class Component {
 }
 export type KasperEntity = Component | Record<string, any> | null | undefined;
 export type ComponentClass = {
-    new (args?: ComponentArgs): Component;
+    new (args?: ComponentArgs<any>): Component;
 };
 export interface ComponentRegistry {
     [tagName: string]: {

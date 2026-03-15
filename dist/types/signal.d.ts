@@ -18,7 +18,7 @@ export declare class Signal<T> {
 export declare function effect(fn: Listener, options?: SignalOptions): () => void;
 export declare function signal<T>(initialValue: T): Signal<T>;
 /**
- * Functional alias for signal.onChange()
+ * Functional alias for Signal.onChange()
  */
 export declare function watch<T>(sig: Signal<T>, fn: Watcher<T>, options?: SignalOptions): () => void;
 export declare function batch(fn: () => void): void;

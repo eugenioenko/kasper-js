@@ -9,5 +9,5 @@ interface AppConfig {
     entry?: string;
     registry: ComponentRegistry;
 }
-export declare function KasperInit(config: AppConfig): import("./component").Component;
+export declare function KasperInit(config: AppConfig): import("./component").Component<Record<string, any>>;
 export {};
