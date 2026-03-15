@@ -58,6 +58,31 @@ export class CartBadge extends Component {
 
 `CartBadge` will update reactively whenever `cartItems` changes — even though it never received a prop from a parent.
 
+## Persistent Stores
+
+You can use the standalone `effect()` function to create global side-effects, such as syncing state to `localStorage`. This is a powerful pattern for building "Persistent Stores" that exist independently of the UI.
+
+```ts
+// src/store/theme.ts
+import { signal, effect } from 'kasper-js';
+
+// 1. Initialize from external source
+const saved = localStorage.getItem('kasper-theme');
+export const theme = signal(saved || 'light');
+
+// 2. Sync changes back (Global side-effect)
+// This effect lives for the life of the app and handles initial sync.
+effect(() => {
+  localStorage.setItem('kasper-theme', theme.value);
+  document.body.className = `theme-${theme.value}`;
+});
+
+// 3. Simple action to mutate the signal
+export function toggleTheme() {
+  theme.value = theme.value === 'light' ? 'dark' : 'light';
+}
+```
+
 ## Why this works
 
 Signals track their own subscribers. When `cartItems.value` is written from anywhere — a button click in `ProductCard`, a fetch response, a timer — every `effect` and template binding that read it will re-run automatically.
@@ -78,20 +103,21 @@ src/
 
 Each file is independently importable. Components only import what they need.
 
-## Cleaning up
+## Component Subscriptions
 
-Template bindings (`{{user.value}}`, `@if`, `@each`) are cleaned up automatically on destroy.
-
-For `onChange` on a global signal, use `this.haunt()` instead of calling `onChange` directly — it registers the subscription and cleans it up automatically when the component is destroyed:
+When a component needs to react to a global signal, use **`this.watch()`** or **`this.effect()`**. These are automatically cleaned up when the component is destroyed.
 
 ```ts
+import { Component } from 'kasper-js';
+import { currentUser } from '../store/user';
+
 export class Navbar extends Component {
   onMount() {
-    this.haunt(currentUser, (user) => {
-      console.log('user changed', user);
+    this.watch(currentUser, (user) => {
+      console.log('User changed:', user);
     });
   }
 }
 ```
 
-No `onDestroy` needed. `this.haunt()` is always the preferred way to subscribe to external signals inside a component.
+Using these methods ensures you never have a memory leak from a global signal subscription.

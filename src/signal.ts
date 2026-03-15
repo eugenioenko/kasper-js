@@ -1,3 +1,5 @@
+import { KasperError, KErrorCode } from "./types/error";
+
 type Listener = () => void;
 
 let activeEffect: { fn: Listener; deps: Set<any> } | null = null;
@@ -9,8 +11,12 @@ const pendingWatchers: Array<() => void> = [];
 
 type Watcher<T> = (newValue: T, oldValue: T) => void;
 
+export interface SignalOptions {
+  signal?: AbortSignal;
+}
+
 export class Signal<T> {
-  private _value: T;
+  protected _value: T;
   private subscribers = new Set<Listener>();
   private watchers = new Set<Watcher<T>>();
 
@@ -34,8 +40,9 @@ export class Signal<T> {
         for (const sub of this.subscribers) pendingSubscribers.add(sub);
         for (const watcher of this.watchers) pendingWatchers.push(() => watcher(newValue, oldValue));
       } else {
-        for (const sub of Array.from(this.subscribers)) {
-          try { sub(); } catch (e) { console.error("Effect error:", e); }
+        const subs = Array.from(this.subscribers);
+        for (const sub of subs) {
+          sub();
         }
         for (const watcher of this.watchers) {
           try { watcher(newValue, oldValue); } catch (e) { console.error("Watcher error:", e); }
@@ -44,9 +51,14 @@ export class Signal<T> {
     }
   }
 
-  onChange(fn: Watcher<T>): () => void {
+  onChange(fn: Watcher<T>, options?: SignalOptions): () => void {
+    if (options?.signal?.aborted) return () => {};
     this.watchers.add(fn);
-    return () => this.watchers.delete(fn);
+    const stop = () => this.watchers.delete(fn);
+    if (options?.signal) {
+      options.signal.addEventListener("abort", stop, { once: true });
+    }
+    return stop;
   }
 
   unsubscribe(fn: Listener) {
@@ -57,7 +69,44 @@ export class Signal<T> {
   peek() { return this._value; }
 }
 
-export function effect(fn: Listener) {
+class ComputedSignal<T> extends Signal<T> {
+  private fn: () => T;
+  private computing = false;
+
+  constructor(fn: () => T, options?: SignalOptions) {
+    super(undefined as any);
+    this.fn = fn;
+
+    const stop = effect(() => {
+      if (this.computing) {
+        throw new KasperError(KErrorCode.CIRCULAR_COMPUTED);
+      }
+
+      this.computing = true;
+      try {
+        // Eagerly update the value so subscribers are notified immediately
+        super.value = this.fn();
+      } finally {
+        this.computing = false;
+      }
+    }, options);
+
+    if (options?.signal) {
+      options.signal.addEventListener("abort", stop, { once: true });
+    }
+  }
+
+  get value(): T {
+    return super.value;
+  }
+
+  set value(_v: T) {
+    // Computed signals are read-only from outside
+  }
+}
+
+export function effect(fn: Listener, options?: SignalOptions) {
+  if (options?.signal?.aborted) return () => {};
   const effectObj = {
     fn: () => {
       effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
@@ -76,14 +125,28 @@ export function effect(fn: Listener) {
   };
 
   effectObj.fn();
-  return () => {
+  const stop: any = () => {
     effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
     effectObj.deps.clear();
   };
+  stop.run = effectObj.fn;
+
+  if (options?.signal) {
+    options.signal.addEventListener("abort", stop, { once: true });
+  }
+
+  return stop as (() => void) & { run: () => void };
 }
 
 export function signal<T>(initialValue: T): Signal<T> {
   return new Signal(initialValue);
+}
+
+/**
+ * Functional alias for Signal.onChange()
+ */
+export function watch<T>(sig: Signal<T>, fn: Watcher<T>, options?: SignalOptions): () => void {
+  return sig.onChange(fn, options);
 }
 
 export function batch(fn: () => void): void {
@@ -96,7 +159,7 @@ export function batch(fn: () => void): void {
     pendingSubscribers.clear();
     const watchers = pendingWatchers.splice(0);
     for (const sub of subs) {
-      try { sub(); } catch (e) { console.error("Effect error:", e); }
+      sub();
     }
     for (const watcher of watchers) {
       try { watcher(); } catch (e) { console.error("Watcher error:", e); }
@@ -104,10 +167,6 @@ export function batch(fn: () => void): void {
   }
 }
 
-export function computed<T>(fn: () => T): Signal<T> {
-  const s = signal<T>(undefined as any);
-  effect(() => {
-    s.value = fn();
-  });
-  return s;
+export function computed<T>(fn: () => T, options?: SignalOptions): Signal<T> {
+  return new ComputedSignal(fn, options);
 }

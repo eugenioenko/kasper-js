@@ -1,5 +1,39 @@
+export declare const KErrorCode: {
+    readonly ROOT_ELEMENT_NOT_FOUND: "K001-1";
+    readonly ENTRY_COMPONENT_NOT_FOUND: "K001-2";
+    readonly UNTERMINATED_COMMENT: "K002-1";
+    readonly UNTERMINATED_STRING: "K002-2";
+    readonly UNEXPECTED_CHARACTER: "K002-3";
+    readonly UNEXPECTED_EOF: "K003-1";
+    readonly UNEXPECTED_CLOSING_TAG: "K003-2";
+    readonly EXPECTED_TAG_NAME: "K003-3";
+    readonly EXPECTED_CLOSING_BRACKET: "K003-4";
+    readonly EXPECTED_CLOSING_TAG: "K003-5";
+    readonly BLANK_ATTRIBUTE_NAME: "K003-6";
+    readonly MISPLACED_CONDITIONAL: "K003-7";
+    readonly DUPLICATE_IF: "K003-8";
+    readonly MULTIPLE_STRUCTURAL_DIRECTIVES: "K003-9";
+    readonly UNEXPECTED_TOKEN: "K004-1";
+    readonly INVALID_LVALUE: "K004-2";
+    readonly EXPECTED_EXPRESSION: "K004-3";
+    readonly INVALID_DICTIONARY_KEY: "K004-4";
+    readonly INVALID_POSTFIX_LVALUE: "K005-1";
+    readonly UNKNOWN_BINARY_OPERATOR: "K005-2";
+    readonly INVALID_PREFIX_RVALUE: "K005-3";
+    readonly UNKNOWN_UNARY_OPERATOR: "K005-4";
+    readonly NOT_A_FUNCTION: "K005-5";
+    readonly NOT_A_CLASS: "K005-6";
+    readonly CIRCULAR_COMPUTED: "K006-1";
+    readonly RUNTIME_ERROR: "K007-1";
+    readonly MISSING_REQUIRED_ATTR: "K007-2";
+};
+export type KErrorCodeType = (typeof KErrorCode)[keyof typeof KErrorCode];
+export declare const ErrorTemplates: Record<string, (args: any) => string>;
 export declare class KasperError extends Error {
-    line: number;
-    col: number;
-    constructor(value: string, line: number, col: number);
+    code: KErrorCodeType;
+    args: any;
+    line?: number;
+    col?: number;
+    tagName?: string;
+    constructor(code: KErrorCodeType, args?: any, line?: number, col?: number, tagName?: string);
 }

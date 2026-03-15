@@ -1,5 +1,6 @@
 import * as Utils from "./utils";
 import { Token, TokenType } from "./types/token";
+import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
 
 export class Scanner {
   /** scripts source code */
@@ -88,7 +89,7 @@ export class Scanner {
       this.advance();
     }
     if (this.eof()) {
-      this.error('Unterminated comment, expecting closing "*/"');
+      this.error(KErrorCode.UNTERMINATED_COMMENT);
     } else {
       // the closing slash '*/'
       this.advance();
@@ -103,7 +104,7 @@ export class Scanner {
 
     // Unterminated string.
     if (this.eof()) {
-      this.error(`Unterminated string, expecting closing ${quote}`);
+      this.error(KErrorCode.UNTERMINATED_STRING, { quote: quote });
       return;
     }
 
@@ -339,13 +340,13 @@ export class Scanner {
         } else if (Utils.isAlpha(char)) {
           this.identifier();
         } else {
-          this.error(`Unexpected character '${char}'`);
+          this.error(KErrorCode.UNEXPECTED_CHARACTER, { char: char });
         }
         break;
     }
   }
 
-  private error(message: string): void {
-    throw new Error(`Scan Error (${this.line}:${this.col}) => ${message}`);
+  private error(code: KErrorCodeType, args: any = {}): void {
+    throw new KasperError(code, args, this.line, this.col);
   }
 }

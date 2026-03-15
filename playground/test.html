@@ -31,9 +31,6 @@
         </badge>
       </div>
 
-      <!-- @while: render N dots -->
-      <div @while="count.value > dot++">●</div>
-
       <!-- @on events -->
       <button @on:click="add()">add</button>
       <button @on:click="count.value--" @class="count.value === 0 ? 'disabled' : ''">-</button>
@@ -54,7 +51,7 @@
       highlight = kasper.signal('');
       double = kasper.computed(() => this.count.value * 2);
 
-      $onInit() {
+      onMount() {
         kasper.effect(() => {
           document.title = `count: ${this.count.value}`;
         });

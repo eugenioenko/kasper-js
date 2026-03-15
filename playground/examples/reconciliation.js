@@ -57,7 +57,7 @@ class App extends Component {
   _stressStart = 0;
   _stressOps = 0;
 
-  onInit() {
+  onMount() {
     this.items.value = Array.from({ length: 20 }, (_, i) => ({ id: i + 1 }));
   }
 

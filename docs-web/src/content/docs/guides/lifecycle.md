@@ -20,19 +20,21 @@ Every Kasper component goes through a predictable lifecycle from creation to rem
 
 ## constructor
 
-If you need to run logic before anything else — before args, before the DOM, before the first render — you can use the standard JavaScript constructor. Call `super()` first to ensure the component initialises correctly:
+If you need to run logic before the first render — before the DOM is ready — you can use the standard JavaScript constructor. 
+
+**`this.args` is already populated** in the constructor, so you can use incoming properties to initialise your state signals immediately.
 
 ```js
 class MyComponent extends Component {
   constructor(props) {
     super(props);
-    // runs before everything — no args, no DOM
-    this.startedAt = Date.now();
+    // this.args is available here!
+    this.initialCount = signal(this.args.count ?? 0);
   }
 }
 ```
 
-In practice, this is rarely needed. `onMount()` is the right place for setup in almost every case — prefer it over the constructor.
+While `this.args` is available, `this.ref` (the DOM element) is not yet attached. `onMount()` remains the recommended place for most setup logic, especially anything requiring DOM access.
 
 ---
 
@@ -176,6 +178,36 @@ Kasper handles several things automatically so you don't have to:
 
 - **Event listeners** added via `@on:` are bound to the component's `AbortController` and removed automatically on destroy. You only need `onDestroy` for listeners you attach manually (e.g. `window.addEventListener`).
 - **Reactive effects** registered through the framework are stopped automatically. Only effects you create manually with `effect()` outside a component need explicit cleanup.
+
+---
+
+## Waiting for Updates
+
+### nextTick()
+
+Because Kasper batches reactive updates into microtasks for performance and lifecycle consistency, the DOM is not updated immediately after you change a signal.
+
+If you need to execute code after the DOM has been updated (e.g., to focus an element or measure its size), use the `nextTick()` utility.
+
+```js
+import { nextTick, signal } from 'kasper-js';
+
+class Search extends Component {
+  showInput = signal(false);
+
+  async toggle() {
+    this.showInput.value = true;
+    
+    // Wait for the framework to render the input
+    await nextTick();
+    
+    // Now the DOM is ready!
+    this.ref.querySelector('input').focus();
+  }
+}
+```
+
+`nextTick()` returns a Promise that resolves after all pending component updates (`onChanges` -> DOM Update -> `onRender`) have finished.
 
 ---
 

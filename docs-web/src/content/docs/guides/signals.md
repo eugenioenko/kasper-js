@@ -3,128 +3,107 @@ title: Signals & Reactivity
 description: Fine-grained reactivity with signals, computed values, and effects.
 ---
 
-Kasper's reactivity system is built on signals — reactive primitives that track their dependencies automatically. When a signal changes, only the parts of the DOM that depend on it update.
+Kasper's reactivity system is built on **Signals** — reactive primitives that track their dependencies automatically. Unlike frameworks that re-render entire components, Kasper uses signals to perform surgical updates directly to the specific text nodes or attributes that changed.
 
 ## signal()
 
-```ts
-import { signal } from 'kasper-js';
+A `signal` is a writable piece of state. In a component, you declare signals as class fields.
 
-const count = signal(0);
+```html
+<!-- Counter.kasper -->
+<template>
+  <div class="counter">
+    <p>Count: {{count.value}}</p>
+    <button @on:click="increment()">+</button>
+  </div>
+</template>
 
-count.value;      // read
-count.value = 5;  // write
-count.peek();     // read without tracking
-```
-
-## computed()
-
-Derived signals that update automatically when their dependencies change:
-
-```ts
-import { signal, computed } from 'kasper-js';
-
-const count = signal(0);
-const double = computed(() => count.value * 2);
-
-console.log(double.value); // 0
-count.value = 5;
-console.log(double.value); // 10
-```
-
-## effect()
-
-Runs a function whenever its signal dependencies change:
-
-```ts
-import { signal, effect } from 'kasper-js';
-
-const name = signal('Alice');
-
-const stop = effect(() => {
-  console.log(`Hello, ${name.value}`);
-});
-// logs: "Hello, Alice"
-
-name.value = 'Bob';
-// logs: "Hello, Bob"
-
-stop(); // unsubscribe
-```
-
-## batch()
-
-Group multiple signal writes into a single effect flush:
-
-```ts
-import { signal, effect, batch } from 'kasper-js';
-
-const a = signal(0);
-const b = signal(0);
-
-effect(() => console.log(a.value + b.value));
-
-batch(() => {
-  a.value = 1;
-  b.value = 2;
-});
-// effect fires once, not twice
-```
-
-## onChange()
-
-Watch a specific signal for changes, receiving the old and new values:
-
-```ts
-const count = signal(0);
-
-const stop = count.onChange((newVal, oldVal) => {
-  console.log(`changed from ${oldVal} to ${newVal}`);
-});
-
-count.value = 5; // logs: "changed from 0 to 5"
-
-stop(); // unsubscribe
-```
-
-## Signals in components
-
-Declare signals as class fields:
-
-```ts
-import { signal, computed, Component } from 'kasper-js';
+<script>
+import { Component, signal } from 'kasper-js';
 
 export class Counter extends Component {
   count = signal(0);
-  double = computed(() => this.count.value * 2);
 
   increment() {
     this.count.value++;
   }
+}
+</script>
+```
 
-  onDestroy() {
-    // effects created with effect() should be stopped here
-    // signals owned by the component are garbage collected automatically
-  }
+### peek()
+
+Sometimes you want to read a signal's value without subscribing to it (so the effect doesn't re-run when the signal changes). Use `peek()`.
+
+```ts
+const val = this.count.peek();
+```
+
+## Component Reactivity (Auto-Cleaning)
+
+Kasper provides built-in methods on the `Component` class that automatically clean up when the component is destroyed. This is the **recommended** way to use reactivity inside components.
+
+### this.effect()
+
+Creates a reactive effect tied to the component's lifecycle. It runs immediately and re-runs whenever any signal it "touches" changes.
+
+```ts
+onMount() {
+  this.effect(() => {
+    console.log('Syncing count:', this.count.value);
+  });
 }
 ```
 
-## Cleanup
+### this.watch()
 
-Signals and computed values owned by a component are garbage collected when the component is destroyed. Effects created with `effect()` return a stop function — call it in `onDestroy` to avoid leaks:
+Watches a specific signal for changes. Unlike `effect()`, it does **not** run immediately and provides the previous value.
 
 ```ts
-export class Timer extends Component {
-  private stopEffect: () => void;
-
-  onMount() {
-    this.stopEffect = effect(() => {
-      // some side effect
-    });
-  }
-
-  onDestroy() {
-    this.stopEffect();
-  }
+onMount() {
+  this.watch(this.count, (newVal, oldVal) => {
+    console.log(`Changed from ${oldVal} to ${newVal}`);
+  });
 }
+```
+
+### this.computed()
+
+A `computed` signal is a derived value. When created via `this.computed()`, the internal effect is automatically stopped when the component dies.
+
+```ts
+export class Sidebar extends Component {
+  isExpanded = this.computed(() => globalState.sidebarOpen.value);
+}
+```
+
+## Global Reactivity (Manual Cleaning)
+
+If you use `effect()` or `watch()` as standalone functions (without `this.`), they are not tied to any component lifecycle and **must be cleaned up manually** to prevent memory leaks.
+
+```ts
+import { effect, watch } from 'kasper-js';
+
+// Returns a stop function
+const stopEffect = effect(() => { ... });
+const stopWatch = watch(sig, (n, o) => { ... });
+
+// Later, you must call them manually
+stopEffect();
+stopWatch();
+```
+
+Use standalone reactivity for global state stores or logic that exists outside of the component tree.
+
+## Reactivity Rules
+
+1. **Reference Equality**: Signals use strict equality (`===`). Only reassigning the `.value` triggers an update.
+2. **Immutability for Objects/Arrays**: Mutating a property inside an object or pushing to an array will **not** trigger reactivity. You must reassign the value.
+
+```ts
+// ✗ Won't trigger update
+this.items.value.push(newItem);
+
+// ✓ Will trigger update
+this.items.value = [...this.items.value, newItem];
 ```

@@ -1,4 +1,4 @@
-import { KasperError } from "./types/error";
+import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
 import * as Expr from "./types/expressions";
 import { Token, TokenType } from "./types/token";
 
@@ -55,13 +55,14 @@ export class ExpressionParser {
     }
 
     return this.error(
+      KErrorCode.UNEXPECTED_TOKEN,
       this.peek(),
-      message + `, unexpected token "${this.peek().lexeme}"`
+      { message: message, token: this.peek().lexeme }
     );
   }
 
-  private error(token: Token, message: string): any {
-    throw new KasperError(message, token.line, token.col);
+  private error(code: KErrorCodeType, token: Token, args: any = {}): any {
+    throw new KasperError(code, args, token.line, token.col);
   }
 
   private synchronize(): void {
@@ -145,7 +146,7 @@ export class ExpressionParser {
         }
         return new Expr.Set(expr.entity, expr.key, value, expr.line);
       }
-      this.error(operator, `Invalid l-value, is not an assigning target.`);
+      this.error(KErrorCode.INVALID_LVALUE, operator);
     }
     return expr;
   }
@@ -292,8 +293,11 @@ export class ExpressionParser {
   private newKeyword(): Expr.Expr {
     if (this.match(TokenType.New)) {
       const keyword = this.previous();
-      const construct: Expr.Expr = this.postfix();
-      return new Expr.New(construct, keyword.line);
+      const construct: Expr.Expr = this.call();
+      if (construct instanceof Expr.Call) {
+        return new Expr.New(construct.callee, construct.args, keyword.line);
+      }
+      return new Expr.New(construct, [], keyword.line);
     }
     return this.postfix();
   }
@@ -458,8 +462,9 @@ export class ExpressionParser {
     }
 
     throw this.error(
+      KErrorCode.EXPECTED_EXPRESSION,
       this.peek(),
-      `Expected expression, unexpected token "${this.peek().lexeme}"`
+      { token: this.peek().lexeme }
     );
     // unreacheable code
     return new Expr.Literal(null, 0);
@@ -491,10 +496,9 @@ export class ExpressionParser {
         }
       } else {
         this.error(
+          KErrorCode.INVALID_DICTIONARY_KEY,
           this.peek(),
-          `String, Number or Identifier expected as a Key of Dictionary {, unexpected token ${
-            this.peek().lexeme
-          }`
+          { token: this.peek().lexeme }
         );
       }
     } while (this.match(TokenType.Comma));

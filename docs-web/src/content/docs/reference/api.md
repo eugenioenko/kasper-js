@@ -5,7 +5,7 @@ description: Complete API reference for Kasper.js.
 
 ## App bootstrap
 
-### App(config)
+### App(config: KasperConfig)
 
 Bootstrap a Kasper application.
 
@@ -18,6 +18,7 @@ App({
   registry: {
     'my-app': { component: MyApp },
   },
+  mode: import.meta.env.MODE as any,
 });
 ```
 
@@ -26,6 +27,7 @@ App({
 | `root` | `string \| HTMLElement` | Root DOM element or selector |
 | `entry` | `string` | Tag name of the root component |
 | `registry` | `ComponentRegistry` | Map of tag names to component definitions |
+| `mode` | `'development' \| 'production'` | Environment mode (enables dev warnings) |
 
 ## Signals
 
@@ -61,6 +63,17 @@ const stop = effect(() => {
 stop(); // cleanup
 ```
 
+### watch(sig, fn)
+
+Watch a specific signal for changes. Unlike `effect()`, it does not run immediately. Returns a stop function.
+
+```ts
+const stop = watch(count, (newVal, oldVal) => {
+  console.log(`Changed: ${newVal}`);
+});
+stop(); // cleanup
+```
+
 ### batch(fn)
 
 Group signal writes into a single flush.
@@ -89,16 +102,22 @@ class Component {
   onRender(): void {}
   onChanges(): void {}
   onDestroy(): void {}
+
+  // Reactive methods (Auto-cleaning)
+  effect(fn: () => void): void;
+  watch<T>(sig: Signal<T>, fn: (newVal: T, oldVal: T) => void): void;
+  computed<T>(fn: () => T): Signal<T>;
 }
 ```
 
-### Lifecycle order
+## Lifecycle order
 
-1. `onMount()` — before first render
+1. Constructor — runs before framework setup
 2. Template is transpiled into DOM
-3. `onRender()` — after first render, DOM available
-4. `onChanges()` — on arg changes
-5. `onDestroy()` — on removal
+3. `onMount()` — once, after first render, DOM ready, args populated
+4. `onRender()` — after every render cycle
+5. `onChanges()` — before each reactive re-render (not first mount)
+6. `onDestroy()` — when removed from DOM
 
 ## Utilities
 

@@ -1,6 +1,7 @@
 import { ComponentRegistry } from "./component";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
+import { KasperError, KErrorCode } from "./types/error";
 
 export function execute(source: string): string {
   const parser = new TemplateParser();
@@ -27,7 +28,7 @@ export function transpile(
 
 
 export function Kasper(ComponentClass: any) {
-  KasperInit({
+  bootstrap({
     root: "kasper-app",
     entry: "kasper-root",
     registry: {
@@ -40,10 +41,11 @@ export function Kasper(ComponentClass: any) {
   });
 }
 
-interface AppConfig {
+export interface KasperConfig {
   root?: string | HTMLElement;
   entry?: string;
   registry: ComponentRegistry;
+  mode?: "development" | "production";
 }
 
 function createComponent(
@@ -84,6 +86,10 @@ function normalizeRegistry(
         continue;
       }
     }
+    if (typeof entry.template === "string") {
+      entry.nodes = parser.parse(entry.template);
+      continue;
+    }
     const staticTemplate = (entry.component as any).template;
     if (staticTemplate) {
       entry.nodes = parser.parse(staticTemplate);
@@ -92,7 +98,7 @@ function normalizeRegistry(
   return result;
 }
 
-export function KasperInit(config: AppConfig) {
+export function bootstrap(config: KasperConfig) {
   const parser = new TemplateParser();
   const root =
     typeof config.root === "string"
@@ -100,12 +106,30 @@ export function KasperInit(config: AppConfig) {
       : config.root;
 
   if (!root) {
-    throw new Error(`Root element not found: ${config.root}`);
+    throw new KasperError(
+      KErrorCode.ROOT_ELEMENT_NOT_FOUND,
+      { root: config.root }
+    );
+  }
+
+  const entryTag = config.entry || "kasper-app";
+  if (!config.registry[entryTag]) {
+    throw new KasperError(
+      KErrorCode.ENTRY_COMPONENT_NOT_FOUND,
+      { tag: entryTag }
+    );
   }
 
   const registry = normalizeRegistry(config.registry, parser);
   const transpiler = new Transpiler({ registry: registry });
-  const entryTag = config.entry || "kasper-app";
+  
+  // Set the environment mode on the transpiler or globally
+  if (config.mode) {
+    (transpiler as any).mode = config.mode;
+  } else {
+    // Default to development if not specified
+    (transpiler as any).mode = "development";
+  }
 
   const { node, instance, nodes } = createComponent(
     transpiler,

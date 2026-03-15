@@ -1,18 +1,20 @@
 window.EXAMPLES.push({
-  name: "Digital Pulse",
+  name: "Neo-Counter",
   id: "counter",
   template: String.raw`
-<div class="counter-container">
-  <div class="pulse-ring" @style="'transform: scale(' + (1 + count.value/100) + '); opacity: ' + (0.5 - count.value/200)"></div>
-  <h1 class="display">{{count.value}}</h1>
-  <p class="label">PULSE_FREQUENCY</p>
-  
-  <div class="controls">
-    <button class="btn-cyan" @on:click="count.value--">DECREMENT</button>
-    <button class="btn-cyan" @on:click="count.value++">INCREMENT</button>
+<div class="neo-container">
+  <div class="circle-viz" @style="'border-color: ' + (count.value > 0 ? '#6366f1' : '#f43f5e')">
+    <div class="ripple" @style="'transform: scale(' + (1 + Math.abs(count.value)/20) + ')'"></div>
+    <div class="count-display">{{ count.value }}</div>
   </div>
   
-  <button class="btn-reset" @on:click="count.value = 0">RESET_CORE</button>
+  <div class="controls-pill">
+    <button @on:click="count.value--">-</button>
+    <div class="divider"></div>
+    <button @on:click="count.value++">+</button>
+  </div>
+
+  <button class="reset-link" @on:click="count.value = 0">Return to Zero</button>
 </div>
 `,
   script: `
@@ -21,74 +23,87 @@ class App extends Component {
 }
 `,
   style: `
-.counter-container {
+.neo-container {
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  position: relative;
+  background: #ffffff;
+  color: #0f172a;
 }
 
-.pulse-ring {
-  position: absolute;
+.circle-viz {
   width: 200px;
   height: 200px;
-  border: 4px solid #00f2ff;
+  border: 2px solid #e2e8f0;
   border-radius: 50%;
-  pointer-events: none;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.display {
-  font-size: 120px;
-  font-weight: 900;
-  margin: 0;
-  color: #fff;
-  text-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
-}
-
-.label {
-  color: #00f2ff;
-  font-size: 10px;
-  letter-spacing: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.4s;
   margin-bottom: 40px;
 }
 
-.controls {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
+.ripple {
+  position: absolute;
+  inset: -1px;
+  border: inherit;
+  border-radius: 50%;
+  opacity: 0.1;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.btn-cyan {
+.count-display {
+  font-size: 72px;
+  font-weight: 800;
+  letter-spacing: -2px;
+}
+
+.controls-pill {
+  background: #f1f5f9;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.controls-pill button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
   background: transparent;
-  border: 2px solid #00f2ff;
-  color: #00f2ff;
-  padding: 10px 20px;
-  font-family: inherit;
-  font-weight: bold;
+  font-size: 24px;
   cursor: pointer;
+  color: #475569;
   transition: all 0.2s;
 }
 
-.btn-cyan:hover {
-  background: #00f2ff;
-  color: #000;
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+.controls-pill button:hover {
+  background: #fff;
+  color: #6366f1;
 }
 
-.btn-reset {
-  background: transparent;
+.divider {
+  width: 1px;
+  height: 20px;
+  background: #cbd5e1;
+}
+
+.reset-link {
+  margin-top: 30px;
+  background: none;
   border: none;
-  color: #444;
-  font-family: inherit;
-  font-size: 9px;
+  color: #94a3b8;
+  font-size: 12px;
   text-decoration: underline;
   cursor: pointer;
+  letter-spacing: 0.5px;
 }
 
-.btn-reset:hover { color: #fff; }
+.reset-link:hover { color: #64748b; }
 `
 });

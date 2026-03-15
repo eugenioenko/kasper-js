@@ -81,12 +81,12 @@ App({
 
 - **Fine-grained signals** — `signal()`, `computed()`, `effect()`, `batch()`, `peek()`. Reactivity is tracked at the binding level, not the component level. When a signal changes, Kasper updates only the specific DOM text nodes, attributes, and structural boundaries that depend on it. Siblings, parent elements, and unrelated components are untouched.
 - **Single-file components** — `<template>`, `<script>`, `<style>` in one `.kasper` file. The Vite plugin transforms them at build time into standard ES modules with zero runtime overhead. Imports in the script block are automatically hoisted into template scope via `$imports` — no need to re-declare imported functions or classes as component fields.
-- **Template directives** — `@if`, `@elseif`, `@else`, `@each`, `@while`, `@let`, `@on:event`, `@attr`, `@class`, `@style`, `@ref` as standard HTML attributes. Structural directives (`@if`, `@each`) use DOM Boundaries — lightweight comment-node bookmarks that surgically replace only their own content when dependencies change.
+- **Template directives** — `@if`, `@elseif`, `@else`, `@each`, `@let`, `@on:event`, `@attr`, `@class`, `@style`, `@ref` as standard HTML attributes. Structural directives (`@if`, `@each`) use DOM Boundaries — lightweight comment-node bookmarks that surgically replace only their own content when dependencies change.
 - **Event modifiers** — `@on:submit.prevent`, `@on:click.stop`, `@on:click.once`, `@on:scroll.passive`, `@on:click.capture`. All `@on:` listeners are registered via the component's `AbortController` and removed automatically on destroy.
 - **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template — no configuration object needed.
 - **Slots** — default and named content transclusion via `<slot />` and `@slot`. Named slots use `@name` / `@slot` for attribute consistency across the framework.
 - **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
-- **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. Use `this.haunt(signal, fn)` to subscribe to an external signal — subscriptions are released automatically when the component is destroyed.
+- **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. 
 - **Manual rendering** — `this.render()` triggers a full template teardown and rebuild for cases where imperative updates are preferred over reactive bindings. Prefer signals for normal use; `render()` exists for third-party library integration and non-reactive data sources.
 - **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function` — compatible with strict Content Security Policies out of the box.
 - **TypeScript** — fully typed throughout. Declaration files generated separately. `.kasper` files typed via ambient module declaration.
@@ -118,13 +118,18 @@ HTML string
 ## Signals
 
 ```ts
-import { signal, computed, effect, batch } from 'kasper-js';
+import { signal, computed, effect, watch, batch } from 'kasper-js';
 
 const count = signal(0);
 const double = computed(() => count.value * 2);
 
 // effect runs immediately and re-runs whenever count changes
-const stop = effect(() => console.log(`double is ${double.value}`));
+const stopEffect = effect(() => console.log(`double is ${double.value}`));
+
+// watch runs only on change and provides old value
+const stopWatch = watch(count, (newVal, oldVal) => {
+  console.log(`${oldVal} → ${newVal}`);
+});
 
 // batch defers effect flushes until the callback returns
 batch(() => {
@@ -132,16 +137,20 @@ batch(() => {
   count.value++;
 }); // effect fires once, not twice
 
-stop(); // unsubscribe
+stopEffect(); // unsubscribe
+stopWatch(); // unsubscribe
 
 // peek() reads the current value without registering a dependency
 const current = count.peek();
 
-// onChange() watches for changes with old and new value
-const unwatch = count.onChange((newVal, oldVal) => {
-  console.log(`${oldVal} → ${newVal}`);
-});
-unwatch(); // unsubscribe
+// Signals use reference equality — only reassignment triggers reactivity
+// Arrays: reassign, never mutate in-place
+items.value = [...items.value, newItem]; // triggers ✓
+items.value.push(newItem);               // does NOT trigger ✗
+
+// Objects: same rule — mutating a nested property does NOT trigger
+user.value = { ...user.value, name: 'Alice' }; // triggers ✓
+user.value.name = 'Alice';                     // does NOT trigger ✗
 ```
 
 Signals declared as component fields are garbage-collected when the component is destroyed. Effects created with `effect()` return a stop function — call it in `onDestroy` if you create one outside the framework's tracking. Template bindings are cleaned up automatically.
@@ -317,7 +326,7 @@ export class DataTable extends Component {
   onDestroy() {
     // Fires when removed from DOM.
     // @on: listeners are cleaned up automatically via AbortController.
-    // haunt() subscriptions are released automatically.
+    // this.watch() and this.effect subscriptions are released automatically.
     // Manual timers, WebSocket connections, etc. go here.
   }
 }
@@ -346,7 +355,7 @@ signal.value changes
 parent @if / @each removes the component
   └─ onDestroy()
   └─ @on: listeners aborted (AbortController)
-  └─ haunt() subscriptions released
+  └─ this.effect() / this.watch() / this.computed() stopped
   └─ reactive effects stopped
 ```
 
@@ -518,19 +527,19 @@ export class ProductCard extends Component {
 
 ### Subscribing to external signals
 
-Use `this.haunt()` to subscribe to an external signal inside a component. The subscription is released automatically when the component is destroyed — no `onDestroy` cleanup needed:
+Use `this.watch()` to subscribe to an external signal inside a component. The subscription is released automatically when the component is destroyed — no `onDestroy` cleanup needed:
 
 ```ts
 export class Navbar extends Component {
   onMount() {
-    this.haunt(currentUser, (user) => {
+    this.watch(currentUser, (user) => {
       console.log('session changed', user);
     });
   }
 }
 ```
 
-Calling `onChange` directly on a global signal inside a component works but leaks — the subscription outlives the component. `haunt` is always preferred inside components.
+Calling `onChange` directly on a global signal inside a component works but leaks — the subscription outlives the component. `this.watch()` is always preferred inside components.
 
 ---
 
@@ -632,7 +641,7 @@ export class ProfilePage extends Component {
 
 ## Testing
 
-Kasper has **589 tests across 13 spec files**, all passing. Tests run directly against `src/` — no build step required. Coverage is measured with V8's native instrumentor via Vitest.
+Kasper has **600+ tests across 17 spec files**, all passing. Tests run directly against `src/` — no build step required. Coverage is measured with V8's native instrumentor via Vitest.
 
 
 **Coverage:**
@@ -673,6 +682,7 @@ App({
   registry: {
     'my-app': { component: MyApp },
   },
+  mode: import.meta.env.MODE as any,
 });
 ```
 

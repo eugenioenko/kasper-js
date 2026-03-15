@@ -29,7 +29,7 @@ class App extends Component {
     { name: "KSP/USD", price: signal(1.24), dir: signal("up") }
   ]);
 
-  onInit() {
+  onMount() {
     this.timer = setInterval(() => {
       this.markets.value.forEach(m => {
         const change = (Math.random() - 0.5) * (m.price.value * 0.01);

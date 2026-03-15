@@ -47,16 +47,6 @@ Without `@key`, every signal update destroys and recreates all list nodes. With 
 
 The key expression is evaluated in the item's scope and must be unique across the list. Typically `item.id` or another stable identifier.
 
-## @while
-
-Render elements while a condition is true:
-
-```html
-<div @while="count.value > 0">
-  {{count.value}}
-</div>
-```
-
 ## @let
 
 Declare a local template variable:
@@ -84,31 +74,47 @@ Available modifiers: `.prevent`, `.stop`, `.once`, `.passive`, `.capture`
 
 Event listeners are automatically removed when the component is destroyed.
 
-## @attr
+## Attribute Binding
 
-There are three ways to bind dynamic attributes:
+Kasper uses the `@` prefix to bind expressions to **any** valid HTML attribute. This is a general-purpose mechanism, not limited to a predefined list of directives.
 
-**Interpolation** — `{{ }}` works inside any regular attribute value and is reactive:
+### Single attribute shorthand
 
-```html
-<input value="{{name.value}}" placeholder="{{hint}}" />
-```
-
-**Shorthand** — `@name="expr"` binds a single attribute from an expression:
+Use `@attribute-name="expression"` to bind a single attribute. When signals in the expression change, the attribute is updated surgically using `setAttribute`.
 
 ```html
-<input @value="name.value" />
-<input type="checkbox" @checked="todo.done.value" />
-<button @disabled="isLoading">Submit</button>
+<!-- Binds to standard attributes -->
+<input @value="name.value" @placeholder="getHint()" />
+<a @href="url" @title="linkTitle">Link</a>
+
+<!-- Binds to boolean attributes -->
+<button @disabled="isLoading.value">Submit</button>
+
+<!-- Binds to ARIA and data attributes -->
+<div @aria-label="label" @data-id="userId"></div>
 ```
 
-**Object form** — `@attr="{ ... }"` binds multiple attributes at once:
+### Object binding (@attr)
+
+Use `@attr="{ ... }"` to bind multiple attributes at once from an object.
 
 ```html
-<div @attr="{ class: isActive ? 'active' : '', 'aria-label': label }"></div>
+<div @attr="{ 
+  class: isActive ? 'active' : '', 
+  'aria-expanded': isOpen,
+  disabled: isDisabled 
+}"></div>
 ```
 
-`class` and `style` values are merged with existing static attributes.
+The `class` and `style` values in the object are automatically merged with any static attributes on the element.
+
+### Interpolation
+
+You can also use `{{ }}` interpolation inside any standard attribute value for simple reactive strings:
+
+```html
+<div title="Current count is {{count.value}}"></div>
+```
 
 ## @class
 

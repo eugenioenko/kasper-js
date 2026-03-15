@@ -299,10 +299,12 @@ export class Literal extends Expr {
 
 export class New extends Expr {
     public clazz: Expr;
+    public args: Expr[];
 
-    constructor(clazz: Expr, line: number) {
+    constructor(clazz: Expr, args: Expr[], line: number) {
         super();
         this.clazz = clazz;
+        this.args = args;
         this.line = line;
     }
 

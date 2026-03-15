@@ -1,4 +1,6 @@
+import { describe, it, expect } from "vitest";
 import { Interpreter } from "../src/interpreter";
+import { KErrorCode } from "../src/types/error";
 import { ExpressionParser } from "../src/expression-parser";
 import { Scanner } from "../src/scanner";
 import { evaluate } from "./helpers";
@@ -608,7 +610,7 @@ describe("Interpreter", () => {
     it("throws on unknown binary operator", () => {
       // Direct test: construct a bad binary expression manually
       const interpreter = new Interpreter();
-      expect(() => interpreter.error("test error")).toThrow("Runtime Error => test error");
+      expect(() => interpreter.error(KErrorCode.UNKNOWN_BINARY_OPERATOR as any, { operator: "test error" })).toThrow(/\[K005-2\] Unknown binary operator test error/);
     });
 
     it("calling a non-function throws with message", () => {

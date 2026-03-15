@@ -2,6 +2,7 @@ import { Component } from "../src/component";
 import { TemplateParser } from "../src/template-parser";
 import { Transpiler } from "../src/transpiler";
 import { signal } from "../src/signal";
+import { nextTick } from "../src/scheduler";
 
 function makeContainer(): HTMLElement {
   return document.createElement("div");
@@ -161,18 +162,21 @@ describe("Transpiler", () => {
       expect(div.getAttribute("class")).toBe("static dynamic");
     });
 
-    it("surgically swaps @class values when signal changes", () => {
+    it("surgically swaps @class values when signal changes", async () => {
       const state = signal("selected");
-      const container = transpile('<div class="base" @class="state.value"></div>', { state });
+      const entity = { state };
+      const container = transpile('<div class="base" @class="state.value"></div>', entity);
       const div = container.querySelector("div")!;
-      
+
       expect(div.getAttribute("class")).toBe("base selected");
-      
+
       state.value = "disabled";
+      await nextTick();
       expect(div.getAttribute("class")).toBe("base disabled");
       expect(div.getAttribute("class")).not.toContain("selected");
-      
+
       state.value = "focused";
+      await nextTick();
       expect(div.getAttribute("class")).toBe("base focused");
       expect(div.getAttribute("class")).not.toContain("disabled");
     });
@@ -259,20 +263,22 @@ describe("Transpiler", () => {
       expect(transpile(source, { a: false, b: false }).textContent).toBe("C");
     });
 
-    it("updates @if content reactively when signal changes", () => {
+    it("updates @if content reactively when signal changes", async () => {
       const show = signal(true);
       const container = transpile('<div @if="show.value">visible</div>', { show });
       
       expect(container.textContent).toBe("visible");
       
       show.value = false;
+      await nextTick();
       expect(container.textContent).toBe("");
       
       show.value = true;
+      await nextTick();
       expect(container.textContent).toBe("visible");
     });
 
-    it("updates @each content reactively when array signal changes", () => {
+    it("updates @each content reactively when array signal changes", async () => {
       const list = signal(["a", "b"]);
       const container = transpile('<li @each="item of list.value">{{item}}</li>', { list });
       
@@ -280,10 +286,12 @@ describe("Transpiler", () => {
       expect(container.textContent).toBe("ab");
       
       list.value = ["a", "b", "c"];
+      await nextTick();
       expect(container.querySelectorAll("li")).toHaveLength(3);
       expect(container.textContent).toBe("abc");
       
       list.value = ["x"];
+      await nextTick();
       expect(container.querySelectorAll("li")).toHaveLength(1);
       expect(container.textContent).toBe("x");
     });
@@ -475,39 +483,6 @@ describe("Transpiler", () => {
       const list = [{ id: 1 }];
       const container = transpile('<li @each="item of list" @key="item.id">x</li>', { list });
       expect(container.querySelector("li")!.hasAttribute("@key")).toBe(false);
-    });
-  });
-
-  describe("@while directive", () => {
-    it("renders elements while condition is true", () => {
-      const container = transpile('<div @while="count-- > 0"></div>', { count: 3 });
-      expect(container.querySelectorAll("div")).toHaveLength(3);
-    });
-
-    it("renders nothing when condition starts false", () => {
-      const container = transpile('<div @while="false"></div>');
-      expect(container.querySelectorAll("div")).toHaveLength(0);
-    });
-
-    it("has access to outer scope and can modify it using an object", () => {
-      const entity = { state: { i: 0 } };
-      const container = transpile('<div @while="state.i < 3">{{++state.i}}</div>', entity);
-      expect(container.querySelectorAll("div")).toHaveLength(3);
-      expect(container.textContent).toBe("123");
-      // Verify state was modified
-      expect(entity.state.i).toBe(3);
-    });
-
-    it("re-renders reactively when a signal bound changes", async () => {
-      // n is a plain counter (writes go to the child scope, not the entity,
-      // so it resets to 0 on each effect re-run). limit is the reactive bound.
-      const limit = signal(3);
-      const container = transpile('<div @while="n++ < limit.value">x</div>', { n: 0, limit });
-      expect(container.querySelectorAll("div")).toHaveLength(3);
-
-      limit.value = 2;
-      await Promise.resolve();
-      expect(container.querySelectorAll("div")).toHaveLength(2);
     });
   });
 
@@ -711,14 +686,13 @@ describe("Transpiler", () => {
 
   describe("error handling", () => {
     it("throws error on invalid expression in interpolation", () => {
-      expect(() => transpile("{{ 1 + }}")).toThrow("Parse Error");
+      expect(() => transpile("{{ 1 + }}")).toThrow(/\[K007-1\].*\[K004-3\]/s);
     });
 
     it("includes the tag name in the error context", () => {
-      const parser = new TemplateParser();
       // Trigger error inside a specific tag
       const source = '<div id="{{ 1 + }}"></div>';
-      expect(() => transpile(source)).toThrow(/Runtime Error:.*at <div>/s);
+      expect(() => transpile(source)).toThrow(/at <div>/s);
     });
   });
 
@@ -804,7 +778,7 @@ describe("Transpiler", () => {
         expect(bio.value).toBe("world");
       });
 
-      it("text input: signal update reflects back into the DOM attribute", () => {
+      it("text input: signal update reflects back into the DOM attribute", async () => {
         const name = signal("first");
         const container = transpile(
           '<input type="text" @value="name.value" @on:input="name.value = $event.target.value" />',
@@ -814,6 +788,7 @@ describe("Transpiler", () => {
         expect(input.getAttribute("value")).toBe("first");
 
         name.value = "second";
+        await nextTick();
         expect(input.getAttribute("value")).toBe("second");
       });
     });

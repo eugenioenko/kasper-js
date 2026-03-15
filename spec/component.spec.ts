@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { Component } from "../src/component";
 import { signal } from "../src/signal";
+import { nextTick } from "../src/scheduler";
 import { Transpiler } from "../src/transpiler";
 import { TemplateParser } from "../src/template-parser";
 
@@ -30,10 +31,23 @@ describe("Component", () => {
     const transpiler = new Transpiler();
     const args = { foo: "bar" };
     const component = new Component({ args, ref, transpiler });
-    
+
     expect(component.args).toBe(args);
     expect(component.ref).toBe(ref);
     expect(component.transpiler).toBe(transpiler);
+  });
+
+  it("makes this.args available in the constructor", () => {
+    const args = { initialValue: 42 };
+    class TestComponent extends Component {
+      valueFromConstructor: number;
+      constructor(props: any) {
+        super(props);
+        this.valueFromConstructor = this.args.initialValue;
+      }
+    }
+    const component = new TestComponent({ args });
+    expect(component.valueFromConstructor).toBe(42);
   });
 
   describe("render", () => {
@@ -98,67 +112,6 @@ describe("Component", () => {
     });
   });
 
-  describe("haunt", () => {
-    it("calls the callback when signal changes", () => {
-      const component = new Component();
-      const count = signal(0);
-      const calls: number[] = [];
-
-      component.haunt(count, (val) => calls.push(val));
-      count.value = 1;
-      count.value = 2;
-
-      expect(calls).toEqual([1, 2]);
-    });
-
-    it("stops the subscription when $watchStops are called", () => {
-      const component = new Component();
-      const count = signal(0);
-      const calls: number[] = [];
-
-      component.haunt(count, (val) => calls.push(val));
-      count.value = 1;
-
-      component.$watchStops.forEach((stop) => stop());
-      count.value = 2;
-
-      expect(calls).toEqual([1]);
-    });
-
-    it("cleans up haunt subscriptions on component destroy via transpiler", () => {
-      const parser = new TemplateParser();
-      const theme = signal("dark");
-      const calls: string[] = [];
-
-      class ThemedComponent extends Component {
-        onMount() {
-          this.haunt(theme, (val) => calls.push(val));
-        }
-      }
-
-      const registry = {
-        "themed-comp": {
-          selector: "themed-comp",
-          component: ThemedComponent as any,
-          template: document.createElement("div"),
-          nodes: parser.parse("<span></span>"),
-        },
-      };
-
-      const transpiler = new Transpiler({ registry });
-      const container = document.createElement("div");
-      transpiler.transpile(parser.parse("<themed-comp></themed-comp>"), {}, container);
-
-      theme.value = "light";
-      expect(calls).toEqual(["light"]);
-
-      transpiler.destroy(container);
-      theme.value = "dark";
-
-      expect(calls).toEqual(["light"]);
-    });
-  });
-
   describe("Lifecycle hooks", () => {
     it("executes onMount and onRender when transpiled", () => {
       const parser = new TemplateParser();
@@ -180,11 +133,145 @@ describe("Component", () => {
       };
       const transpiler = new Transpiler({ registry });
       const container = document.createElement("div");
-      
+
       transpiler.transpile(parser.parse("<test-comp></test-comp>"), {}, container);
-      
+
       expect(initCalled).toBe(true);
       expect(renderCalled).toBe(true);
+    });
+
+    it("calls onChanges and onRender on batched reactive updates", async () => {
+      const parser = new TemplateParser();
+      const count = signal(0);
+      let changesCalled = 0;
+      let renderCalled = 0;
+
+      class ReactiveComponent extends Component {
+        onChanges() { changesCalled++; }
+        onRender() { renderCalled++; }
+      }
+
+      const registry = {
+        "reactive-comp": {
+          selector: "reactive-comp",
+          component: ReactiveComponent as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<span>{{count.value}}</span>"),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+
+      transpiler.transpile(parser.parse("<reactive-comp></reactive-comp>"), { count }, container);
+
+      // Initial mount - onRender called by transpiler/bootstrap manually
+      expect(renderCalled).toBe(1);
+      expect(changesCalled).toBe(0);
+
+      // Trigger multiple updates
+      count.value = 1;
+      count.value = 2;
+      
+      // DOM should NOT be updated yet
+      expect(container.textContent).toBe("0");
+      expect(changesCalled).toBe(0);
+      expect(renderCalled).toBe(1);
+
+      await nextTick();
+
+      // DOM updated and hooks called ONCE
+      expect(container.textContent).toBe("2");
+      expect(changesCalled).toBe(1);
+      expect(renderCalled).toBe(2);
+    });
+
+    it("triggers lifecycle hooks for nested components on mount", () => {
+      const parser = new TemplateParser();
+      let childMounted = false;
+      let childRendered = false;
+
+      class ChildComp extends Component {
+        onMount() { childMounted = true; }
+        onRender() { childRendered = true; }
+      }
+
+      const registry = {
+        "child-comp": {
+          selector: "child-comp",
+          component: ChildComp as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<b>child</b>"),
+        },
+        "parent-comp": {
+          selector: "parent-comp",
+          component: Component as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<child-comp></child-comp>"),
+        },
+      };
+
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      transpiler.transpile(parser.parse("<parent-comp></parent-comp>"), {}, container);
+
+      expect(childMounted).toBe(true);
+      expect(childRendered).toBe(true);
+    });
+
+    it("calls onRender when @if condition changes", async () => {
+      const parser = new TemplateParser();
+      const show = signal(true);
+      let renderCount = 0;
+
+      class TestComp extends Component {
+        onRender() { renderCount++; }
+      }
+
+      const registry = {
+        "test-comp": {
+          selector: "test-comp",
+          component: TestComp as any,
+          template: "<div></div>",
+          nodes: parser.parse('<span @if="show.value">Visible</span>'),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+
+      transpiler.transpile(parser.parse("<test-comp></test-comp>"), { show }, container);
+      expect(renderCount).toBe(1);
+
+      show.value = false;
+      await nextTick();
+      expect(renderCount).toBe(2);
+    });
+
+    it("calls onRender when @each list changes", async () => {
+      const parser = new TemplateParser();
+      const items = signal([1, 2]);
+      let renderCount = 0;
+
+      class TestComp extends Component {
+        onRender() { renderCount++; }
+      }
+
+      const registry = {
+        "test-comp": {
+          selector: "test-comp",
+          component: TestComp as any,
+          template: "<div></div>",
+          nodes: parser.parse('<li @each="i of items.value">{{i}}</li>'),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+
+      transpiler.transpile(parser.parse("<test-comp></test-comp>"), { items }, container);
+      expect(renderCount).toBe(1);
+
+      items.value = [1, 2, 3];
+      await nextTick();
+      expect(renderCount).toBe(2);
     });
   });
 });
@@ -208,9 +295,9 @@ describe("Component Integration", () => {
     };
     const transpiler = new Transpiler({ registry });
     const container = document.createElement("div");
-    
+
     transpiler.transpile(parser.parse(`<greet-comp @:name="'Kasper'"></greet-comp>`), {}, container);
-    
+
     expect(container.textContent).toContain("Hello Kasper");
   });
 
@@ -230,11 +317,11 @@ describe("Component Integration", () => {
         nodes: parser.parse("<div>parent<child-comp></child-comp></div>"),
       },
     };
-    
+
     const transpiler = new Transpiler({ registry });
     const container = document.createElement("div");
     transpiler.transpile(parser.parse("<parent-comp></parent-comp>"), {}, container);
-    
+
     expect(container.querySelector("parent-comp")).not.toBeNull();
     expect(container.querySelector("child-comp")).not.toBeNull();
     expect(container.textContent).toContain("parentchild");

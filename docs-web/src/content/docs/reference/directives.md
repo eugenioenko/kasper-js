@@ -18,7 +18,6 @@ description: Complete reference for all Kasper.js template directives.
 | `@else` | Else branch (must follow `@if` or `@elseif` sibling) |
 | `@each="item of array"` | Render element for each item |
 | `@each="item with index of array"` | Render with index |
-| `@while="expr"` | Render while expression is truthy |
 | `@let="x = expr"` | Declare a scoped local variable |
 
 ## Event binding
@@ -38,7 +37,7 @@ description: Complete reference for all Kasper.js template directives.
 
 | Directive | Description |
 |---|---|
-| `@name="expr"` | Bind a single attribute dynamically (e.g. `@value`, `@checked`, `@disabled`, `@aria-label`) |
+| `@name="expr"` | Bind ANY valid HTML attribute dynamically (e.g. `@value`, `@aria-label`, `@data-id`) |
 | `@attr="{ key: value }"` | Bind multiple attributes from an object |
 | `@class="expr"` | Bind class attribute dynamically |
 | `@style="{ prop: value }"` | Bind style properties dynamically |

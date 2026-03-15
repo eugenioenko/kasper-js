@@ -99,10 +99,10 @@
       state.stylesEl.textContent = style;
 
       const userRegistry = {};
-      const parser = new kasper.TemplateParser();
+      const parser = new window.kasper.TemplateParser();
 
       // EXPLICIT CLEANUP: Remove old event listeners and effects
-      const transpiler = new kasper.Transpiler();
+      const transpiler = new window.kasper.Transpiler();
       transpiler.destroy(state.renderContainer);
       state.renderContainer.innerHTML = "";
 
@@ -116,18 +116,19 @@
       }
 
       // Safe execution of user script
-      const executeScript = new Function("kasper", "register", `
-        const { Component, signal, effect, computed } = kasper;
+      const executeScript = new Function("register", `
+        const { Component, signal, batch, nextTick } = window;
         ${script}
         return typeof App !== 'undefined' ? App : null;
       `);
 
-      const UserAppClass = executeScript(kasper, register);
+      const UserAppClass = executeScript(register);
       
       if (UserAppClass) {
-          kasper.App({
+          window.kasper.App({
               root: state.renderContainer,
               entry: 'user-root',
+              mode: 'development',
               registry: {
                 ...userRegistry,
                 'user-root': {
@@ -138,9 +139,11 @@
                 }
               }
           });
-      }
- else {
-          kasper.transpile(template, window, state.renderContainer, userRegistry);
+      } else {
+          // Use the transpiler instance to respect registry and mode
+          const transpiler = new window.kasper.Transpiler({ registry: userRegistry });
+          transpiler.mode = 'development';
+          transpiler.transpile(parser.parse(template), window, state.renderContainer);
       }
 
       state.statusEl.textContent = `SYSTEM_INITIALIZED AT ${new Date().toLocaleTimeString()}`;

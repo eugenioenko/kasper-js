@@ -202,4 +202,54 @@ describe("Signals", () => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("multiple effects on same signal", () => {
+    const s = signal(0);
+    let r1 = 0, r2 = 0;
+    effect(() => {
+      s.value;
+      r1++;
+    });
+    effect(() => {
+      s.value;
+      r2++;
+    });
+
+    expect(r1).toBe(1);
+    expect(r2).toBe(1);
+    s.value = 1;
+    expect(r1).toBe(2);
+    expect(r2).toBe(2);
+  });
+
+  it("signal of signal", () => {
+    const inner = signal(1);
+    const outer = signal(inner);
+
+    let result = 0;
+    effect(() => {
+      result = outer.value.value;
+    });
+
+    expect(result).toBe(1);
+    inner.value = 2;
+    expect(result).toBe(2);
+
+    const nextInner = signal(10);
+    outer.value = nextInner;
+    expect(result).toBe(10);
+  });
+
+  describe("computed edge cases", () => {
+    it("circular dependency in computed signals", () => {
+      const trigger = signal(false);
+      let a: any, b: any;
+      
+      a = computed(() => trigger.value ? b.value + 1 : 0);
+      b = computed(() => a.value + 1);
+
+      // Start the cycle
+      expect(() => trigger.value = true).toThrow("Circular dependency detected");
+    });
+  });
 });
