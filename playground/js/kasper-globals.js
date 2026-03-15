@@ -1,33 +1,10 @@
-import {
-  execute,
-  transpile,
-  App,
-  Component,
-  TemplateParser,
-  Transpiler,
-  signal,
-  effect,
-  computed,
-  batch,
-  watch,
-  nextTick,
-  Kasper,
-} from '../../dist/kasper.js';
+import * as kasper from '../../dist/kasper.js';
 
-window.kasper = {
-  execute,
-  transpile,
-  App,
-  Component,
-  TemplateParser,
-  Transpiler,
-  signal,
-  effect,
-  computed,
-  batch,
-  watch,
-  nextTick,
-};
+// Minimal bridge for the playground editor
+window.kasper = kasper;
 
-window.Kasper = Kasper;
-window.Component = Component;
+// Expose these for the Function constructor in playground.js
+window.Component = kasper.Component;
+window.signal = kasper.signal;
+window.nextTick = kasper.nextTick;
+window.batch = kasper.batch;

@@ -99,10 +99,10 @@
       state.stylesEl.textContent = style;
 
       const userRegistry = {};
-      const parser = new kasper.TemplateParser();
+      const parser = new window.kasper.TemplateParser();
 
       // EXPLICIT CLEANUP: Remove old event listeners and effects
-      const transpiler = new kasper.Transpiler();
+      const transpiler = new window.kasper.Transpiler();
       transpiler.destroy(state.renderContainer);
       state.renderContainer.innerHTML = "";
 
@@ -116,16 +116,16 @@
       }
 
       // Safe execution of user script
-      const executeScript = new Function("kasper", "register", `
-        const { Component, signal, effect, computed, batch, watch, nextTick } = kasper;
+      const executeScript = new Function("register", `
+        const { Component, signal, batch, nextTick } = window;
         ${script}
         return typeof App !== 'undefined' ? App : null;
       `);
 
-      const UserAppClass = executeScript(kasper, register);
+      const UserAppClass = executeScript(register);
       
       if (UserAppClass) {
-          kasper.App({
+          window.kasper.App({
               root: state.renderContainer,
               entry: 'user-root',
               mode: 'development',
@@ -141,8 +141,8 @@
           });
       } else {
           // Use the transpiler instance to respect registry and mode
+          const transpiler = new window.kasper.Transpiler({ registry: userRegistry });
           transpiler.mode = 'development';
-          // Ensure router is in registry
           transpiler.transpile(parser.parse(template), window, state.renderContainer);
       }
 
