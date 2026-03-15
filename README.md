@@ -198,9 +198,14 @@ Boundaries — not wrapper elements — delimit conditional DOM. When the signal
 <input @on:input="search($event)" />
 <form @on:submit.prevent="submit()">...</form>
 <button @on:click.stop.once="handleOnce()">...</button>
+<input @on:keydown.enter="addTodo()" />
+<button @on:click.ctrl="specialAction()">...</button>
 ```
 
-Available modifiers: `.prevent`, `.stop`, `.once`, `.passive`, `.capture`.
+Available modifiers:
+- **Event:** `.prevent`, `.stop`, `.once`, `.passive`, `.capture`
+- **Keyboard:** `.enter`, `.escape`, `.tab`, `.space`, `.up`, `.down`, `.left`, `.right`, `.delete`, `.backspace`, etc.
+- **System:** `.ctrl`, `.shift`, `.alt`, `.meta`
 
 ### Dynamic attributes
 

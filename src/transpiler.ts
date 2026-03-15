@@ -11,6 +11,26 @@ import { queueUpdate, flushSync } from "./scheduler";
 import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
 import * as KNode from "./types/nodes";
 
+const KEY_MAP: Record<string, string[]> = {
+  esc: ["Escape", "Esc"],
+  escape: ["Escape", "Esc"],
+  space: [" ", "Spacebar"],
+  up: ["ArrowUp", "Up"],
+  down: ["ArrowDown", "Down"],
+  left: ["ArrowLeft", "Left"],
+  right: ["ArrowRight", "Right"],
+  del: ["Delete", "Del"],
+  delete: ["Delete", "Del"],
+  ins: ["Insert"],
+  dot: ["."],
+  comma: [","],
+  slash: ["/"],
+  backslash: ["\\"],
+  plus: ["+"],
+  minus: ["-"],
+  equal: ["="],
+};
+
 type IfElseNode = [KNode.Element, KNode.Attribute];
 
 export class Transpiler implements KNode.KNodeVisitor<void> {
@@ -739,12 +759,37 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (modifiers.includes("passive")) options.passive = true;
     if (modifiers.includes("capture")) options.capture = true;
 
-    element.addEventListener(eventName, (event) => {
-      if (modifiers.includes("prevent")) event.preventDefault();
-      if (modifiers.includes("stop"))    event.stopPropagation();
-      listenerScope.set("$event", event);
-      this.execute(attr.value, listenerScope);
-    }, options);
+    // Anything not in this list is treated as a potential key modifier
+    const controlModifiers = ["prevent", "stop", "once", "passive", "capture", "ctrl", "shift", "alt", "meta"];
+    const potentialKeyModifiers = modifiers.filter((m) => !controlModifiers.includes(m.toLowerCase()));
+
+    element.addEventListener(
+      eventName,
+      (event: any) => {
+        if (potentialKeyModifiers.length > 0) {
+          const matched = potentialKeyModifiers.some((m) => {
+            const lowerM = m.toLowerCase();
+            if (KEY_MAP[lowerM] && KEY_MAP[lowerM].includes(event.key)) return true;
+            if (lowerM === event.key?.toLowerCase()) return true;
+            return false;
+          });
+          if (!matched) {
+            return;
+          }
+        }
+
+        if (modifiers.includes("ctrl") && !event.ctrlKey) return;
+        if (modifiers.includes("shift") && !event.shiftKey) return;
+        if (modifiers.includes("alt") && !event.altKey) return;
+        if (modifiers.includes("meta") && !event.metaKey) return;
+
+        if (modifiers.includes("prevent")) event.preventDefault();
+        if (modifiers.includes("stop")) event.stopPropagation();
+        listenerScope.set("$event", event);
+        this.execute(attr.value, listenerScope);
+      },
+      options
+    );
   }
 
   private evaluateTemplateString(text: string): string {
