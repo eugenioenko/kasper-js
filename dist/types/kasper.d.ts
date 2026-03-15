@@ -10,4 +10,4 @@ export interface KasperConfig {
     registry: ComponentRegistry;
     mode?: "development" | "production";
 }
-export declare function KasperInit(config: KasperConfig): import("./component").Component<Record<string, any>>;
+export declare function bootstrap(config: KasperConfig): import("./component").Component<Record<string, any>>;

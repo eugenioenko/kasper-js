@@ -4,7 +4,7 @@ export interface SignalOptions {
     signal?: AbortSignal;
 }
 export declare class Signal<T> {
-    private _value;
+    protected _value: T;
     private subscribers;
     private watchers;
     constructor(initialValue: T);

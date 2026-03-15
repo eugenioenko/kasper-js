@@ -19,6 +19,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private interpreter = new Interpreter();
   private registry: ComponentRegistry = {};
   public mode: "development" | "production" = "development";
+  private isRendering = false;
 
   constructor(options?: { registry: ComponentRegistry }) {
     this.registry["router"] = { component: Router, nodes: [] };
@@ -35,7 +36,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       if (misplaced) {
         // These are handled by doIf, if we reach them here it's an error
         const name = misplaced.name.startsWith("@") ? misplaced.name.slice(1) : misplaced.name;
-        this.error(KErrorCode.MISPLACED_CONDITIONAL, { name }, el.name);
+        this.error(KErrorCode.MISPLACED_CONDITIONAL, { name: name }, el.name);
       }
     }
     node.accept(this, parent);
@@ -815,7 +816,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         if (!checkAttr) {
           this.error(KErrorCode.MISSING_REQUIRED_ATTR, { message: "<guard> requires @check attribute." }, el.name);
         }
-        const guardFn = this.execute(checkAttr!.value);
 
         if (!checkAttr) continue;
         const check = this.execute(checkAttr.value);

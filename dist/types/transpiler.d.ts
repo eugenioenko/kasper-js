@@ -1,6 +1,7 @@
 import { ComponentClass, ComponentRegistry } from "./component";
 import { RouteConfig } from "./router";
 import { Scope } from "./scope";
+import { KErrorCodeType } from "./types/error";
 import * as KNode from "./types/nodes";
 export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private scanner;
@@ -8,6 +9,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private interpreter;
     private registry;
     mode: "development" | "production";
+    private isRendering;
     constructor(options?: {
         registry: ComponentRegistry;
     });
@@ -38,6 +40,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     destroy(container: Element): void;
     mountComponent(ComponentClass: ComponentClass, container: HTMLElement, params?: Record<string, string>): void;
     extractRoutes(children: KNode.KNode[], parentGuard?: () => Promise<boolean>, scope?: Scope): RouteConfig[];
+    private triggerRender;
     visitDoctypeKNode(_node: KNode.Doctype): void;
-    error(message: string, tagName?: string): void;
+    error(code: KErrorCodeType, args: any, tagName?: string): void;
 }

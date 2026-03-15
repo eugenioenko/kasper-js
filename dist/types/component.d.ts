@@ -44,7 +44,7 @@ export interface ComponentRegistry {
     [tagName: string]: {
         selector?: string;
         component: ComponentClass;
-        template?: Element | null;
+        template?: Element | string | null;
         nodes?: KNode[];
     };
 }

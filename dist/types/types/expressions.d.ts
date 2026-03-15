@@ -125,7 +125,8 @@ export declare class Literal extends Expr {
 }
 export declare class New extends Expr {
     clazz: Expr;
-    constructor(clazz: Expr, line: number);
+    args: Expr[];
+    constructor(clazz: Expr, args: Expr[], line: number);
     accept<R>(visitor: ExprVisitor<R>): R;
     toString(): string;
 }

@@ -1,5 +1,6 @@
 import * as Expr from "./types/expressions";
 import { Scope } from "./scope";
+import { KErrorCodeType } from "./types/error";
 export declare class Interpreter implements Expr.ExprVisitor<any> {
     scope: Scope;
     private scanner;
@@ -7,7 +8,7 @@ export declare class Interpreter implements Expr.ExprVisitor<any> {
     evaluate(expr: Expr.Expr): any;
     visitPipelineExpr(expr: Expr.Pipeline): any;
     visitArrowFunctionExpr(expr: Expr.ArrowFunction): any;
-    error(message: string): void;
+    error(code: KErrorCodeType, args?: any, line?: number, col?: number): void;
     visitVariableExpr(expr: Expr.Variable): any;
     visitAssignExpr(expr: Expr.Assign): any;
     visitKeyExpr(expr: Expr.Key): any;
