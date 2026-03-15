@@ -138,6 +138,75 @@ describe("Component", () => {
       expect(initCalled).toBe(true);
       expect(renderCalled).toBe(true);
     });
+
+    it("calls onChanges and onRender on reactive signal updates", async () => {
+      const parser = new TemplateParser();
+      const count = signal(0);
+      let changesCalled = 0;
+      let renderCalled = 0;
+
+      class ReactiveComponent extends Component {
+        onChanges() { changesCalled++; }
+        onRender() { renderCalled++; }
+      }
+
+      const registry = {
+        "reactive-comp": {
+          selector: "reactive-comp",
+          component: ReactiveComponent as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<span>{{count.value}}</span>"),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+
+      transpiler.transpile(parser.parse("<reactive-comp></reactive-comp>"), { count }, container);
+
+      // Initial mount
+      expect(renderCalled).toBe(1);
+      expect(changesCalled).toBe(0);
+
+      // Trigger update
+      count.value = 1;
+      await Promise.resolve(); // Wait for effect
+
+      expect(changesCalled).toBe(1);
+      expect(renderCalled).toBe(2);
+    });
+
+    it("triggers lifecycle hooks for nested components on mount", () => {
+      const parser = new TemplateParser();
+      let childMounted = false;
+      let childRendered = false;
+
+      class ChildComp extends Component {
+        onMount() { childMounted = true; }
+        onRender() { childRendered = true; }
+      }
+
+      const registry = {
+        "child-comp": {
+          selector: "child-comp",
+          component: ChildComp as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<b>child</b>"),
+        },
+        "parent-comp": {
+          selector: "parent-comp",
+          component: Component as any,
+          template: document.createElement("div"),
+          nodes: parser.parse("<child-comp></child-comp>"),
+        },
+      };
+
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+      transpiler.transpile(parser.parse("<parent-comp></parent-comp>"), {}, container);
+
+      expect(childMounted).toBe(true);
+      expect(childRendered).toBe(true);
+    });
   });
 });
 

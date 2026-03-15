@@ -9,4 +9,5 @@ App({
     app: { component: KasperApp },
     example: { component: Example },
   },
+  mode: import.meta.env.MODE as any,
 });

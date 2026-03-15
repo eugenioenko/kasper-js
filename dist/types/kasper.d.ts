@@ -4,10 +4,10 @@ export declare function transpile(source: string, entity?: {
     [key: string]: any;
 }, container?: HTMLElement, registry?: ComponentRegistry): Node;
 export declare function Kasper(ComponentClass: any): void;
-interface AppConfig {
+export interface KasperConfig {
     root?: string | HTMLElement;
     entry?: string;
     registry: ComponentRegistry;
+    mode?: "development" | "production";
 }
-export declare function KasperInit(config: AppConfig): import("./component").Component<Record<string, any>>;
-export {};
+export declare function KasperInit(config: KasperConfig): import("./component").Component<Record<string, any>>;

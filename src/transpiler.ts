@@ -16,6 +16,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private parser = new ExpressionParser();
   private interpreter = new Interpreter();
   private registry: ComponentRegistry = {};
+  public mode: "development" | "production" = "development";
 
   constructor(options?: { registry: ComponentRegistry }) {
     this.registry["router"] = { component: Router, nodes: [] };
@@ -76,7 +77,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.interpreter.evaluate(expression)
     );
     this.interpreter.scope = restoreScope;
-    return result && result.length ? result[0] : undefined;
+    return result && result.length ? result[result.length - 1] : undefined;
   }
 
   public transpile(
@@ -245,12 +246,19 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       // Compute new items and their keys
       const newItems: Array<{ item: any; idx: number; key: any }> = [];
+      const seenKeys = new Set();
       let index = 0;
       for (const item of iterable) {
         const scopeValues: any = { [name]: item };
         if (indexKey) scopeValues[indexKey] = index;
         this.interpreter.scope = new Scope(originalScope, scopeValues);
         const key = this.execute(keyAttr.value);
+
+        if (this.mode === "development" && seenKeys.has(key)) {
+          console.warn(`[Kasper] Duplicate key detected in @each: "${key}". Keys must be unique to ensure correct reconciliation.`);
+        }
+        seenKeys.add(key);
+
         newItems.push({ item: item, idx: index, key: key });
         index++;
       }
@@ -305,9 +313,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   // executes initialization in the current scope
   private doLet(init: KNode.Attribute, node: KNode.Element, parent: Node) {
+    const restoreScope = this.interpreter.scope;
+    this.interpreter.scope = new Scope(restoreScope);
+
     this.execute(init.value);
-    const element = this.createElement(node, parent);
-    this.interpreter.scope.set("$ref", element);
+    this.createElement(node, parent);
+
+    this.interpreter.scope = restoreScope;
   }
 
   private createSiblings(nodes: KNode.KNode[], parent?: Node): void {

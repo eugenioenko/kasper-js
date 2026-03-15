@@ -7,6 +7,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private parser;
     private interpreter;
     private registry;
+    mode: "development" | "production";
     constructor(options?: {
         registry: ComponentRegistry;
     });

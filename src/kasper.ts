@@ -27,7 +27,7 @@ export function transpile(
 
 
 export function Kasper(ComponentClass: any) {
-  KasperInit({
+  bootstrap({
     root: "kasper-app",
     entry: "kasper-root",
     registry: {
@@ -40,10 +40,11 @@ export function Kasper(ComponentClass: any) {
   });
 }
 
-interface AppConfig {
+export interface KasperConfig {
   root?: string | HTMLElement;
   entry?: string;
   registry: ComponentRegistry;
+  mode?: "development" | "production";
 }
 
 function createComponent(
@@ -84,6 +85,10 @@ function normalizeRegistry(
         continue;
       }
     }
+    if (typeof entry.template === "string") {
+      entry.nodes = parser.parse(entry.template);
+      continue;
+    }
     const staticTemplate = (entry.component as any).template;
     if (staticTemplate) {
       entry.nodes = parser.parse(staticTemplate);
@@ -92,7 +97,7 @@ function normalizeRegistry(
   return result;
 }
 
-export function KasperInit(config: AppConfig) {
+export function bootstrap(config: KasperConfig) {
   const parser = new TemplateParser();
   const root =
     typeof config.root === "string"
@@ -105,6 +110,15 @@ export function KasperInit(config: AppConfig) {
 
   const registry = normalizeRegistry(config.registry, parser);
   const transpiler = new Transpiler({ registry: registry });
+  
+  // Set the environment mode on the transpiler or globally
+  if (config.mode) {
+    (transpiler as any).mode = config.mode;
+  } else {
+    // Default to development if not specified
+    (transpiler as any).mode = "development";
+  }
+
   const entryTag = config.entry || "kasper-app";
 
   const { node, instance, nodes } = createComponent(

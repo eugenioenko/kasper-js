@@ -611,7 +611,9 @@ On destroy (component removed):
 
 ## App Bootstrap
 
-### KasperInit (recommended)
+### bootstrap (recommended)
+
+Bootstrap the application using `App` (aliased to `bootstrap` internally).
 
 ```js
 App({
@@ -629,6 +631,7 @@ App({
       template: null,
     },
   },
+  mode: import.meta.env.MODE, // 'development' or 'production'
 });
 ```
 
@@ -653,4 +656,4 @@ App({
 Kasper(MyApp);
 ```
 
-Equivalent to calling `KasperInit` with `root: "kasper-app"`, `entry: "kasper-root"`, and a single component mapped to the first `<template>` on the page. Useful for simple single-component apps.
+Equivalent to calling `bootstrap` with `root: "kasper-app"`, `entry: "kasper-root"`, and a single component mapped to the first `<template>` on the page. Useful for simple single-component apps.

@@ -5,7 +5,7 @@ description: Complete API reference for Kasper.js.
 
 ## App bootstrap
 
-### App(config)
+### App(config: KasperConfig)
 
 Bootstrap a Kasper application.
 
@@ -18,6 +18,7 @@ App({
   registry: {
     'my-app': { component: MyApp },
   },
+  mode: import.meta.env.MODE as any,
 });
 ```
 
@@ -26,6 +27,7 @@ App({
 | `root` | `string \| HTMLElement` | Root DOM element or selector |
 | `entry` | `string` | Tag name of the root component |
 | `registry` | `ComponentRegistry` | Map of tag names to component definitions |
+| `mode` | `'development' \| 'production'` | Environment mode (enables dev warnings) |
 
 ## Signals
 

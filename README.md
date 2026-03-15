@@ -682,6 +682,7 @@ App({
   registry: {
     'my-app': { component: MyApp },
   },
+  mode: import.meta.env.MODE as any,
 });
 ```
 
