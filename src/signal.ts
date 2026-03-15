@@ -125,16 +125,17 @@ export function effect(fn: Listener, options?: SignalOptions) {
   };
 
   effectObj.fn();
-  const stop = () => {
+  const stop: any = () => {
     effectObj.deps.forEach(sig => sig.unsubscribe(effectObj.fn));
     effectObj.deps.clear();
   };
+  stop.run = effectObj.fn;
 
   if (options?.signal) {
     options.signal.addEventListener("abort", stop, { once: true });
   }
 
-  return stop;
+  return stop as (() => void) & { run: () => void };
 }
 
 export function signal<T>(initialValue: T): Signal<T> {

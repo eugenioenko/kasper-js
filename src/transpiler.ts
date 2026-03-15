@@ -103,6 +103,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       container.innerHTML = "";
       this.bindMethods(entity);
       this.interpreter.scope.init(entity);
+      this.interpreter.scope.set("$instance", entity);
       
       flushSync(() => {
         this.createSiblings(nodes, container);
@@ -171,7 +172,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
-  private trackEffect(target: any, stop: () => void) {
+  private trackEffect(target: any, stop: any) {
     if (!target.$kasperEffects) target.$kasperEffects = [];
     target.$kasperEffects.push(stop);
   }
@@ -196,33 +197,64 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   private doIf(expressions: IfElseNode[], parent: Node): void {
     const boundary = new Boundary(parent, "if");
 
-    const stop = this.scopedEffect(() => {
-      boundary.nodes().forEach((n) => this.destroyNode(n));
-      boundary.clear();
+    const run = () => {
+      const instance = this.interpreter.scope.get("$instance");
+      
+      const trackingScope = instance ? new Scope(this.interpreter.scope) : this.interpreter.scope;
+      const prevScope = this.interpreter.scope;
+      this.interpreter.scope = trackingScope;
 
-      const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
-      if ($if) {
-        expressions[0][0].accept(this, boundary as any);
-        return;
-      }
-
-      for (const expression of expressions.slice(1, expressions.length)) {
-        if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
-          const $elseif = this.execute((expression[1] as KNode.Attribute).value);
-          if ($elseif) {
-            expression[0].accept(this, boundary as any);
-            return;
-          } else {
-            continue;
+      // Evaluate conditions synchronously to ensure signal tracking
+      const results: boolean[] = [];
+      results.push(!!this.execute((expressions[0][1] as KNode.Attribute).value));
+      
+      if (!results[0]) {
+        for (const expression of expressions.slice(1)) {
+          if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
+            const val = !!this.execute((expression[1] as KNode.Attribute).value);
+            results.push(val);
+            if (val) break;
+          } else if (this.findAttr(expression[0] as KNode.Element, ["@else"])) {
+            results.push(true);
+            break;
           }
         }
-        if (this.findAttr(expression[0] as KNode.Element, ["@else"])) {
-          expression[0].accept(this, boundary as any);
-          return;
-        }
       }
-    });
+      this.interpreter.scope = prevScope;
 
+      const task = () => {
+        boundary.nodes().forEach((n) => this.destroyNode(n));
+        boundary.clear();
+
+        const restoreScope = this.interpreter.scope;
+        this.interpreter.scope = trackingScope;
+        try {
+          if (results[0]) {
+            expressions[0][0].accept(this, boundary as any);
+            return;
+          }
+
+          for (let i = 1; i < results.length; i++) {
+            if (results[i]) {
+              expressions[i][0].accept(this, boundary as any);
+              return;
+            }
+          }
+        } finally {
+          this.interpreter.scope = restoreScope;
+        }
+      };
+
+      if (instance) {
+        queueUpdate(instance, task);
+      } else {
+        task();
+      }
+    };
+
+    (boundary as any).start.$kasperRefresh = run;
+
+    const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);
   }
 
@@ -239,28 +271,59 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const boundary = new Boundary(parent, "each");
     const originalScope = this.interpreter.scope;
 
-    const stop = effect(() => {
-      boundary.nodes().forEach((n) => this.destroyNode(n));
-      boundary.clear();
-
+    const run = () => {
       const tokens = this.scanner.scan(each.value);
       const [name, key, iterable] = this.interpreter.evaluate(
         this.parser.foreach(tokens)
       );
+      const instance = this.interpreter.scope.get("$instance");
 
-      let index = 0;
-      for (const item of iterable) {
-        const scopeValues: any = { [name]: item };
-        if (key) scopeValues[key] = index;
+      const task = () => {
+        boundary.nodes().forEach((n) => this.destroyNode(n));
+        boundary.clear();
 
-        this.interpreter.scope = new Scope(originalScope, scopeValues);
-        this.createElement(node, boundary as any);
-        index += 1;
+        let index = 0;
+        for (const item of iterable) {
+          const scopeValues: any = { [name]: item };
+          if (key) scopeValues[key] = index;
+
+          this.interpreter.scope = new Scope(originalScope, scopeValues);
+          this.createElement(node, boundary as any);
+          index += 1;
+        }
+        this.interpreter.scope = originalScope;
+      };
+
+      if (instance) {
+        queueUpdate(instance, task);
+      } else {
+        task();
       }
-      this.interpreter.scope = originalScope;
-    });
+    };
 
+    (boundary as any).start.$kasperRefresh = run;
+
+    const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);
+  }
+
+  private triggerRefresh(node: Node): void {
+    // 1. Re-run structural logic (if/each/while)
+    if ((node as any).$kasperRefresh) {
+      (node as any).$kasperRefresh();
+    }
+    
+    // 2. Re-run all surgical effects (text interpolation, attributes, etc.)
+    if ((node as any).$kasperEffects) {
+      (node as any).$kasperEffects.forEach((stop: any) => {
+        if (typeof stop.run === "function") {
+          stop.run();
+        }
+      });
+    }
+
+    // 3. Recurse
+    node.childNodes?.forEach((child) => this.triggerRefresh(child));
   }
 
   private doEachKeyed(each: KNode.Attribute, node: KNode.Element, parent: Node, keyAttr: KNode.Attribute) {
@@ -268,13 +331,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const originalScope = this.interpreter.scope;
     const keyedNodes = new Map<any, Node>();
 
-    const stop = effect(() => {
+    const run = () => {
       const tokens = this.scanner.scan(each.value);
       const [name, indexKey, iterable] = this.interpreter.evaluate(
         this.parser.foreach(tokens)
       );
+      const instance = this.interpreter.scope.get("$instance");
 
-      // Compute new items and their keys
+      // Compute new items and their keys immediately
       const newItems: Array<{ item: any; idx: number; key: any }> = [];
       const seenKeys = new Set();
       let index = 0;
@@ -293,51 +357,106 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         index++;
       }
 
-      // Destroy nodes whose keys are no longer present
-      const newKeySet = new Set(newItems.map((i) => i.key));
-      for (const [key, domNode] of keyedNodes) {
-        if (!newKeySet.has(key)) {
-          this.destroyNode(domNode);
-          domNode.parentNode?.removeChild(domNode);
-          keyedNodes.delete(key);
+      const task = () => {
+        // Destroy nodes whose keys are no longer present
+        const newKeySet = new Set(newItems.map((i) => i.key));
+        for (const [key, domNode] of keyedNodes) {
+          if (!newKeySet.has(key)) {
+            this.destroyNode(domNode);
+            domNode.parentNode?.removeChild(domNode);
+            keyedNodes.delete(key);
+          }
         }
-      }
 
-      // Insert/reuse nodes in new order
-      for (const { item, idx, key } of newItems) {
-        const scopeValues: any = { [name]: item };
-        if (indexKey) scopeValues[indexKey] = idx;
-        this.interpreter.scope = new Scope(originalScope, scopeValues);
+        // Insert/reuse nodes in new order
+        for (const { item, idx, key } of newItems) {
+          const scopeValues: any = { [name]: item };
+          if (indexKey) scopeValues[indexKey] = idx;
+          this.interpreter.scope = new Scope(originalScope, scopeValues);
 
-        if (keyedNodes.has(key)) {
-          boundary.insert(keyedNodes.get(key)!);
-        } else {
-          const created = this.createElement(node, boundary as any);
-          if (created) keyedNodes.set(key, created);
+          if (keyedNodes.has(key)) {
+            const domNode = keyedNodes.get(key)!;
+            boundary.insert(domNode);
+
+            // Update scope and trigger re-render of nested structural directives
+            const nodeScope = (domNode as any).$kasperScope;
+            if (nodeScope) {
+              nodeScope.set(name, item);
+              if (indexKey) nodeScope.set(indexKey, idx);
+
+              // If it has its own render logic (nested each/if), trigger it recursively
+              this.triggerRefresh(domNode);
+            }
+          } else {
+            const created = this.createElement(node, boundary as any);
+            if (created) {
+              keyedNodes.set(key, created);
+              // Store the scope on the DOM node so we can update it later
+              (created as any).$kasperScope = this.interpreter.scope;
+            }
+          }
         }
+        this.interpreter.scope = originalScope;
+      };
+
+      if (instance) {
+        queueUpdate(instance, task);
+      } else {
+        task();
       }
+    };
 
-      this.interpreter.scope = originalScope;
-    });
+    (boundary as any).start.$kasperRefresh = run;
 
+    const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);
   }
+
 
   private doWhile($while: KNode.Attribute, node: KNode.Element, parent: Node) {
     const boundary = new Boundary(parent, "while");
     const originalScope = this.interpreter.scope;
 
-    const stop = this.scopedEffect(() => {
-      boundary.nodes().forEach((n) => this.destroyNode(n));
-      boundary.clear();
+    const run = () => {
+      const instance = this.interpreter.scope.get("$instance");
 
-      this.interpreter.scope = new Scope(originalScope);
-      while (this.execute($while.value)) {
-        this.createElement(node, boundary as any);
+      if (instance) {
+        // Tracking: evaluate first iteration synchronously in a temporary scope
+        const trackingScope = new Scope(originalScope);
+        const prevScope = this.interpreter.scope;
+        this.interpreter.scope = trackingScope;
+        const firstCondition = !!this.execute($while.value);
+        this.interpreter.scope = prevScope;
+
+        const task = () => {
+          boundary.nodes().forEach((n) => this.destroyNode(n));
+          boundary.clear();
+
+          // Use the same tracking scope to continue the loop
+          const restoreScope = this.interpreter.scope;
+          this.interpreter.scope = trackingScope;
+          let currentCondition = firstCondition;
+          while (currentCondition) {
+            this.createElement(node, boundary as any);
+            currentCondition = !!this.execute($while.value);
+          }
+          this.interpreter.scope = restoreScope;
+        };
+        queueUpdate(instance, task);
+      } else {
+        boundary.nodes().forEach((n) => this.destroyNode(n));
+        boundary.clear();
+        this.interpreter.scope = new Scope(originalScope);
+        while (this.execute($while.value)) {
+          this.createElement(node, boundary as any);
+        }
+        this.interpreter.scope = originalScope;
       }
-      this.interpreter.scope = originalScope;
-    });
+    };
 
+    (boundary as any).start.$kasperRefresh = run;
+
+    const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);
   }
 

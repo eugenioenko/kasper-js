@@ -3,6 +3,7 @@ import { Component } from "../src/component";
 import { TemplateParser } from "../src/template-parser";
 import { Transpiler } from "../src/transpiler";
 import { signal, computed, effect, batch } from "../src/signal";
+import { nextTick } from "../src/scheduler";
 
 function makeContainer(): HTMLElement {
   return document.createElement("div");
@@ -63,7 +64,7 @@ describe("Directive Edge Cases", () => {
     expect(() => transpile(source)).toThrow();
   });
 
-  it("directives on components", () => {
+  it("directives on components", async () => {
     const show = signal(false);
     class MyComp extends Component {}
     const parser = new TemplateParser();
@@ -77,6 +78,7 @@ describe("Directive Edge Cases", () => {
     expect(container.textContent).toBe("");
     
     show.value = true;
+    await nextTick();
     // Transpiler doesn't seem to have a way to reactively update @if on a component 
     // because it only sets up effects for text/attributes, and @if is handled during sibling creation.
     // Wait, doIf creates an effect. But does it work for components?
@@ -189,5 +191,35 @@ describe("Integration Edge Cases", () => {
     await Promise.resolve();
     // Child has an effect on args.count.value in its template
     expect(childRenders).toBe(2);
+  });
+
+  it("reactive update to nested array within object using @key", async () => {
+    const data = signal([
+      { id: "c1", tasks: [{ id: "t1", text: "task 1" }, { id: "t2", text: "task 2" }] }
+    ]);
+
+    const source = `
+      <div @each="col of data.value" @key="col.id" class="column">
+        <span @each="task of col.tasks" @key="task.id" class="task">{{ task.text }}</span>
+      </div>
+    `;
+
+    const container = makeContainer();
+    transpile(source, { data }, container);
+
+    expect(container.querySelectorAll(".task")).toHaveLength(2);
+    expect(container.textContent).toContain("task 1");
+    expect(container.textContent).toContain("task 2");
+
+    // Simulate deleting a task via filter and re-assigning top-level signal
+    const cols = [...data.value];
+    cols[0].tasks = cols[0].tasks.filter(t => t.id !== "t1");
+    data.value = cols;
+
+    await nextTick();
+
+    expect(container.querySelectorAll(".task")).toHaveLength(1);
+    expect(container.textContent).not.toContain("task 1");
+    expect(container.textContent).toContain("task 2");
   });
 });

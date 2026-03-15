@@ -217,6 +217,62 @@ describe("Component", () => {
       expect(childMounted).toBe(true);
       expect(childRendered).toBe(true);
     });
+
+    it("calls onRender when @if condition changes", async () => {
+      const parser = new TemplateParser();
+      const show = signal(true);
+      let renderCount = 0;
+
+      class TestComp extends Component {
+        onRender() { renderCount++; }
+      }
+
+      const registry = {
+        "test-comp": {
+          selector: "test-comp",
+          component: TestComp as any,
+          template: "<div></div>",
+          nodes: parser.parse('<span @if="show.value">Visible</span>'),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+
+      transpiler.transpile(parser.parse("<test-comp></test-comp>"), { show }, container);
+      expect(renderCount).toBe(1);
+
+      show.value = false;
+      await nextTick();
+      expect(renderCount).toBe(2);
+    });
+
+    it("calls onRender when @each list changes", async () => {
+      const parser = new TemplateParser();
+      const items = signal([1, 2]);
+      let renderCount = 0;
+
+      class TestComp extends Component {
+        onRender() { renderCount++; }
+      }
+
+      const registry = {
+        "test-comp": {
+          selector: "test-comp",
+          component: TestComp as any,
+          template: "<div></div>",
+          nodes: parser.parse('<li @each="i of items.value">{{i}}</li>'),
+        },
+      };
+      const transpiler = new Transpiler({ registry });
+      const container = document.createElement("div");
+
+      transpiler.transpile(parser.parse("<test-comp></test-comp>"), { items }, container);
+      expect(renderCount).toBe(1);
+
+      items.value = [1, 2, 3];
+      await nextTick();
+      expect(renderCount).toBe(2);
+    });
   });
 });
 
