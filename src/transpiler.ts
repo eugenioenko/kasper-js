@@ -413,64 +413,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
 
-  private doWhile($while: KNode.Attribute, node: KNode.Element, parent: Node) {
-    const boundary = new Boundary(parent, "while");
-    const originalScope = this.interpreter.scope;
-
-    const run = () => {
-      const instance = this.interpreter.scope.get("$instance");
-
-      if (instance) {
-        // Tracking: evaluate first iteration synchronously in a temporary scope
-        const trackingScope = new Scope(originalScope);
-        const prevScope = this.interpreter.scope;
-        this.interpreter.scope = trackingScope;
-        const firstCondition = !!this.execute($while.value);
-        this.interpreter.scope = prevScope;
-
-        const task = () => {
-          boundary.nodes().forEach((n) => this.destroyNode(n));
-          boundary.clear();
-
-          // Use the same tracking scope to continue the loop
-          const restoreScope = this.interpreter.scope;
-          this.interpreter.scope = trackingScope;
-          let currentCondition = firstCondition;
-          while (currentCondition) {
-            this.createElement(node, boundary as any);
-            currentCondition = !!this.execute($while.value);
-          }
-          this.interpreter.scope = restoreScope;
-        };
-        queueUpdate(instance, task);
-      } else {
-        boundary.nodes().forEach((n) => this.destroyNode(n));
-        boundary.clear();
-        this.interpreter.scope = new Scope(originalScope);
-        while (this.execute($while.value)) {
-          this.createElement(node, boundary as any);
-        }
-        this.interpreter.scope = originalScope;
-      }
-    };
-
-    (boundary as any).start.$kasperRefresh = run;
-
-    const stop = this.scopedEffect(run);
-    this.trackEffect(boundary, stop);
-  }
-
-  // executes initialization in the current scope
-  private doLet(init: KNode.Attribute, node: KNode.Element, parent: Node) {
-    const restoreScope = this.interpreter.scope;
-    this.interpreter.scope = new Scope(restoreScope);
-
-    this.execute(init.value);
-    this.createElement(node, parent);
-
-    this.interpreter.scope = restoreScope;
-  }
-
   private createSiblings(nodes: KNode.KNode[], parent?: Node): void {
     let current = 0;
     const initialScope = this.interpreter.scope;
@@ -496,10 +438,9 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         const elseifAttr = this.findAttr(el, ["@elseif"]);
         const elseAttr = this.findAttr(el, ["@else"]);
         const $each = this.findAttr(el, ["@each"]);
-        const $while = this.findAttr(el, ["@while"]);
 
         if (this.mode === "development") {
-          const structuralCount = [ifAttr, elseifAttr, elseAttr, $each, $while].filter(a => a).length;
+          const structuralCount = [ifAttr, elseifAttr, elseAttr, $each].filter(a => a).length;
           if (structuralCount > 1) {
             this.error(KErrorCode.MULTIPLE_STRUCTURAL_DIRECTIVES, {}, el.name);
           }
@@ -528,11 +469,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           }
 
           this.doIf(expressions, parent!);
-          continue;
-        }
-
-        if ($while) {
-          this.doWhile($while, el, parent!);
           continue;
         }
       }
@@ -680,7 +616,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const name = (attr as KNode.Attribute).name;
           return (
             name.startsWith("@") &&
-            !["@if", "@elseif", "@else", "@each", "@while", "@let", "@key", "@ref"].includes(
+            !["@if", "@elseif", "@else", "@each", "@let", "@key", "@ref"].includes(
               name
             ) &&
             !name.startsWith("@on:") &&

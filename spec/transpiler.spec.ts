@@ -486,39 +486,6 @@ describe("Transpiler", () => {
     });
   });
 
-  describe("@while directive", () => {
-    it("renders elements while condition is true", () => {
-      const container = transpile('<div @while="count-- > 0"></div>', { count: 3 });
-      expect(container.querySelectorAll("div")).toHaveLength(3);
-    });
-
-    it("renders nothing when condition starts false", () => {
-      const container = transpile('<div @while="false"></div>');
-      expect(container.querySelectorAll("div")).toHaveLength(0);
-    });
-
-    it("has access to outer scope and can modify it using an object", () => {
-      const entity = { state: { i: 0 } };
-      const container = transpile('<div @while="state.i < 3">{{++state.i}}</div>', entity);
-      expect(container.querySelectorAll("div")).toHaveLength(3);
-      expect(container.textContent).toBe("123");
-      // Verify state was modified
-      expect(entity.state.i).toBe(3);
-    });
-
-    it("re-renders reactively when a signal bound changes", async () => {
-      // n is a plain counter (writes go to the child scope, not the entity,
-      // so it resets to 0 on each effect re-run). limit is the reactive bound.
-      const limit = signal(3);
-      const container = transpile('<div @while="n++ < limit.value">x</div>', { n: 0, limit });
-      expect(container.querySelectorAll("div")).toHaveLength(3);
-
-      limit.value = 2;
-      await Promise.resolve();
-      expect(container.querySelectorAll("div")).toHaveLength(2);
-    });
-  });
-
   describe("@let directive", () => {
     it("makes initialized variable available in children", () => {
       const container = transpile('<div @let="x = 42">{{x}}</div>');

@@ -255,9 +255,6 @@ user.value.name = 'Alice';                       // does NOT trigger ✗
 <!-- Lists — keyed reconciliation (reuses DOM nodes, use for dynamic lists) -->
 <li @each="item of items.value" @key="item.id">{{item.name}}</li>
 
-<!-- While loop -->
-<div @while="condition">...</div>
-
 <!-- Local variable — sets a variable in the current scope -->
 <!-- Available to the element's children AND all subsequent siblings at the same level -->
 <!-- Nested @let can reference ancestor @let variables via the scope chain -->

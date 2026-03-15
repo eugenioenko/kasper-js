@@ -29,8 +29,6 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private doEachUnkeyed;
     private triggerRefresh;
     private doEachKeyed;
-    private doWhile;
-    private doLet;
     private createSiblings;
     private createElement;
     private createComponentArgs;

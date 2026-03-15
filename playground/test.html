@@ -31,9 +31,6 @@
         </badge>
       </div>
 
-      <!-- @while: render N dots -->
-      <div @while="count.value > dot++">●</div>
-
       <!-- @on events -->
       <button @on:click="add()">add</button>
       <button @on:click="count.value--" @class="count.value === 0 ? 'disabled' : ''">-</button>

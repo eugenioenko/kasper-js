@@ -47,16 +47,6 @@ Without `@key`, every signal update destroys and recreates all list nodes. With 
 
 The key expression is evaluated in the item's scope and must be unique across the list. Typically `item.id` or another stable identifier.
 
-## @while
-
-Render elements while a condition is true:
-
-```html
-<div @while="count.value > 0">
-  {{count.value}}
-</div>
-```
-
 ## @let
 
 Declare a local template variable:

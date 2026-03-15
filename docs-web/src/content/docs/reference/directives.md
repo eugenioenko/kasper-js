@@ -18,7 +18,6 @@ description: Complete reference for all Kasper.js template directives.
 | `@else` | Else branch (must follow `@if` or `@elseif` sibling) |
 | `@each="item of array"` | Render element for each item |
 | `@each="item with index of array"` | Render with index |
-| `@while="expr"` | Render while expression is truthy |
 | `@let="x = expr"` | Declare a scoped local variable |
 
 ## Event binding

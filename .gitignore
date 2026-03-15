@@ -66,3 +66,4 @@ typings/
 
 
 docs-web/dist
+docs-web/.astro

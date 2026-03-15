@@ -14,9 +14,7 @@ Kasper templates are valid HTML extended with `{{ }}` interpolation and `@`-pref
 2. [Directives](#directives)
    - [@if / @elseif / @else](#if--elseif--else)
    - [@each](#each)
-   - [@while](#while)
-   - [@let](#let)
-   - [@on:event](#onevent)
+   - [@let](#let)   - [@on:event](#onevent)
    - [@attr (dynamic attributes)](#attr-dynamic-attributes)
    - [@class](#class)
    - [@style](#style)
@@ -129,30 +127,6 @@ Benefits:
   <span>{{user.name}}</span>
 </div>
 ```
-
----
-
-### @while
-
-```html
-<div @while="n++ < limit.value">row {{n}}</div>
-```
-
-**Syntax:** `@while="<condition>"`
-
-Renders the element repeatedly while the condition is truthy. The loop is reactive — when signals read in the condition change, the boundary is cleared and the loop re-runs.
-
-**Important:** avoid writing to a signal inside the condition, as this will cause an infinite re-render loop. Use plain variables for loop counters and signals only for the bound:
-
-```html
-<!-- Safe: n is a plain variable, limit is a signal -->
-<tr @while="n++ < limit.value">...</tr>
-
-<!-- UNSAFE: modifying a signal in the condition causes infinite loops -->
-<div @while="sig.value-- > 0">...</div>
-```
-
-On each re-run the loop counter resets automatically because writes to the counter go to a fresh child scope, not the entity.
 
 ---
 
