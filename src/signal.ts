@@ -14,7 +14,7 @@ export interface SignalOptions {
 }
 
 export class Signal<T> {
-  private _value: T;
+  protected _value: T;
   private subscribers = new Set<Listener>();
   private watchers = new Set<Watcher<T>>();
 
@@ -38,8 +38,9 @@ export class Signal<T> {
         for (const sub of this.subscribers) pendingSubscribers.add(sub);
         for (const watcher of this.watchers) pendingWatchers.push(() => watcher(newValue, oldValue));
       } else {
-        for (const sub of Array.from(this.subscribers)) {
-          try { sub(); } catch (e) { console.error("Effect error:", e); }
+        const subs = Array.from(this.subscribers);
+        for (const sub of subs) {
+          sub();
         }
         for (const watcher of this.watchers) {
           try { watcher(newValue, oldValue); } catch (e) { console.error("Watcher error:", e); }
@@ -64,6 +65,42 @@ export class Signal<T> {
 
   toString() { return String(this.value); }
   peek() { return this._value; }
+}
+
+class ComputedSignal<T> extends Signal<T> {
+  private fn: () => T;
+  private computing = false;
+
+  constructor(fn: () => T, options?: SignalOptions) {
+    super(undefined as any);
+    this.fn = fn;
+
+    const stop = effect(() => {
+      if (this.computing) {
+        throw new Error("Circular dependency detected in computed signal");
+      }
+
+      this.computing = true;
+      try {
+        // Eagerly update the value so subscribers are notified immediately
+        super.value = this.fn();
+      } finally {
+        this.computing = false;
+      }
+    }, options);
+
+    if (options?.signal) {
+      options.signal.addEventListener("abort", stop, { once: true });
+    }
+  }
+
+  get value(): T {
+    return super.value;
+  }
+
+  set value(_v: T) {
+    // Computed signals are read-only from outside
+  }
 }
 
 export function effect(fn: Listener, options?: SignalOptions) {
@@ -119,7 +156,7 @@ export function batch(fn: () => void): void {
     pendingSubscribers.clear();
     const watchers = pendingWatchers.splice(0);
     for (const sub of subs) {
-      try { sub(); } catch (e) { console.error("Effect error:", e); }
+      sub();
     }
     for (const watcher of watchers) {
       try { watcher(); } catch (e) { console.error("Watcher error:", e); }
@@ -128,9 +165,5 @@ export function batch(fn: () => void): void {
 }
 
 export function computed<T>(fn: () => T, options?: SignalOptions): Signal<T> {
-  const s = signal<T>(undefined as any);
-  effect(() => {
-    s.value = fn();
-  }, options);
-  return s;
+  return new ComputedSignal(fn, options);
 }

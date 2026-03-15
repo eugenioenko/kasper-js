@@ -242,11 +242,14 @@ describe("Signals", () => {
 
   describe("computed edge cases", () => {
     it("circular dependency in computed signals", () => {
+      const trigger = signal(false);
       let a: any, b: any;
-      a = computed(() => b.value + 1);
+      
+      a = computed(() => trigger.value ? b.value + 1 : 0);
       b = computed(() => a.value + 1);
 
-      expect(() => a.value).toThrow("Circular dependency detected");
+      // Start the cycle
+      expect(() => trigger.value = true).toThrow("Circular dependency detected");
     });
   });
 });
