@@ -285,6 +285,8 @@ user.value.name = 'Alice';                       // does NOT trigger ✗
 <input @on:input="handle($event)" />       <!-- $event is the native DOM Event -->
 <form @on:submit.prevent="submit()">...</form>
 <!-- modifiers: .prevent .stop .once .passive .capture -->
+<!-- keyboard modifiers: .enter .escape .esc .tab .space .up .down .left .right .delete .backspace .ins .home .end .pageup .pagedown -->
+<!-- system modifiers: .ctrl .shift .alt .meta -->
 <!-- $event is the only implicit variable in event handlers — it holds the raw DOM event -->
 
 <!-- Attribute binding shorthand — @attr-name="expr" works for ANY valid HTML attribute -->

@@ -30,6 +30,8 @@ description: Complete reference for all Kasper.js template directives.
 | `@on:event.once` | Remove listener after first call |
 | `@on:event.passive` | Add as passive listener |
 | `@on:event.capture` | Add in capture phase |
+| `@on:keydown.enter` | Trigger only on Enter key |
+| `@on:click.ctrl` | Trigger only when Ctrl key is held |
 
 `$event` is available in the handler expression.
 
