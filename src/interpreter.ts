@@ -3,6 +3,7 @@ import { Scanner } from "./scanner";
 import { ExpressionParser as Parser } from "./expression-parser";
 import { Scope } from "./scope";
 import { TokenType } from "./types/token";
+import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
 
 export class Interpreter implements Expr.ExprVisitor<any> {
   public scope = new Scope();
@@ -52,8 +53,8 @@ export class Interpreter implements Expr.ExprVisitor<any> {
     };
   }
 
-  public error(message: string): void {
-    throw new Error(`Runtime Error => ${message}`);
+  public error(code: KErrorCodeType, args: any = {}, line?: number, col?: number): void {
+    throw new KasperError(code, args, line, col);
   }
 
   public visitVariableExpr(expr: Expr.Variable): any {
@@ -102,7 +103,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       );
       this.evaluate(assign);
     } else {
-      this.error(`Invalid left-hand side in postfix operation: ${expr.entity}`);
+      this.error(KErrorCode.INVALID_POSTFIX_LVALUE, { entity: expr.entity }, expr.line);
     }
 
     return value;
@@ -191,7 +192,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
       case TokenType.RightShift:
         return left >> right;
       default:
-        this.error("Unknown binary operator " + expr.operator);
+        this.error(KErrorCode.UNKNOWN_BINARY_OPERATOR, { operator: expr.operator }, expr.line);
         return null; // unreachable
     }
   }
@@ -259,13 +260,15 @@ export class Interpreter implements Expr.ExprVisitor<any> {
           this.evaluate(assign);
         } else {
           this.error(
-            `Invalid right-hand side expression in prefix operation:  ${expr.right}`
+            KErrorCode.INVALID_PREFIX_RVALUE,
+            { right: expr.right },
+            expr.line
           );
         }
         return newValue;
       }
       default:
-        this.error(`Unknown unary operator ' + expr.operator`);
+        this.error(KErrorCode.UNKNOWN_UNARY_OPERATOR, { operator: expr.operator }, expr.line);
         return null; // should be unreachable
     }
   }
@@ -275,7 +278,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
     const callee = this.evaluate(expr.callee);
     if (callee == null && expr.optional) return undefined;
     if (typeof callee !== "function") {
-      this.error(`${callee} is not a function`);
+      this.error(KErrorCode.NOT_A_FUNCTION, { callee: callee }, expr.line);
     }
     // evaluate function arguments
     const args = [];
@@ -295,18 +298,18 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   }
 
   public visitNewExpr(expr: Expr.New): any {
-    const newCall = expr.clazz as Expr.Call;
-    // internal class definition instance
-    const clazz = this.evaluate(newCall.callee);
+    const clazz = this.evaluate(expr.clazz);
 
     if (typeof clazz !== "function") {
       this.error(
-        `'${clazz}' is not a class. 'new' statement must be used with classes.`
+        KErrorCode.NOT_A_CLASS,
+        { clazz: clazz },
+        expr.line
       );
     }
 
     const args: any[] = [];
-    for (const arg of newCall.args) {
+    for (const arg of expr.args) {
       args.push(this.evaluate(arg));
     }
     return new clazz(...args);

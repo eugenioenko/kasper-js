@@ -8,6 +8,7 @@ import { effect } from "./signal";
 import { Boundary } from "./boundary";
 import { TemplateParser } from "./template-parser";
 import { queueUpdate, flushSync } from "./scheduler";
+import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
 import * as KNode from "./types/nodes";
 
 type IfElseNode = [KNode.Element, KNode.Attribute];
@@ -28,6 +29,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   private evaluate(node: KNode.KNode, parent?: Node): void {
+    if (node.type === "element") {
+      const el = node as KNode.Element;
+      const misplaced = this.findAttr(el, ["@elseif", "@else"]);
+      if (misplaced) {
+        // These are handled by doIf, if we reach them here it's an error
+        const name = misplaced.name.startsWith("@") ? misplaced.name.slice(1) : misplaced.name;
+        this.error(KErrorCode.MISPLACED_CONDITIONAL, { name }, el.name);
+      }
+    }
     node.accept(this, parent);
   }
 
@@ -132,7 +142,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       });
       this.trackEffect(text, stop);
     } catch (e: any) {
-      this.error(e.message || `${e}`, "text node");
+      this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, "text node");
     }
   }
 
@@ -191,7 +201,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       const $if = this.execute((expressions[0][1] as KNode.Attribute).value);
       if ($if) {
-        this.createElement(expressions[0][0], boundary as any);
+        expressions[0][0].accept(this, boundary as any);
         return;
       }
 
@@ -199,14 +209,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
           const $elseif = this.execute((expression[1] as KNode.Attribute).value);
           if ($elseif) {
-            this.createElement(expression[0], boundary as any);
+            expression[0].accept(this, boundary as any);
             return;
           } else {
             continue;
           }
         }
         if (this.findAttr(expression[0] as KNode.Element, ["@else"])) {
-          this.createElement(expression[0], boundary as any);
+          expression[0].accept(this, boundary as any);
           return;
         }
       }
@@ -346,7 +356,17 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     while (current < nodes.length) {
       const node = nodes[current++];
       if (node.type === "element") {
-        const $each = this.findAttr(node as KNode.Element, ["@each"]);
+        const el = node as KNode.Element;
+
+        // Validation: Only one conditional allowed per element
+        const ifAttr = this.findAttr(el, ["@if"]);
+        const elseifAttr = this.findAttr(el, ["@elseif"]);
+        const elseAttr = this.findAttr(el, ["@else"]);
+        if ([ifAttr, elseifAttr, elseAttr].filter((a) => a).length > 1) {
+          this.error(KErrorCode.DUPLICATE_IF, {}, el.name);
+        }
+
+        const $each = this.findAttr(el, ["@each"]);
         if ($each) {
           this.doEach($each, node as KNode.Element, parent!);
           continue;
@@ -403,6 +423,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       const isVoid = node.name === "void";
       const isComponent = !!this.registry[node.name];
+
       const element = isVoid ? parent : document.createElement(node.name);
       const restoreScope = this.interpreter.scope;
 
@@ -619,7 +640,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       return element;
     } catch (e: any) {
-      this.error(e.message || `${e}`, node.name);
+      this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, node.name);
     }
   }
 
@@ -780,14 +801,22 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         const pathAttr = this.findAttr(el, ["@path"]);
         const componentAttr = this.findAttr(el, ["@component"]);
         const guardAttr = this.findAttr(el, ["@guard"]);
-        if (!pathAttr || !componentAttr) continue;
-        const path = pathAttr.value;
-        const component = this.execute(componentAttr.value);
+
+        if (!pathAttr || !componentAttr) {
+          this.error(KErrorCode.MISSING_REQUIRED_ATTR, { message: "<route> requires @path and @component attributes." }, el.name);
+        }
+
+        const path = pathAttr!.value;
+        const component = this.execute(componentAttr!.value);
         const guard = guardAttr ? this.execute(guardAttr.value) : parentGuard;
         routes.push({ path: path, component: component, guard: guard });
-      }
-      if (el.name === "guard") {
+      } else if (el.name === "guard") {
         const checkAttr = this.findAttr(el, ["@check"]);
+        if (!checkAttr) {
+          this.error(KErrorCode.MISSING_REQUIRED_ATTR, { message: "<guard> requires @check attribute." }, el.name);
+        }
+        const guardFn = this.execute(checkAttr!.value);
+
         if (!checkAttr) continue;
         const check = this.execute(checkAttr.value);
         routes.push(...this.extractRoutes(el.children, check));
@@ -810,15 +839,16 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     // return document.implementation.createDocumentType("html", "", "");
   }
 
-  public error(message: string, tagName?: string): void {
-    const cleanMessage = message.startsWith("Runtime Error")
-      ? message
-      : `Runtime Error: ${message}`;
-
-    if (tagName && !cleanMessage.includes(`at <${tagName}>`)) {
-      throw new Error(`${cleanMessage}\n  at <${tagName}>`);
+  public error(code: KErrorCodeType, args: any, tagName?: string): void {
+    let finalArgs = args;
+    if (typeof args === "string") {
+      const cleanMessage = args.includes("Runtime Error")
+        ? args.replace("Runtime Error: ", "")
+        : args;
+      finalArgs = { message: cleanMessage };
     }
 
-    throw new Error(cleanMessage);
+    throw new KasperError(code, finalArgs, undefined, undefined, tagName);
   }
+
 }

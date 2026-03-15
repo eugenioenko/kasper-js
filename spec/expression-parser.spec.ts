@@ -446,10 +446,17 @@ describe("ExpressionParser", () => {
   });
 
   describe("new", () => {
-    it("new Foo() → New wrapping Call", () => {
+    it("new Foo() -> New with class and args", () => {
       const expr = parseOne("new Foo()") as Expr.New;
       expect(expr).toBeInstanceOf(Expr.New);
-      expect(expr.clazz).toBeInstanceOf(Expr.Call);
+      expect(expr.clazz).toBeInstanceOf(Expr.Variable);
+      expect(expr.args).toHaveLength(0);
+    });
+
+    it("new Foo(1, 2) -> New with args", () => {
+      const expr = parseOne("new Foo(1, 2)") as Expr.New;
+      expect(expr.clazz).toBeInstanceOf(Expr.Variable);
+      expect(expr.args).toHaveLength(2);
     });
   });
 

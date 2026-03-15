@@ -1,4 +1,4 @@
-import { KasperError } from "./types/error";
+import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
 import * as Node from "./types/nodes";
 import { SelfClosingTags, WhiteSpaces } from "./types/token";
 
@@ -43,10 +43,11 @@ export class TemplateParser {
         this.line += 1;
         this.col = 0;
       }
-      this.col += 1;
-      this.current++;
-    } else {
-      this.error(`Unexpected end of file. ${eofError}`);
+      if (!this.eof()) {
+        this.current++;
+      } else {
+        this.error(KErrorCode.UNEXPECTED_EOF, { eofError: eofError });
+      }
     }
   }
 
@@ -67,8 +68,8 @@ export class TemplateParser {
     return this.current > this.source.length;
   }
 
-  private error(message: string): any {
-    throw new KasperError(message, this.line, this.col);
+  private error(code: KErrorCodeType, args: any = {}): any {
+    throw new KasperError(code, args, this.line, this.col);
   }
 
   private node(): Node.KNode {
@@ -76,7 +77,7 @@ export class TemplateParser {
     let node: Node.KNode;
 
     if (this.match("</")) {
-      this.error("Unexpected closing tag");
+      this.error(KErrorCode.UNEXPECTED_CLOSING_TAG);
     }
 
     if (this.match("<!--")) {
@@ -115,7 +116,7 @@ export class TemplateParser {
     const line = this.line;
     const name = this.identifier("/", ">");
     if (!name) {
-      this.error("Expected a tag name");
+      this.error(KErrorCode.EXPECTED_TAG_NAME);
     }
 
     const attributes = this.attributes();
@@ -128,7 +129,7 @@ export class TemplateParser {
     }
 
     if (!this.match(">")) {
-      this.error("Expected closing tag");
+      this.error(KErrorCode.EXPECTED_CLOSING_BRACKET);
     }
 
     let children: Node.KNode[] = [];
@@ -143,14 +144,14 @@ export class TemplateParser {
 
   private close(name: string): void {
     if (!this.match("</")) {
-      this.error(`Expected </${name}>`);
+      this.error(KErrorCode.EXPECTED_CLOSING_TAG, { name: name });
     }
     if (!this.match(`${name}`)) {
-      this.error(`Expected </${name}>`);
+      this.error(KErrorCode.EXPECTED_CLOSING_TAG, { name: name });
     }
     this.whitespace();
     if (!this.match(">")) {
-      this.error(`Expected </${name}>`);
+      this.error(KErrorCode.EXPECTED_CLOSING_TAG, { name: name });
     }
   }
 
@@ -158,7 +159,7 @@ export class TemplateParser {
     const children: Node.KNode[] = [];
     do {
       if (this.eof()) {
-        this.error(`Expected </${parent}>`);
+        this.error(KErrorCode.EXPECTED_CLOSING_TAG, { name: parent });
       }
       const node = this.node();
       if (node === null) {
@@ -177,7 +178,7 @@ export class TemplateParser {
       const line = this.line;
       const name = this.identifier("=", ">", "/>");
       if (!name) {
-        this.error("Blank attribute name");
+        this.error(KErrorCode.BLANK_ATTRIBUTE_NAME);
       }
       this.whitespace();
       let value = "";

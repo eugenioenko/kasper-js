@@ -1,3 +1,5 @@
+import { KasperError, KErrorCode } from "./types/error";
+
 type Listener = () => void;
 
 let activeEffect: { fn: Listener; deps: Set<any> } | null = null;
@@ -77,7 +79,7 @@ class ComputedSignal<T> extends Signal<T> {
 
     const stop = effect(() => {
       if (this.computing) {
-        throw new Error("Circular dependency detected in computed signal");
+        throw new KasperError(KErrorCode.CIRCULAR_COMPUTED);
       }
 
       this.computing = true;

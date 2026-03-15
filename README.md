@@ -641,7 +641,7 @@ export class ProfilePage extends Component {
 
 ## Testing
 
-Kasper has **589 tests across 13 spec files**, all passing. Tests run directly against `src/` — no build step required. Coverage is measured with V8's native instrumentor via Vitest.
+Kasper has **600+ tests across 17 spec files**, all passing. Tests run directly against `src/` — no build step required. Coverage is measured with V8's native instrumentor via Vitest.
 
 
 **Coverage:**

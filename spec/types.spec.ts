@@ -13,21 +13,24 @@ describe("Token", () => {
 
 describe("KasperError", () => {
   it("is an instance of Error", () => {
-    expect(new KasperError("something failed", 3, 5)).toBeInstanceOf(Error);
+    expect(new KasperError("K000" as any, "msg")).toBeInstanceOf(Error);
   });
 
-  it("message includes position and value", () => {
-    expect(new KasperError("something failed", 3, 5).message).toBe("Parse Error (3:5) => something failed");
+  it("message includes code and value", () => {
+    const err = new KasperError("K000" as any, "something failed", 3, 5);
+    expect(err.message).toContain("[K000] something failed (3:5)");
+    expect(err.message).toContain("See: https://kasperjs.top/reference/errors#k000");
   });
 
   it("exposes line and col", () => {
-    const err = new KasperError("something failed", 3, 5);
+    const err = new KasperError("K000" as any, "something failed", 3, 5);
     expect(err.line).toBe(3);
     expect(err.col).toBe(5);
   });
 
+
   it("has a stack trace", () => {
-    expect(new KasperError("something failed", 3, 5).stack).toBeDefined();
+    expect(new KasperError("K000" as any, "something failed", 3, 5).stack).toBeDefined();
   });
 });
 

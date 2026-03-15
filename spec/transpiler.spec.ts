@@ -711,14 +711,13 @@ describe("Transpiler", () => {
 
   describe("error handling", () => {
     it("throws error on invalid expression in interpolation", () => {
-      expect(() => transpile("{{ 1 + }}")).toThrow("Parse Error");
+      expect(() => transpile("{{ 1 + }}")).toThrow(/\[K007-1\].*\[K004-3\]/s);
     });
 
     it("includes the tag name in the error context", () => {
-      const parser = new TemplateParser();
       // Trigger error inside a specific tag
       const source = '<div id="{{ 1 + }}"></div>';
-      expect(() => transpile(source)).toThrow(/Runtime Error:.*at <div>/s);
+      expect(() => transpile(source)).toThrow(/at <div>/s);
     });
   });
 

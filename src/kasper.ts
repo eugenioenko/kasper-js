@@ -1,6 +1,7 @@
 import { ComponentRegistry } from "./component";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
+import { KasperError, KErrorCode } from "./types/error";
 
 export function execute(source: string): string {
   const parser = new TemplateParser();
@@ -105,7 +106,18 @@ export function bootstrap(config: KasperConfig) {
       : config.root;
 
   if (!root) {
-    throw new Error(`Root element not found: ${config.root}`);
+    throw new KasperError(
+      KErrorCode.ROOT_ELEMENT_NOT_FOUND,
+      { root: config.root }
+    );
+  }
+
+  const entryTag = config.entry || "kasper-app";
+  if (!config.registry[entryTag]) {
+    throw new KasperError(
+      KErrorCode.ENTRY_COMPONENT_NOT_FOUND,
+      { tag: entryTag }
+    );
   }
 
   const registry = normalizeRegistry(config.registry, parser);
@@ -118,8 +130,6 @@ export function bootstrap(config: KasperConfig) {
     // Default to development if not specified
     (transpiler as any).mode = "development";
   }
-
-  const entryTag = config.entry || "kasper-app";
 
   const { node, instance, nodes } = createComponent(
     transpiler,
