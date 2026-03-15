@@ -17,6 +17,7 @@ export const KErrorCode = {
   BLANK_ATTRIBUTE_NAME: "K003-6",
   MISPLACED_CONDITIONAL: "K003-7",
   DUPLICATE_IF: "K003-8",
+  MULTIPLE_STRUCTURAL_DIRECTIVES: "K003-9",
 
   // Expression Parser
   UNEXPECTED_TOKEN: "K004-1",
@@ -58,6 +59,7 @@ export const ErrorTemplates: Record<string, (args: any) => string> = {
   "K003-6": () => "Blank attribute name",
   "K003-7": (a) => `@${a.name} must be preceded by an @if or @elseif block.`,
   "K003-8": () => "Multiple conditional directives (@if, @elseif, @else) on the same element are not allowed.",
+  "K003-9": () => "Multiple structural directives (@if, @each, @while) on the same element are not allowed. Nest them or use <void> instead.",
 
   "K004-1": (a) => `${a.message}, unexpected token "${a.token}"`,
   "K004-2": () => "Invalid l-value, is not an assigning target.",

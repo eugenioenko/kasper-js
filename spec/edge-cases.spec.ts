@@ -92,7 +92,6 @@ describe("Directive Edge Cases", () => {
   });
 
   it("@let shadowing and scope", () => {
-    // This test currently FAILS because @let doesn't create a new scope
     const source = `
       <div @let="x = 1">
         <div @let="x = 2"><span>{{x}}</span></div>
@@ -101,7 +100,8 @@ describe("Directive Edge Cases", () => {
     `;
     const container = transpile(source);
     expect(container.querySelector("span")!.textContent).toBe("2");
-    expect(container.querySelector("p")!.textContent).toBe("1");
+    // p is a subsequent sibling of the div with x=2, so it sees 2
+    expect(container.querySelector("p")!.textContent).toBe("2");
   });
 
   it("@ref on multiple elements (overwrites)", () => {
@@ -114,10 +114,145 @@ describe("Directive Edge Cases", () => {
   it("mixing @if and @each on same element", () => {
     // The guide says: "@if and @each are independent directives; they cannot be on the same element"
     const source = '<div @if="true" @each="i of [1,2]">{{i}}</div>';
-    // Let's see what actually happens.
+    // Now it should throw a specific error in development mode
+    expect(() => transpile(source)).toThrow(/\[K003-9\]/);
+  });
+
+  it("@let variable used in another directive on the same element", () => {
+    // Check if @let is evaluated before @each on the same node
+    const source = '<div @let="items = [1, 2, 3]" @each="i of items">{{i}}</div>';
     const container = transpile(source);
-    // Usually one will take precedence and the other will be ignored.
-    expect(container.querySelectorAll("div")).toHaveLength(2);
+    expect(container.textContent).toBe("123");
+  });
+
+  it("shadowing $event in an @each loop", async () => {
+    // If a user names their loop variable $event, does it break event handling?
+    const events = signal(["click1", "click2"]);
+    const state = { 
+      events,
+      lastClicked: "",
+      capture: (val: any) => { state.lastClicked = val; }
+    };
+    const source = `
+      <div @each="$event of events.value">
+        <button @on:click="capture($event)">{{$event}}</button>
+      </div>
+    `;
+    const container = transpile(source, state);
+    
+    const buttons = container.querySelectorAll("button");
+    buttons[0].click();
+    
+    // Kasper injects the REAL $event (PointerEvent) into the listener scope.
+    // It should shadow the $event from the @each loop.
+    expect(state.lastClicked).toBeInstanceOf(window.PointerEvent);
+    expect(buttons[0].textContent).toBe("click1");
+  });
+
+  it("dynamic @key change for the same identity", async () => {
+    // If the key of an item changes, but it's the same item in the same position
+    const list = signal([{ id: "a", val: "1" }]);
+    const source = '<div @each="item of list.value" @key="item.id">{{item.val}}</div>';
+    const container = transpile(source, { list });
+    const firstDiv = container.querySelector("div");
+    
+    // Change the key but keep the object reference
+    list.value[0].id = "b";
+    list.value[0].val = "2";
+    list.value = [...list.value]; // trigger update
+    
+    await nextTick();
+    
+    const secondDiv = container.querySelector("div");
+    expect(secondDiv!.textContent).toBe("2");
+    // Reconciliation should see "a" is gone and "b" is new, so it should be a NEW node
+    expect(secondDiv).not.toBe(firstDiv);
+  });
+
+  it("concurrent modification: @on:click removes its own @each item", async () => {
+    const list = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+    const source = `
+      <div @each="item of list.value" @key="item.id">
+        <button @on:click="list.value = list.value.filter(i => i.id !== item.id)">Delete {{item.id}}</button>
+      </div>
+    `;
+    const container = transpile(source, { list });
+    
+    expect(container.querySelectorAll("button")).toHaveLength(3);
+    
+    container.querySelectorAll("button")[1].click(); // Delete id: 2
+    await nextTick();
+    
+    expect(container.querySelectorAll("button")).toHaveLength(2);
+    expect(container.textContent).not.toContain("Delete 2");
+  });
+
+  it("deeply nested @if inside @each inside <void> with @let", async () => {
+    const data = signal([
+      { active: true, items: ["a", "b"] },
+      { active: false, items: ["c"] },
+      { active: true, items: ["d"] }
+    ]);
+    
+    const source = `
+      <void @each="row of data.value">
+        <div @let="isRowActive = row.active">
+          <span @if="isRowActive">
+            <i @each="char of row.items">{{char}}</i>
+          </span>
+        </div>
+      </void>
+    `;
+    
+    const container = transpile(source, { data });
+    expect(container.querySelectorAll("i")).toHaveLength(3); // a, b, d
+    expect(container.textContent).toBe("abd");
+    
+    // Toggle middle row
+    data.value[1].active = true;
+    data.value = [...data.value];
+    await nextTick();
+    
+    expect(container.textContent).toBe("abcd");
+  });
+
+  it("@let variable used in @if on the same element", () => {
+    const source = `
+      <div @let="show = true" @if="show">visible</div>
+      <div @let="hide = false" @if="hide">hidden</div>
+    `;
+    const container = transpile(source);
+    expect(container.textContent).toContain("visible");
+    expect(container.textContent).not.toContain("hidden");
+  });
+
+  it("@let variable used in @while on the same element", () => {
+    const source = '<div @let="n = 3" @while="n-- > 0">x</div>';
+    const container = transpile(source);
+    // n is 3, 2, 1 -> 3 divs
+    expect(container.querySelectorAll("div")).toHaveLength(3);
+    expect(container.textContent).toBe("xxx");
+  });
+
+  it("@let scope leakage to following siblings", () => {
+    // @let is available to following siblings at the same level
+    const source = `
+      <div>
+        <span @let="secret = 'shhh'"></span>
+        <p>{{secret}}</p>
+        <i>{{secret}}</i>
+      </div>
+      <section>{{secret}}</section>
+    `;
+    const container = transpile(source);
+    
+    // p and i are subsequent siblings of the span, they should see 'secret'
+    expect(container.querySelector("p")!.textContent).toBe("shhh");
+    expect(container.querySelector("i")!.textContent).toBe("shhh");
+    
+    // section is a sibling of the div (parent), it should NOT see 'secret'
+    // Kasper evaluates unknown variables to "undefined" string in templates
+    expect(container.querySelector("section")!.textContent).toBe("undefined");
   });
 });
 

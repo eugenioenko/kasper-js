@@ -473,28 +473,46 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private createSiblings(nodes: KNode.KNode[], parent?: Node): void {
     let current = 0;
+    const initialScope = this.interpreter.scope;
+    let groupScope: Scope | null = null;
+
     while (current < nodes.length) {
       const node = nodes[current++];
       if (node.type === "element") {
         const el = node as KNode.Element;
 
-        // Validation: Only one conditional allowed per element
+        // 1. Process @let (leaks to siblings and available to other directives on this node)
+        const $let = this.findAttr(el, ["@let"]);
+        if ($let) {
+          if (!groupScope) {
+            groupScope = new Scope(initialScope);
+            this.interpreter.scope = groupScope;
+          }
+          this.execute($let.value);
+        }
+
+        // 2. Validation: Structural directives are mutually exclusive
         const ifAttr = this.findAttr(el, ["@if"]);
         const elseifAttr = this.findAttr(el, ["@elseif"]);
         const elseAttr = this.findAttr(el, ["@else"]);
-        if ([ifAttr, elseifAttr, elseAttr].filter((a) => a).length > 1) {
-          this.error(KErrorCode.DUPLICATE_IF, {}, el.name);
+        const $each = this.findAttr(el, ["@each"]);
+        const $while = this.findAttr(el, ["@while"]);
+
+        if (this.mode === "development") {
+          const structuralCount = [ifAttr, elseifAttr, elseAttr, $each, $while].filter(a => a).length;
+          if (structuralCount > 1) {
+            this.error(KErrorCode.MULTIPLE_STRUCTURAL_DIRECTIVES, {}, el.name);
+          }
         }
 
-        const $each = this.findAttr(el, ["@each"]);
+        // 3. Process structural directives (one will match and continue)
         if ($each) {
-          this.doEach($each, node as KNode.Element, parent!);
+          this.doEach($each, el, parent!);
           continue;
         }
 
-        const $if = this.findAttr(node as KNode.Element, ["@if"]);
-        if ($if) {
-          const expressions: IfElseNode[] = [[node as KNode.Element, $if]];
+        if (ifAttr) {
+          const expressions: IfElseNode[] = [[el, ifAttr]];
 
           while (current < nodes.length) {
             const attr = this.findAttr(nodes[current] as KNode.Element, [
@@ -513,20 +531,16 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
 
-        const $while = this.findAttr(node as KNode.Element, ["@while"]);
         if ($while) {
-          this.doWhile($while, node as KNode.Element, parent!);
-          continue;
-        }
-
-        const $let = this.findAttr(node as KNode.Element, ["@let"]);
-        if ($let) {
-          this.doLet($let, node as KNode.Element, parent!);
+          this.doWhile($while, el, parent!);
           continue;
         }
       }
+      
       this.evaluate(node, parent);
     }
+
+    this.interpreter.scope = initialScope;
   }
 
   private createElement(node: KNode.Element, parent?: Node): Node | undefined {

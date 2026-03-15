@@ -12,6 +12,7 @@ export declare const KErrorCode: {
     readonly BLANK_ATTRIBUTE_NAME: "K003-6";
     readonly MISPLACED_CONDITIONAL: "K003-7";
     readonly DUPLICATE_IF: "K003-8";
+    readonly MULTIPLE_STRUCTURAL_DIRECTIVES: "K003-9";
     readonly UNEXPECTED_TOKEN: "K004-1";
     readonly INVALID_LVALUE: "K004-2";
     readonly EXPECTED_EXPRESSION: "K004-3";

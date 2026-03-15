@@ -49,7 +49,7 @@ describe("Error System (New Checks)", () => {
       }).toThrow(/\[K003-7\] @else must be preceded by an @if or @elseif block/);
     });
 
-    it("K003-8: throws if multiple conditionals on same element", () => {
+    it("K003-9: throws if multiple structural directives on same element", () => {
       const parser = new TemplateParser();
       const transpiler = new Transpiler();
       const container = document.createElement("div");
@@ -57,7 +57,7 @@ describe("Error System (New Checks)", () => {
       const nodes = parser.parse('<div @if="true" @else></div>');
       expect(() => {
         transpiler.transpile(nodes, {}, container);
-      }).toThrow(/\[K003-8\] Multiple conditional directives/);
+      }).toThrow(/\[K003-9\] Multiple structural directives/);
     });
   });
 });
