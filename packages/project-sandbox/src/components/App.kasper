@@ -1,0 +1,30 @@
+<script>
+  import { Component, signal } from 'kasper-js';
+  import { Counter } from './Counter.kasper';
+
+  export class App extends Component {
+
+    showExample = signal(false);
+  }
+</script>
+
+<template>
+  <router>
+    <route @path="/" @component="Counter" />
+  </router>
+</template>
+
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: #0d0e0f;
+    color: #e0e0e0;
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+  }
+</style>

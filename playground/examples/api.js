@@ -28,7 +28,7 @@ class App extends Component {
   users = signal([]);
   loading = signal(true);
 
-  onInit() {
+  onMount() {
     this.fetchData();
   }
 

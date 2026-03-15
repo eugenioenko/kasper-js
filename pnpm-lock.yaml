@@ -63,6 +63,22 @@ importers:
         specifier: workspace:*
         version: link:../../vite-plugin-kasper
 
+  packages/project-sandbox:
+    dependencies:
+      kasper-js:
+        specifier: workspace:*
+        version: link:../..
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@24.12.0)(terser@5.46.0)
+      vite-plugin-kasper:
+        specifier: workspace:*
+        version: link:../vite-plugin-kasper
+
   packages/vite-plugin-kasper:
     devDependencies:
       typescript:

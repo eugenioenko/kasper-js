@@ -5,11 +5,12 @@ import {
   Component,
   TemplateParser,
   Transpiler,
-  Viewer,
   signal,
   effect,
   computed,
   batch,
+  watch,
+  nextTick,
   Kasper,
 } from '../../dist/kasper.js';
 
@@ -20,11 +21,12 @@ window.kasper = {
   Component,
   TemplateParser,
   Transpiler,
-  Viewer,
   signal,
   effect,
   computed,
   batch,
+  watch,
+  nextTick,
 };
 
 window.Kasper = Kasper;

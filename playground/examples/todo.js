@@ -109,7 +109,7 @@ class App extends Component {
   searchQuery = signal("");
   isAdding = signal(false);
 
-  onInit() {
+  onMount() {
     this.fetchTodos();
     this.timer = setInterval(() => {
       this.uptime.value++;

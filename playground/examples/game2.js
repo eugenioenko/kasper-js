@@ -39,7 +39,7 @@ class App extends Component {
   _lastTick = 0;
   _fpsHistory = [];
 
-  onInit() {
+  onMount() {
     this.randomize();
   }
 

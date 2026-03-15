@@ -117,7 +117,7 @@
 
       // Safe execution of user script
       const executeScript = new Function("kasper", "register", `
-        const { Component, signal, effect, computed } = kasper;
+        const { Component, signal, effect, computed, batch, watch, nextTick } = kasper;
         ${script}
         return typeof App !== 'undefined' ? App : null;
       `);
@@ -128,6 +128,7 @@
           kasper.App({
               root: state.renderContainer,
               entry: 'user-root',
+              mode: 'development',
               registry: {
                 ...userRegistry,
                 'user-root': {
@@ -138,9 +139,11 @@
                 }
               }
           });
-      }
- else {
-          kasper.transpile(template, window, state.renderContainer, userRegistry);
+      } else {
+          // Use the transpiler instance to respect registry and mode
+          transpiler.mode = 'development';
+          // Ensure router is in registry
+          transpiler.transpile(parser.parse(template), window, state.renderContainer);
       }
 
       state.statusEl.textContent = `SYSTEM_INITIALIZED AT ${new Date().toLocaleTimeString()}`;

@@ -54,7 +54,7 @@
       highlight = kasper.signal('');
       double = kasper.computed(() => this.count.value * 2);
 
-      $onInit() {
+      onMount() {
         kasper.effect(() => {
           document.title = `count: ${this.count.value}`;
         });
