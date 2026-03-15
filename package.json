@@ -1,6 +1,6 @@
 {
   "name": "kasper-js",
-  "version": "0.3.8",
+  "version": "0.3.10",
   "description": "A lightweight component framework with fine-grained Signal-based reactivity. No virtual DOM. No magic compiler. Just components, signals, and surgical DOM updates",
   "main": "./dist/kasper.js",
   "module": "./dist/kasper.js",
