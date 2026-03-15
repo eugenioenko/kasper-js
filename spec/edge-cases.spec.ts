@@ -72,9 +72,6 @@ describe("Directive Edge Cases", () => {
 
     show.value = true;
     await nextTick();
-    // Transpiler doesn't seem to have a way to reactively update @if on a component 
-    // because it only sets up effects for text/attributes, and @if is handled during sibling creation.
-    // Wait, doIf creates an effect. But does it work for components?
     expect(container.textContent).toBe("Component");
   });
 
@@ -342,6 +339,253 @@ describe("Integration Edge Cases", () => {
     expect(container.textContent).not.toContain("task 1");
     expect(container.textContent).toContain("task 2");
   });
+
+  it("renders @each with component and props on same element without throwing", async () => {
+    class UICard extends Component {
+      static template = '<div class="card"><slot @name="header" /><slot /></div>';
+    }
+
+    class TaskCard extends Component {
+      static template = `
+        <div class="task-card-wrapper">
+          <ui-card>
+            <div @slot="header">{{ args.task.title }}</div>
+            <p class="desc" @if="args.task.description">{{ args.task.description }}</p>
+          </ui-card>
+        </div>
+      `;
+    }
+
+    class KanbanColumn extends Component {
+      tasks = this.computed(() => {
+        const all = this.args.allTasks?.value ?? [];
+        return all.filter((t: any) => t && t.status === "todo");
+      });
+      static template = '<task-card @each="task of tasks.value" @:task="task" @key="task.id"></task-card>';
+    }
+
+    class Parent extends Component {
+      all = signal<any[]>([]);
+      static template = '<h1>Repro</h1><kanban-column @:allTasks="all"></kanban-column>';
+
+      onMount() {
+        this.all.value = [
+          { id: 1, title: "Item 1", status: "todo" },
+          { id: 2, title: "Item 2", status: "todo", description: "desc" }
+        ];
+      }
+    }
+
+    const parser = new TemplateParser();
+    const registry = {
+      "ui-card": {
+        component: UICard as any,
+        template: UICard.template,
+        nodes: parser.parse(UICard.template)
+      },
+      "task-card": {
+        component: TaskCard as any,
+        template: TaskCard.template,
+        nodes: parser.parse(TaskCard.template)
+      },
+      "kanban-column": {
+        component: KanbanColumn as any,
+        template: KanbanColumn.template,
+        nodes: parser.parse(KanbanColumn.template)
+      },
+      "parent-comp": {
+        component: Parent as any,
+        template: Parent.template,
+        nodes: parser.parse(Parent.template)
+      }
+    };
+
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    // Should not throw now
+    transpiler.mountComponent(Parent, container);
+    await nextTick();
+
+    expect(container.textContent).toContain("Item 1");
+    expect(container.textContent).toContain("Item 2");
+    expect(container.textContent).toContain("desc");
+  });
+
+  it("renders @each and @:prop on same element (simple)", () => {
+    class SimpleChild extends Component {
+      static template = "<span>{{ args.val }}</span>";
+    }
+    const parser = new TemplateParser();
+    const registry = {
+      "simple-child": {
+        component: SimpleChild as any,
+        template: SimpleChild.template,
+        nodes: parser.parse(SimpleChild.template)
+      }
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+    const list = [{ id: 1, v: "A" }, { id: 2, v: "B" }];
+
+    transpiler.transpile(
+      parser.parse('<simple-child @each="item of list" @key="item.id" @:val="item.v"></simple-child>'),
+      { list },
+      container
+    );
+
+    expect(container.textContent).toBe("AB");
+  });
+
+  it("isolates slot scopes for multiple instances of the same component", async () => {
+    // This tests if the WeakMap correctly separates scopes for different instances
+    // sharing the same KNodes.
+    class Box extends Component {
+      static template = '<div><slot /></div>';
+    }
+    const parser = new TemplateParser();
+    const registry = {
+      "x-box": { component: Box as any, nodes: parser.parse(Box.template!) }
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+    
+    const source = `
+      <div @each="item of ['A', 'B']">
+        <x-box>{{item}}</x-box>
+      </div>
+    `;
+
+    transpiler.transpile(parser.parse(source), { }, container);
+    expect(container.textContent.trim()).toBe("AB");
+  });
+
+  it("allows @let variable from parent to be used in a slot", () => {
+    class Wrapper extends Component {
+      static template = '<section><slot /></section>';
+    }
+    const parser = new TemplateParser();
+    const registry = {
+      "x-wrapper": { component: Wrapper as any, nodes: parser.parse(Wrapper.template!) }
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const source = `
+      <div @let="secret = 'shhh'">
+        <x-wrapper>
+          <span>{{secret}}</span>
+        </x-wrapper>
+      </div>
+    `;
+
+    transpiler.transpile(parser.parse(source), {}, container);
+    expect(container.querySelector("span")!.textContent).toBe("shhh");
+  });
+
+  it("passes @each index as a component prop", () => {
+    class ItemView extends Component {
+      static template = '<i>{{args.index}}:{{args.name}}</i>';
+    }
+    const parser = new TemplateParser();
+    const registry = {
+      "item-view": { component: ItemView as any, nodes: parser.parse(ItemView.template!) }
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const list = ["apple", "banana"];
+    const source = '<item-view @each="name with i of list" @:name="name" @:index="i"></item-view>';
+
+    transpiler.transpile(parser.parse(source), { list }, container);
+    expect(container.textContent).toBe("0:apple1:banana");
+  });
+
+  it("handles deep nested slots with parent scope preservation", () => {
+    class Level1 extends Component { static template = '<div>L1:<slot /></div>'; }
+    class Level2 extends Component { static template = '<span>L2:<slot /></span>'; }
+    
+    const parser = new TemplateParser();
+    const registry = {
+      "l-1": { component: Level1 as any, nodes: parser.parse(Level1.template!) },
+      "l-2": { component: Level2 as any, nodes: parser.parse(Level2.template!) }
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const source = `
+      <div @let="val = 'target'">
+        <l-1>
+          <l-2>
+            <b>{{val}}</b>
+          </l-2>
+        </l-1>
+      </div>
+    `;
+
+    transpiler.transpile(parser.parse(source), {}, container);
+    expect(container.querySelector("b")!.textContent).toBe("target");
+  });
+
+  it("reactively updates parent variables used inside a slot", async () => {
+    class Wrapper extends Component { static template = '<div><slot /></div>'; }
+    const parser = new TemplateParser();
+    const registry = { "x-wrapper": { component: Wrapper as any, nodes: parser.parse(Wrapper.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const count = signal(0);
+    const source = '<x-wrapper><span>{{count.value}}</span></x-wrapper>';
+
+    transpiler.transpile(parser.parse(source), { count }, container);
+    expect(container.textContent).toBe("0");
+
+    count.value = 1;
+    await nextTick();
+    expect(container.textContent).toBe("1");
+  });
+
+  it("handles nested @each where inner loop is inside a slot", () => {
+    class Wrapper extends Component { static template = '<section><slot /></section>'; }
+    const parser = new TemplateParser();
+    const registry = { "x-wrapper": { component: Wrapper as any, nodes: parser.parse(Wrapper.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const matrix = [["a1", "a2"], ["b1"]];
+    const source = `
+      <div @each="row of matrix">
+        <x-wrapper>
+          <i @each="cell of row">{{cell}}</i>
+        </x-wrapper>
+      </div>
+    `;
+
+    transpiler.transpile(parser.parse(source), { matrix }, container);
+    expect(container.textContent.replace(/\s/g, "")).toBe("a1a2b1");
+  });
+
+  it("respects @if inside a slot using parent scope", async () => {
+    class Wrapper extends Component { static template = '<div><slot /></div>'; }
+    const parser = new TemplateParser();
+    const registry = { "x-wrapper": { component: Wrapper as any, nodes: parser.parse(Wrapper.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    const source = `
+      <x-wrapper>
+        <span @if="visible.value">Visible</span>
+      </x-wrapper>
+    `;
+
+    transpiler.transpile(parser.parse(source), { visible }, container);
+    expect(container.textContent).toContain("Visible");
+
+    visible.value = false;
+    await nextTick();
+    expect(container.textContent).not.toContain("Visible");
+  });
 });
 
 describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
@@ -453,4 +697,3 @@ describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
     expect(newDivs[2]).toBe(firstNode);
   });
 });
-
