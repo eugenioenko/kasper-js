@@ -716,6 +716,62 @@ describe("Integration Edge Cases", () => {
   });
 });
 
+describe("@each + outer signal reactivity", () => {
+  it("@class inside @each reacts to an outer signal change (plain array iterable)", async () => {
+    // Replicates the data-table pagination bug:
+    // clicking page 3 highlighted pages 1, 2 AND 3 instead of only 3.
+    const selected = signal(1);
+    const items = [1, 2, 3];
+
+    const source = `
+      <button @each="n of items" @class="selected.value === n ? 'active' : ''">{{ n }}</button>
+    `;
+    const container = transpile(source, { items, selected });
+    const buttons = () => container.querySelectorAll("button");
+
+    expect(buttons()[0].className).toBe("active");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("");
+
+    selected.value = 3;
+    await nextTick();
+
+    expect(buttons()[0].className).toBe("");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("active");
+  });
+
+  it("@class inside @each reacts to outer signal when iterable is also a signal", async () => {
+    // Closer to the real demo: pageNumbers is a signal, page is a separate signal.
+    // Both are read in the same @class expression — the @each rebuilds only when
+    // pageNumbers changes, but @class should still update when page changes alone.
+    // Could not reproduce the demo accumulation bug (pages 1+2+3 all active after
+    // clicking 3) in isolation — the framework handles it correctly here.
+    // Tests serve as regression guards for this expected behavior.
+    const page = signal(1);
+    const pageNumbers = signal([1, 2, 3]);
+
+    const source = `
+      <button @each="n of pageNumbers.value" @class="page.value === n ? 'active' : ''">{{ n }}</button>
+    `;
+    const container = transpile(source, { page, pageNumbers });
+    const buttons = () => container.querySelectorAll("button");
+
+    expect(buttons()[0].className).toBe("active");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("");
+
+    page.value = 3;
+    await nextTick();
+
+    // Bug: all previously-active buttons retain the class → [0] and [2] both have "active"
+    // Expected: only [2] has "active"
+    expect(buttons()[0].className).toBe("");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("active");
+  });
+});
+
 describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
   it("infinite loop in effect", () => {
     const s = signal(0);

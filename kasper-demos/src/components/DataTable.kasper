@@ -51,10 +51,10 @@
       <div class="dt-pagination">
         <ui-button @:onClick="prevPage" @:variant="'outline'" @:disabled="page.value === 1">← Prev</ui-button>
         <button
-          @each="btn of pageButtons.value"
-          @on:click="goToPage(btn.num)"
-          @class="'pg-btn' + (btn.active ? ' pg-btn--active' : '')"
-        >{{ btn.num }}</button>
+          @each="p of pageNumbers.value"
+          @on:click="goToPage(p)"
+          @class="'pg-btn' + (page.value === p ? ' pg-btn--active' : '')"
+        >{{ p }}</button>
         <ui-button @:onClick="nextPage" @:variant="'outline'" @:disabled="page.value === totalPages.value">Next →</ui-button>
       </div>
     </div>
@@ -164,11 +164,8 @@ export class DataTable extends Component {
     return this.filteredSorted.value.slice(start, start + this.pageSize);
   });
 
-  pageButtons = this.computed(() =>
-    Array.from({ length: this.totalPages.value }, (_, i) => ({
-      num: i + 1,
-      active: i + 1 === this.page.value,
-    }))
+  pageNumbers = this.computed(() =>
+    Array.from({ length: this.totalPages.value }, (_, i) => i + 1)
   );
 
   formatSalary(n) {
