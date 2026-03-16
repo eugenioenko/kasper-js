@@ -31,6 +31,7 @@ export class UISidebar extends Component {
     { path: '/products', icon: '🛍️', label: 'Products' },
     { path: '/table',    icon: '📊', label: 'Data Table' },
     { path: '/cart',     icon: '🛒', label: 'Shopping Cart' },
+    { path: '/form',     icon: '📝', label: 'Form Validation' },
   ];
 }
 </script>

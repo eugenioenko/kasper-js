@@ -18,6 +18,7 @@ import { CartPage } from './components/Cart/CartPage.kasper';
 import { ProductGrid } from './components/Cart/ProductGrid.kasper';
 import { CartPanel } from './components/Cart/CartPanel.kasper';
 import { ProductCatalog } from './components/Products/ProductCatalog.kasper';
+import { SignupForm } from './components/Form/SignupForm.kasper';
 import { ProductForm } from './components/Products/ProductForm.kasper';
 import { App } from 'kasper-js';
 
@@ -45,6 +46,7 @@ App({
     'cart-product-grid': { component: ProductGrid },
     'cart-panel': { component: CartPanel },
     'product-catalog': { component: ProductCatalog },
+    'signup-form': { component: SignupForm },
     'product-form': { component: ProductForm },
   },
 });

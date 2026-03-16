@@ -12,6 +12,7 @@
         <route @path="/products" @component="ProductCatalog" />
         <route @path="/table" @component="DataTable" />
         <route @path="/cart" @component="CartPage" />
+        <route @path="/form" @component="SignupForm" />
       </router>
     </main>
   </div>
@@ -28,6 +29,7 @@ import { GameOfLife } from './GameOfLife.kasper';
 import { ProductCatalog } from './Products/ProductCatalog.kasper';
 import { DataTable } from './DataTable.kasper';
 import { CartPage } from './Cart/CartPage.kasper';
+import { SignupForm } from './Form/SignupForm.kasper';
 
 export class App extends Component {
   currentPath = signal(window.location.pathname);
