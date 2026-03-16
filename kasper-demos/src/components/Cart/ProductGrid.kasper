@@ -1,0 +1,165 @@
+<template>
+  <div class="pg-wrap">
+    <div class="pg-heading">
+      <h1>Products</h1>
+      <span @if="cartCount.value > 0" class="pg-cart-hint">
+        {{ cartCount.value }} item{{ cartCount.value !== 1 ? 's' : '' }} in your cart
+      </span>
+    </div>
+
+    <div class="pg-grid">
+      <div @each="product of products" @key="product.id" class="pg-card">
+        <div class="pg-card__emoji">{{ product.emoji }}</div>
+
+        <div class="pg-card__body">
+          <span class="pg-card__category">{{ product.category }}</span>
+          <h3 class="pg-card__name">{{ product.name }}</h3>
+          <span class="pg-card__price">${{ product.price.toFixed(2) }}</span>
+        </div>
+
+        <div class="pg-card__footer">
+          <span @if="getCartQty(product.id) > 0" class="pg-in-cart">
+            ✓ {{ getCartQty(product.id) }} in cart
+          </span>
+          <button @on:click="add(product)" class="pg-add-btn">
+            {{ getCartQty(product.id) > 0 ? 'Add another' : 'Add to cart' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+import { cartItems, cartCount, addToCart } from './cart-store';
+
+export class ProductGrid extends Component {
+  cartItems = cartItems;
+  cartCount = cartCount;
+
+  products = [
+    { id: 1, name: 'Mechanical Keyboard', price: 129.99, category: 'Electronics', emoji: '⌨️' },
+    { id: 2, name: 'Wireless Mouse',       price:  49.99, category: 'Electronics', emoji: '🖱️' },
+    { id: 3, name: 'USB-C Hub',            price:  39.99, category: 'Electronics', emoji: '🔌' },
+    { id: 4, name: 'Monitor Stand',        price:  59.99, category: 'Accessories', emoji: '🖥️' },
+    { id: 5, name: 'Desk Lamp',            price:  34.99, category: 'Accessories', emoji: '💡' },
+    { id: 6, name: 'Notebook',             price:  12.99, category: 'Stationery',  emoji: '📓' },
+    { id: 7, name: 'Pen Set',              price:   9.99, category: 'Stationery',  emoji: '✒️' },
+    { id: 8, name: 'Cable Organizer',      price:  14.99, category: 'Accessories', emoji: '🗂️' },
+  ];
+
+  add(product) {
+    addToCart(product);
+  }
+
+  getCartQty(id) {
+    return this.cartItems.value.find(i => i.id === id)?.qty ?? 0;
+  }
+}
+</script>
+
+<style>
+.pg-wrap {
+  min-width: 0;
+}
+
+.pg-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pg-heading h1 { margin: 0; }
+
+.pg-cart-hint {
+  font-size: 0.8rem;
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.pg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.pg-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: box-shadow 0.15s;
+}
+
+.pg-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.pg-card__emoji {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.pg-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.pg-card__category {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.pg-card__name {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.pg-card__price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 0.25rem;
+}
+
+.pg-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pg-add-btn {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pg-add-btn:hover { background: var(--color-primary-dark); }
+.pg-add-btn:active { transform: scale(0.97); }
+
+.pg-in-cart {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+</style>

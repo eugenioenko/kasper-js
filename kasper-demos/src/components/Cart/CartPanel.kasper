@@ -1,0 +1,215 @@
+<template>
+  <div class="cp-panel">
+    <div class="cp-header">
+      <h2 class="cp-title">Cart</h2>
+      <span @if="cartCount.value > 0" class="cp-badge">{{ cartCount.value }}</span>
+    </div>
+
+    <div @if="cartItems.value.length === 0" class="cp-empty">
+      <span class="cp-empty__icon">🛒</span>
+      <p>Your cart is empty</p>
+    </div>
+
+    <div @if="cartItems.value.length > 0">
+      <div class="cp-items">
+        <div @each="item of cartItems.value" @key="item.id" class="cp-item">
+          <span class="cp-item__emoji">{{ item.emoji }}</span>
+
+          <div class="cp-item__info">
+            <span class="cp-item__name">{{ item.name }}</span>
+            <span class="cp-item__subtotal">${{ (item.price * item.qty).toFixed(2) }}</span>
+          </div>
+
+          <div class="cp-item__qty">
+            <button @on:click="decrement(item.id, item.qty)" class="qty-btn">−</button>
+            <span class="qty-val">{{ item.qty }}</span>
+            <button @on:click="increment(item.id, item.qty)" class="qty-btn">+</button>
+          </div>
+
+          <button @on:click="remove(item.id)" class="cp-remove" title="Remove">✕</button>
+        </div>
+      </div>
+
+      <div class="cp-total">
+        <span>Total</span>
+        <strong>${{ cartTotal.value.toFixed(2) }}</strong>
+      </div>
+
+      <div class="cp-actions">
+        <ui-button @:onClick="checkout" @:variant="'success'">Checkout</ui-button>
+        <ui-button @:onClick="clear" @:variant="'outline'">Clear cart</ui-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+import { cartItems, cartCount, cartTotal, removeFromCart, updateQty, clearCart } from './cart-store';
+
+export class CartPanel extends Component {
+  cartItems = cartItems;
+  cartCount = cartCount;
+  cartTotal = cartTotal;
+
+  decrement(id, qty) { updateQty(id, qty - 1); }
+  increment(id, qty) { updateQty(id, qty + 1); }
+  remove(id)         { removeFromCart(id); }
+  clear()            { clearCart(); }
+
+  checkout() {
+    alert(`Order placed! Total: $${this.cartTotal.value.toFixed(2)}`);
+    clearCart();
+  }
+}
+</script>
+
+<style>
+.cp-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  position: sticky;
+  top: 2rem;
+}
+
+.cp-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+}
+
+.cp-title { margin: 0; }
+
+.cp-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+.cp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 0;
+  color: var(--color-text-muted);
+}
+
+.cp-empty__icon { font-size: 2rem; }
+.cp-empty p { margin: 0; font-size: 0.875rem; }
+
+.cp-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cp-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.cp-item__emoji { font-size: 1.25rem; flex-shrink: 0; }
+
+.cp-item__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-item__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cp-item__subtotal {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.cp-item__qty {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.qty-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  transition: background 0.1s;
+}
+
+.qty-btn:hover { background: var(--color-bg); }
+
+.qty-val {
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.cp-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  padding: 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.1s, background 0.1s;
+}
+
+.cp-remove:hover { color: var(--color-danger); background: #fff1f2; }
+
+.cp-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+
+.cp-total strong {
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.cp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+</style>

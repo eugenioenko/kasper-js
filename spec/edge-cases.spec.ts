@@ -716,6 +716,88 @@ describe("Integration Edge Cases", () => {
   });
 });
 
+describe("@: prop binding gotchas", () => {
+  it("@:prop with a call expression evaluates the call immediately during render", () => {
+    // Gotcha: @:onClick="fn()" calls fn() during render, it does NOT pass fn as a callback.
+    // The correct pattern for parameterized callbacks is @on:click="fn(arg)" on the
+    // native element, or @:onClick="fn" (reference, no args) for ui-button.
+    let callCount = 0;
+
+    class Btn extends Component {
+      static template = '<button>btn</button>';
+    }
+    const parser = new TemplateParser();
+    const registry = { 'x-btn': { component: Btn as any, nodes: parser.parse(Btn.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const entity = { doSomething() { callCount++; } };
+
+    transpiler.transpile(
+      parser.parse('<x-btn @:onClick="doSomething()"></x-btn>'),
+      entity,
+      container
+    );
+
+    // doSomething() was called once during render, not deferred until click
+    expect(callCount).toBe(1);
+
+    // The button click does nothing because args.onClick received the return value
+    // of doSomething() (undefined), not the function itself
+    container.querySelector('button')!.click();
+    expect(callCount).toBe(1); // still 1 — click did not call doSomething
+  });
+
+  it("@:prop call expression with reactive side effects causes an infinite loop", async () => {
+    // When the called function both reads AND writes the same signal, the @: reactive
+    // effect subscribes to the signal (via the read), then the write re-triggers the
+    // effect, which calls the function again — infinite loop.
+    //
+    // This is what caused the shopping cart demo to freeze: @:onClick="add(product)"
+    // where add() does cartItems.value.find() (read) then cartItems.value = [...] (write).
+    //
+    // Requires mountComponent to get the full reactive lifecycle.
+
+    // The loop only manifests when @: is inside @each — the @each subscribes to the
+    // signal, the call expression writes it, and @each tries to rebuild infinitely.
+    // This mirrors the demo exactly: @each over products, @:onClick="add(product)"
+    // where add() reads+writes cartItems.
+
+    class Btn extends Component {
+      static template = '<button>btn</button>';
+    }
+
+    class Parent extends Component {
+      products = signal([{ id: 1 }, { id: 2 }]);
+
+      addProduct(p: any) {
+        const current = this.products.value;        // READ  → @each subscribes to products
+        this.products.value = [...current, { id: current.length + 1 }]; // WRITE → @each rebuilds → calls addProduct again
+      }
+
+      static template = '<x-btn @each="p of products.value" @:onClick="addProduct(p)"></x-btn>';
+    }
+
+    const parser = new TemplateParser();
+    const registry = {
+      'x-btn': { component: Btn as any, nodes: parser.parse(Btn.template!) },
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    // During flushSync the loop hits a stack overflow synchronously.
+    // The error should contain exactly one [K007-1] code — not thousands of
+    // accumulated wrappers from each retry re-catching and re-wrapping the error.
+    let thrown: Error | null = null;
+    try { transpiler.mountComponent(Parent, container); } catch (e: any) { thrown = e; }
+
+    expect(thrown).not.toBeNull();
+    expect(thrown!.message).toMatch(/K007-1/);
+    const count = (thrown!.message.match(/K007-1/g) ?? []).length;
+    expect(count).toBe(1);
+  });
+});
+
 describe("@each + outer signal reactivity", () => {
   it("@class inside @each reacts to an outer signal change (plain array iterable)", async () => {
     // Replicates the data-table pagination bug:

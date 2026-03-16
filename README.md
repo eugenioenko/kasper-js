@@ -280,6 +280,19 @@ export class UserCard extends Component {
 
 Args are evaluated as full expressions and passed by reference. Signals passed as args remain reactive inside the child.
 
+> **Note:** `@:onClick="add(item)"` evaluates `add(item)` immediately during render and passes its return value as the prop. This is intentional — it supports patterns like factory functions that return a handler. If `add(item)` returns a function, that function becomes the click handler. If it returns `undefined` (a void function), the prop receives `undefined` and the click does nothing. When the called function has reactive side effects that write to a signal it also reads, this creates an infinite reactive loop. In development mode, Kasper warns when a call expression is detected in an `on*` prop binding as a reminder.
+>
+> ```html
+> <!-- add(item) is called during render — if it returns a function, that's the handler -->
+> <my-btn @:onClick="add(item)"></my-btn>
+>
+> <!-- pass a method reference directly (no args) -->
+> <my-btn @:onClick="add"></my-btn>
+>
+> <!-- for parameterized handlers on native elements, use @on:click -->
+> <button @on:click="add(item)">Add</button>
+> ```
+
 ### Registration
 
 ```ts

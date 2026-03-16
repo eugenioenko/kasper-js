@@ -14,6 +14,9 @@ import { UISidebar } from './components/UI/UISidebar.kasper';
 import { UIContent } from './components/UI/UIContent.kasper';
 import { GameOfLife } from './components/GameOfLife.kasper';
 import { DataTable } from './components/DataTable.kasper';
+import { CartPage } from './components/Cart/CartPage.kasper';
+import { ProductGrid } from './components/Cart/ProductGrid.kasper';
+import { CartPanel } from './components/Cart/CartPanel.kasper';
 import { ProductCatalog } from './components/Products/ProductCatalog.kasper';
 import { ProductForm } from './components/Products/ProductForm.kasper';
 import { App } from 'kasper-js';
@@ -38,6 +41,9 @@ App({
     'ui-content': { component: UIContent },
     'game-of-life': { component: GameOfLife },
     'data-table': { component: DataTable },
+    'cart-page': { component: CartPage },
+    'cart-product-grid': { component: ProductGrid },
+    'cart-panel': { component: CartPanel },
     'product-catalog': { component: ProductCatalog },
     'product-form': { component: ProductForm },
   },

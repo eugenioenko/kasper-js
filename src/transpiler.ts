@@ -141,31 +141,27 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
-    try {
-      const text = document.createTextNode("");
-      if (parent) {
-        if ((parent as any).insert && typeof (parent as any).insert === "function") {
-          (parent as any).insert(text);
-        } else {
-          parent.appendChild(text);
-        }
+    const text = document.createTextNode("");
+    if (parent) {
+      if ((parent as any).insert && typeof (parent as any).insert === "function") {
+        (parent as any).insert(text);
+      } else {
+        parent.appendChild(text);
       }
-
-      const stop = this.scopedEffect(() => {
-        const newValue = this.evaluateTemplateString(node.value);
-        const instance = this.interpreter.scope.get("$instance");
-        if (instance) {
-          queueUpdate(instance, () => {
-            text.textContent = newValue;
-          });
-        } else {
-          text.textContent = newValue;
-        }
-      });
-      this.trackEffect(text, stop);
-    } catch (e: any) {
-      this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, "text node");
     }
+
+    const stop = this.scopedEffect(() => {
+      const newValue = this.evaluateTemplateString(node.value);
+      const instance = this.interpreter.scope.get("$instance");
+      if (instance) {
+        queueUpdate(instance, () => {
+          text.textContent = newValue;
+        });
+      } else {
+        text.textContent = newValue;
+      }
+    });
+    this.trackEffect(text, stop);
   }
 
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
@@ -741,6 +737,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       return element;
     } catch (e: any) {
+      if (e instanceof KasperError && e.code === KErrorCode.RUNTIME_ERROR) throw e;
       this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, node.name);
     }
   }
@@ -752,6 +749,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const result: Record<string, any> = {};
     for (const arg of args) {
       const key = arg.name.split(":")[1];
+      if (this.mode === "development" && key.toLowerCase().startsWith("on")) {
+        const trimmed = arg.value.trim();
+        const isCallExpr = /^[\w$.][\w$.]*\s*\(.*\)\s*$/.test(trimmed) && !trimmed.includes("=>");
+        if (isCallExpr) {
+          console.warn(
+            `[Kasper] @:${key}="${arg.value}" — the expression is called during render and its return value is passed as the prop. ` +
+            `If it returns a function, that function becomes the handler (factory pattern). ` +
+            `If it returns undefined, the prop receives undefined. ` +
+            `If the function has reactive side effects, ensure it does not both read and write the same signal.`
+          );
+        }
+      }
       result[key] = this.execute(arg.value);
     }
     return result;

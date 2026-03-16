@@ -30,6 +30,7 @@ export class UISidebar extends Component {
     { path: '/game',     icon: '🎮', label: 'Game of Life' },
     { path: '/products', icon: '🛍️', label: 'Products' },
     { path: '/table',    icon: '📊', label: 'Data Table' },
+    { path: '/cart',     icon: '🛒', label: 'Shopping Cart' },
   ];
 }
 </script>

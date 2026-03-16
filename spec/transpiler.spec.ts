@@ -686,7 +686,7 @@ describe("Transpiler", () => {
 
   describe("error handling", () => {
     it("throws error on invalid expression in interpolation", () => {
-      expect(() => transpile("{{ 1 + }}")).toThrow(/\[K007-1\].*\[K004-3\]/s);
+      expect(() => transpile("{{ 1 + }}")).toThrow(/\[K004-3\]/);
     });
 
     it("includes the tag name in the error context", () => {
