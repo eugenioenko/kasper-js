@@ -156,16 +156,23 @@ describe("Transpiler", () => {
       expect(div.hasAttribute("title")).toBe(false);
     });
 
-    it("merges static class and shorthand @class", () => {
-      const container = transpile('<div class="static" @class="\'dynamic\'"></div>');
+    it("@class sets the class attribute to the expression value", () => {
+      const container = transpile('<div @class="\'foo bar\'"></div>');
       const div = container.querySelector("div")!;
-      expect(div.getAttribute("class")).toBe("static dynamic");
+      expect(div.getAttribute("class")).toBe("foo bar");
     });
 
-    it("surgically swaps @class values when signal changes", async () => {
+    it("@class overrides any static class attribute", () => {
+      // @class replaces — static class should be put inside the @class expression
+      const container = transpile('<div class="static" @class="\'dynamic\'"></div>');
+      const div = container.querySelector("div")!;
+      expect(div.getAttribute("class")).toBe("dynamic");
+    });
+
+    it("@class updates reactively when signal changes", async () => {
       const state = signal("selected");
       const entity = { state };
-      const container = transpile('<div class="base" @class="state.value"></div>', entity);
+      const container = transpile('<div @class="\'base \' + state.value"></div>', entity);
       const div = container.querySelector("div")!;
 
       expect(div.getAttribute("class")).toBe("base selected");

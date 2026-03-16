@@ -295,9 +295,10 @@ user.value.name = 'Alice';                       // does NOT trigger ✗
 <a @href="url" @aria-label="linkLabel">link</a>
 <button @disabled="isLoading">Submit</button>
 
-<!-- Object form — @attr="{ ... }" binds multiple attributes at once; class and style are merged -->
+<!-- Object form — @attr="{ ... }" binds multiple attributes at once -->
 <div @attr="{ class: isActive ? 'active' : '', disabled: isDisabled }"></div>
-<div @class="isActive ? 'active' : ''"></div>
+<!-- @class replaces the class attribute entirely — put static and dynamic classes together in the expression -->
+<div @class="'base-class ' + (isActive ? 'active' : '')"></div>
 <div @style="{ color: textColor }"></div>
 <!-- Both forms use setAttribute — reliable for most attributes -->
 <!-- Exception: boolean DOM properties (checked, selected) diverge from their attribute after user interaction -->

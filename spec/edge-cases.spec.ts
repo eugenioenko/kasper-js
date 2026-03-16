@@ -963,3 +963,58 @@ describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
     expect(newDivs[2]).toBe(firstNode);
   });
 });
+
+describe("@class reactivity", () => {
+  it("@class with a multi-token expression does not accumulate on repeated updates", async () => {
+    // Bug: @class reads element.className on each reactive update instead of the
+    // original static class. When the expression returns multiple tokens like
+    // 'sf-field sf-field--error', the filter removes only exact token matches —
+    // but lastDynamicValue is the full multi-token string, not individual tokens.
+    // Result: each update appends the full string again.
+    const hasError = signal(true);
+
+    const source = `<div @class="hasError.value ? 'box box--error' : 'box'">content</div>`;
+    const container = transpile(source, { hasError });
+    const div = container.querySelector("div")!;
+
+    expect(div.className).toBe("box box--error");
+
+    // Toggle to no-error and back several times
+    hasError.value = false;
+    await nextTick();
+    expect(div.className).toBe("box");
+
+    hasError.value = true;
+    await nextTick();
+    // Bug: would produce "box box--error box box--error" after second toggle
+    expect(div.className).toBe("box box--error");
+
+    hasError.value = false;
+    await nextTick();
+    expect(div.className).toBe("box");
+  });
+
+  it("@class overrides a static class attribute — static class goes in the expression", async () => {
+    // @class replaces the class attribute entirely.
+    // Static + dynamic classes should both be in the @class expression.
+    const active = signal(false);
+
+    const source = `<div @class="'base' + (active.value ? ' active' : '')">x</div>`;
+    const container = transpile(source, { active });
+    const div = container.querySelector("div")!;
+
+    expect(div.className).toBe("base");
+
+    active.value = true;
+    await nextTick();
+    expect(div.className).toBe("base active");
+
+    active.value = false;
+    await nextTick();
+    expect(div.className).toBe("base");
+
+    active.value = true;
+    await nextTick();
+    expect(div.className).toBe("base active");
+  });
+});

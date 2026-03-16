@@ -655,18 +655,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const realName = (attr as KNode.Attribute).name.slice(1);
 
           if (realName === "class") {
-            let lastDynamicValue = "";
             const stop = this.scopedEffect(() => {
               const value = this.execute((attr as KNode.Attribute).value);
               const instance = this.interpreter.scope.get("$instance");
               const task = () => {
-                const staticClass = (element as HTMLElement).getAttribute("class") || "";
-                const currentClasses = staticClass.split(" ")
-                  .filter(c => c !== lastDynamicValue && c !== "")
-                  .join(" ");
-                const newValue = currentClasses ? `${currentClasses} ${value}` : value;
-                (element as HTMLElement).setAttribute("class", newValue);
-                lastDynamicValue = value;
+                (element as HTMLElement).setAttribute("class", value);
               };
 
               if (instance) {
