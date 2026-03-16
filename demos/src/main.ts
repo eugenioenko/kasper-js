@@ -20,6 +20,7 @@ import { CartPanel } from './components/Cart/CartPanel.kasper';
 import { ProductCatalog } from './components/Products/ProductCatalog.kasper';
 import { SignupForm } from './components/Form/SignupForm.kasper';
 import { Dashboard } from './components/Dashboard/Dashboard.kasper';
+import { MarkdownEditor } from './components/MarkdownEditor.kasper';
 import { ProductForm } from './components/Products/ProductForm.kasper';
 import { App } from 'kasper-js';
 
@@ -49,6 +50,7 @@ App({
     'product-catalog': { component: ProductCatalog },
     'signup-form': { component: SignupForm },
     'dashboard': { component: Dashboard },
+    'markdown-editor': { component: MarkdownEditor },
     'product-form': { component: ProductForm },
   },
 });

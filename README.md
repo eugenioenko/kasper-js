@@ -86,7 +86,7 @@ App({
 - **Event modifiers** — `@on:submit.prevent`, `@on:click.stop`, `@on:click.once`, `@on:scroll.passive`, `@on:click.capture`. All `@on:` listeners are registered via the component's `AbortController` and removed automatically on destroy.
 - **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template — no configuration object needed.
 - **Slots** — default and named content transclusion via `<slot />` and `@slot`. Named slots use `@name` / `@slot` for attribute consistency across the framework.
-- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
+- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle — after `onMount` on first render, then after each reactive update. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
 - **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. 
 - **Manual rendering** — `this.render()` triggers a full template teardown and rebuild for cases where imperative updates are preferred over reactive bindings. Prefer signals for normal use; `render()` exists for third-party library integration and non-reactive data sources.
 - **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function` — compatible with strict Content Security Policies out of the box.
@@ -330,7 +330,7 @@ export class DataTable extends Component {
   }
 
   onRender() {
-    // Fires after every render cycle — first render and every reactive update.
+    // Fires after every render cycle — after onMount on first render, then after each reactive update.
     // Use for things that must run on each update: scroll sync, external state.
     // Do not use for one-time setup — that belongs in onMount.
     console.log('table rendered, rows:', this.rows.value.length);

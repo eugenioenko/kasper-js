@@ -901,20 +901,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       }
     };
 
-    if (typeof component.onMount === "function") component.onMount();
-
     const scope = new Scope(null, component);
     scope.set("$instance", component);
     const prev = this.interpreter.scope;
     this.interpreter.scope = scope;
-    
+
     flushSync(() => {
       this.createSiblings(nodes, host);
-      if (typeof component.onRender === "function") component.onRender();
     });
-    
+
     this.interpreter.scope = prev;
 
+    if (typeof component.onMount === "function") component.onMount();
     if (typeof component.onRender === "function") component.onRender();
   }
 

@@ -12,7 +12,7 @@ Every Kasper component goes through a predictable lifecycle from creation to rem
 | Hook | When it fires |
 |---|---|
 | `onMount()` | After the first render — DOM is ready, args are populated |
-| `onRender()` | After every render — DOM is ready for querying/measuring |
+| `onRender()` | After every render (fires after `onMount` on first render, then after each reactive update) |
 | `onChanges()` | Before a re-render triggered by a signal change |
 | `onDestroy()` | When the component is removed from the DOM — use for cleanup |
 
@@ -68,7 +68,7 @@ class UserProfile extends Component {
 
 ## onRender()
 
-Called **after every render cycle** — both the first render and every subsequent reactive update. The DOM is live and queryable at this point.
+Called **after every render cycle**. On first mount it fires after `onMount`. On subsequent reactive updates it fires after the DOM is patched. The DOM is live and queryable at this point.
 
 Use it to:
 - Scroll to a position after new content is added
@@ -145,8 +145,8 @@ class Ticker extends Component {
 
 ```
 new ComponentClass()
-  └─ onMount()
   └─ template rendered into DOM
+  └─ onMount()
   └─ onRender()
 ```
 
