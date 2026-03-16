@@ -1,0 +1,123 @@
+<template>
+  <div class="todo-app">
+    <h1>Todo App</h1>
+    <div class="input-group">
+      <input
+        type="text"
+        placeholder="What needs to be done?"
+        @value="newTodo.value"
+        @on:input="newTodo.value = $event.target.value"
+        @on:keydown.enter="addTodo()"
+      />
+      <ui-button @:onClick="addTodo" @:variant="'primary'">Add</ui-button>
+      </div>
+
+      <ul @if="todos.value.length">
+      <li @each="todo of todos.value" @key="todo.id" @class="todo.done.value ? 'completed' : ''">
+        <input 
+          type="checkbox" 
+          @checked="todo.done.value" 
+          @on:change="todo.done.value = $event.target.checked" 
+        />
+        <span>{{todo.text}}</span>
+        <ui-button @:onClick="() => removeTodo(todo.id)" @:variant="'outline'">×</ui-button>
+      </li>
+      </ul>
+      <p @else>No todos yet. Add one above!</p>
+
+      <div class="footer" @if="todos.value.length">
+      <span>{{remaining.value}} items left</span>
+      <ui-button @:onClick="clearCompleted" @:variant="'secondary'">Clear completed</ui-button>
+      </div>
+  </div>
+</template>
+
+<script>
+  import { Component, signal } from "kasper-js";
+
+  export class TodoApp extends Component {
+    newTodo = signal("");
+    todos = signal([]);
+
+    remaining = this.computed(
+      () => this.todos.value.filter((t) => !t.done.value).length,
+    );
+
+    addTodo() {
+      const text = this.newTodo.value.trim();
+      if (!text) return;
+
+      this.todos.value = [
+        ...this.todos.value,
+        { id: Date.now(), text, done: signal(false) },
+      ];
+      this.newTodo.value = "";
+    }
+
+    removeTodo(id) {
+      this.todos.value = this.todos.value.filter((t) => t.id !== id);
+    }
+
+    clearCompleted() {
+      this.todos.value = this.todos.value.filter((t) => !t.done.value);
+    }
+  }
+</script>
+
+<style>
+  .todo-app {
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .input-group input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  li.completed span {
+    text-decoration: line-through;
+    color: #888;
+  }
+
+  li span {
+    flex: 1;
+  }
+
+  .footer {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  button {
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+  }
+</style>

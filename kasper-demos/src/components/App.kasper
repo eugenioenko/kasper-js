@@ -1,0 +1,88 @@
+<template>
+  <div class="app-shell">
+    <ui-sidebar @:onNavigate="navigate" @:currentPath="currentPath"></ui-sidebar>
+
+    <main class="app-main">
+      <router>
+        <route @path="/" @component="Home" />
+        <route @path="/todo" @component="TodoApp" />
+        <route @path="/counter" @component="CounterExample" />
+        <route @path="/kanban" @component="KanbanBoard" />
+        <route @path="/game" @component="GameOfLife" />
+        <route @path="/products" @component="ProductCatalog" />
+        <route @path="/table" @component="DataTable" />
+      </router>
+    </main>
+  </div>
+</template>
+
+<script>
+import { Component, navigate, signal } from 'kasper-js';
+import { UISidebar } from './UI/UISidebar.kasper';
+import { Home } from './Home.kasper';
+import { TodoApp } from './TodoApp.kasper';
+import { CounterExample } from './CounterExample.kasper';
+import { KanbanBoard } from './KanbanBoard.kasper';
+import { GameOfLife } from './GameOfLife.kasper';
+import { ProductCatalog } from './Products/ProductCatalog.kasper';
+import { DataTable } from './DataTable.kasper';
+
+export class App extends Component {
+  currentPath = signal(window.location.pathname);
+
+  navigate(path) {
+    navigate(path);
+    this.currentPath.value = path;
+  }
+}
+</script>
+
+<style>
+:root {
+  /* Semantic Colors */
+  --color-primary: #6366f1;
+  --color-primary-dark: #4f46e5;
+  --color-success: #10b981;
+  --color-danger: #f43f5e;
+  --color-warning: #f59e0b;
+  --color-info: #0ea5e9;
+
+  /* Grays */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  color: #0f172a;
+  letter-spacing: -0.025em;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+</style>

@@ -1,0 +1,90 @@
+<template>
+  <nav class="ui-navbar">
+    <div class="ui-navbar-inner">
+      <a @on:click.prevent="args.onNavigate('/')" href="/" class="logo">
+        <span class="logo-icon">👻</span> Kasper Demos
+      </a>
+      <div class="nav-links">
+        <a @on:click.prevent="args.onNavigate('/')" href="/">Home</a>
+        <a @on:click.prevent="args.onNavigate('/todo')" href="/todo">Todo</a>
+        <a @on:click.prevent="navigate('/counter')" href="/counter">Counter</a>
+        <a @on:click.prevent="navigate('/kanban')" href="/kanban">Kanban</a>
+        <a @on:click.prevent="navigate('/game')" href="/game">Game</a>
+        <a @on:click.prevent="navigate('/products')" href="/products">Products</a>
+      </div>
+    </div>
+  </nav>
+</template>
+
+<script>
+import { Component, navigate } from 'kasper-js';
+
+export class UINavbar extends Component {
+  navigate(path) {
+    if (this.args.onNavigate) {
+      this.args.onNavigate(path);
+    } else {
+      navigate(path);
+    }
+  }
+}
+</script>
+
+<style>
+.ui-navbar {
+  background: white;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.75rem 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8);
+}
+.ui-navbar-inner {
+  width: 100%;
+  max-width: var(--max-content-width, 1280px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  box-sizing: border-box;
+}
+.logo {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: #0f172a;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.logo-icon {
+  background: var(--color-primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+.nav-links a {
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+.nav-links a:hover {
+  color: var(--color-primary);
+}
+</style>

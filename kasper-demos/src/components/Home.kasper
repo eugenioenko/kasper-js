@@ -1,0 +1,95 @@
+<template>
+  <div class="home">
+    <h1>Kasper.js Demos</h1>
+    <p>Explore these examples of Kasper.js features and components.</p>
+    <ul class="example-list">
+      <li>
+        <a @on:click.prevent="navigate('/todo')" href="/todo">
+          <strong>Todo App</strong>
+          <span>A classic Todo application with signals, effects, and list reconciliation.</span>
+        </a>
+      </li>
+      <li>
+        <a @on:click.prevent="navigate('/counter')" href="/counter">
+          <strong>Counter & Props</strong>
+          <span>Demonstrates reactivity, computed signals, and passing data to child components.</span>
+        </a>
+      </li>
+      <li>
+        <a @on:click.prevent="navigate('/kanban')" href="/kanban">
+          <strong>Kanban Board</strong>
+          <span>A drag-and-drop task board with modular components and dialogs.</span>
+        </a>
+      </li>
+      <li>
+        <a @on:click.prevent="navigate('/game')" href="/game">
+          <strong>Game of Life</strong>
+          <span>A 50x50 grid simulation demonstrating high-performance reactive updates.</span>
+        </a>
+      </li>
+      <li>
+        <a @on:click.prevent="navigate('/products')" href="/products">
+          <strong>Product Catalog</strong>
+          <span>A full CRUD application with an external REST API, search, and sorting.</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+import { Component, navigate } from 'kasper-js';
+
+export class Home extends Component {
+  navigate(path) {
+    navigate(path);
+  }
+}
+</script>
+
+<style>
+.home {
+  padding: 1rem;
+  text-align: center;
+}
+
+.example-list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem auto 0 auto;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 400px));
+  justify-content: center;
+}
+
+.example-list a {
+  display: block;
+  padding: 1.5rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  background: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.example-list a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-color: #3498db;
+}
+
+.example-list strong {
+  display: block;
+  font-size: 1.25rem;
+  color: #3498db;
+  margin-bottom: 0.5rem;
+}
+
+.example-list span {
+  color: #666;
+  font-size: 0.95rem;
+}
+</style>

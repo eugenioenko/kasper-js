@@ -1,0 +1,56 @@
+<template>
+  <ui-dialog @:isOpen="args.isOpen" @:onClose="args.onClose" @:title="'Add New Task'">
+    <div class="form-group">
+      <label>Title</label>
+      <input 
+        type="text" 
+        @value="title.value" 
+        @on:input="title.value = $event.target.value" 
+        placeholder="Enter task title"
+      />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea 
+        @value="description.value" 
+        @on:input="description.value = $event.target.value" 
+        placeholder="Enter details"
+      ></textarea>
+    </div>
+    
+    <ui-button @slot="footer" @:onClick="args.onClose" @:variant="'secondary'">Cancel</ui-button>
+    <ui-button @slot="footer" @:onClick="handleSubmit" @:variant="'primary'">Create Task</ui-button>
+  </ui-dialog>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+export class AddTaskDialog extends Component {
+  title = signal('');
+  description = signal('');
+
+  handleSubmit() {
+    const t = this.title.value.trim();
+    if (!t) return;
+    
+    this.args.onAdd({
+      title: t,
+      description: this.description.value
+    });
+    
+    this.title.value = '';
+    this.description.value = '';
+    this.args.onClose();
+  }
+}
+</script>
+
+<style>
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem; }
+.form-group input, .form-group textarea {
+  width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
+}
+.form-group textarea { min-height: 80px; resize: vertical; }
+</style>

@@ -1,0 +1,86 @@
+<template>
+  <div class="kanban-page">
+    <div class="kanban-header">
+      <h1>Kanban Board</h1>
+      <ui-button @:onClick="() => isDialogOpen.value = true" @:variant="'success'">+ New Task</ui-button>
+    </div>
+
+    <div class="board-layout">
+      <kanban-column 
+        @:title="'To Do'" 
+        @:status="'todo'" 
+        @:allTasks="tasks" 
+        @:onMoveTask="moveTask"
+      ></kanban-column>
+
+      <kanban-column 
+        @:title="'In Progress'" 
+        @:status="'progress'" 
+        @:allTasks="tasks" 
+        @:onMoveTask="moveTask"
+      ></kanban-column>
+
+      <kanban-column 
+        @:title="'Done'" 
+        @:status="'done'" 
+        @:allTasks="tasks" 
+        @:onMoveTask="moveTask"
+      ></kanban-column>
+    </div>
+
+    <add-task-dialog 
+      @:isOpen="isDialogOpen" 
+      @:onClose="closeDialog" 
+      @:onAdd="addTask"
+    ></add-task-dialog>
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+export class KanbanBoard extends Component {
+  isDialogOpen = signal(false);
+  tasks = signal([
+    { id: '1', title: 'Learn Kasper.js', description: 'Read the documentation and build a demo.', status: 'todo' },
+    { id: '2', title: 'Setup Project', description: 'Initialize the vite project with kasper plugin.', status: 'done' }
+  ]);
+
+  addTask(taskData) {
+    const newTask = {
+      id: Date.now().toString(),
+      ...taskData,
+      status: 'todo'
+    };
+    this.tasks.value = [...this.tasks.value, newTask];
+  }
+
+  moveTask(taskId, newStatus) {
+    this.tasks.value = this.tasks.value.map(t => 
+      t.id === taskId ? { ...t, status: newStatus } : t
+    );
+  }
+
+  closeDialog() {
+    this.isDialogOpen.value = false;
+  }
+}
+</script>
+
+<style>
+.kanban-page {
+  padding: 1.5rem;
+}
+.kanban-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+.board-layout {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+</style>

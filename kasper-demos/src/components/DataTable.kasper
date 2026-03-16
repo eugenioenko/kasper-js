@@ -1,0 +1,392 @@
+<template>
+  <div class="dt-wrap">
+    <h1>Employee Directory</h1>
+
+    <div class="dt-toolbar">
+      <input
+        type="text"
+        class="dt-search"
+        placeholder="Search name, role, or department…"
+        @on:input="onSearch($event)"
+      />
+      <select class="dt-select" @on:change="onDeptFilter($event)">
+        <option @each="dept of departments" @value="dept">{{ dept }}</option>
+      </select>
+      <span class="dt-count">{{ filteredSorted.value.length }} employees</span>
+    </div>
+
+    <div class="dt-wrapper">
+      <table class="dt-table">
+        <thead>
+          <tr>
+            <th
+              @each="col of columns"
+              @on:click="sort(col.key)"
+              @class="'dt-th' + (sortColumn.value === col.key ? ' dt-th--sorted' : '')"
+            >
+              {{ col.label }}{{ sortColumn.value === col.key ? (sortDir.value === 'asc' ? ' ↑' : ' ↓') : '' }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr @each="row of rows.value" class="dt-row">
+            <td class="td-name">{{ row.name }}</td>
+            <td>{{ row.department }}</td>
+            <td>{{ row.role }}</td>
+            <td class="td-salary">{{ formatSalary(row.salary) }}</td>
+            <td>
+              <span @class="'badge badge--' + row.status.toLowerCase().replace(' ', '-')">{{ row.status }}</span>
+            </td>
+            <td>{{ row.joined }}</td>
+          </tr>
+          <tr @if="rows.value.length === 0">
+            <td colspan="6" class="dt-empty">No employees match your search.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dt-footer">
+      <span class="dt-page-info">Page {{ page.value }} of {{ totalPages.value }}</span>
+      <div class="dt-pagination">
+        <ui-button @:onClick="prevPage" @:variant="'outline'" @:disabled="page.value === 1">← Prev</ui-button>
+        <button
+          @each="btn of pageButtons.value"
+          @on:click="goToPage(btn.num)"
+          @class="'pg-btn' + (btn.active ? ' pg-btn--active' : '')"
+        >{{ btn.num }}</button>
+        <ui-button @:onClick="nextPage" @:variant="'outline'" @:disabled="page.value === totalPages.value">Next →</ui-button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+export class DataTable extends Component {
+  searchQuery = signal('');
+  filterDept = signal('All');
+  sortColumn = signal('name');
+  sortDir = signal('asc');
+  page = signal(1);
+  pageSize = 10;
+
+  departments = ['All', 'Design', 'Engineering', 'Finance', 'HR', 'Marketing', 'Sales'];
+
+  columns = [
+    { key: 'name',       label: 'Name' },
+    { key: 'department', label: 'Department' },
+    { key: 'role',       label: 'Role' },
+    { key: 'salary',     label: 'Salary' },
+    { key: 'status',     label: 'Status' },
+    { key: 'joined',     label: 'Joined' },
+  ];
+
+  data = [
+    { id:  1, name: 'Alice Johnson',   department: 'Engineering', role: 'Senior Engineer',     salary: 120000, status: 'Active',   joined: 2019 },
+    { id:  2, name: 'Bob Martinez',    department: 'Marketing',   role: 'Manager',             salary: 92000,  status: 'Active',   joined: 2020 },
+    { id:  3, name: 'Carlos Rivera',   department: 'Engineering', role: 'Lead Engineer',       salary: 145000, status: 'Active',   joined: 2018 },
+    { id:  4, name: 'Diana Chen',      department: 'Design',      role: 'Senior Designer',     salary: 105000, status: 'On Leave', joined: 2021 },
+    { id:  5, name: 'Ethan Kim',       department: 'Engineering', role: 'Engineer',            salary: 85000,  status: 'Active',   joined: 2022 },
+    { id:  6, name: 'Fiona Walsh',     department: 'HR',          role: 'HR Manager',          salary: 88000,  status: 'Active',   joined: 2020 },
+    { id:  7, name: 'George Patel',    department: 'Finance',     role: 'Financial Analyst',   salary: 78000,  status: 'Active',   joined: 2021 },
+    { id:  8, name: 'Hannah Schmidt',  department: 'Sales',       role: 'Account Executive',   salary: 82000,  status: 'Inactive', joined: 2019 },
+    { id:  9, name: 'Ivan Petrov',     department: 'Engineering', role: 'Staff Engineer',      salary: 165000, status: 'Active',   joined: 2017 },
+    { id: 10, name: 'Julia Torres',    department: 'Marketing',   role: 'Director',            salary: 155000, status: 'Active',   joined: 2016 },
+    { id: 11, name: 'Kevin Brown',     department: 'Sales',       role: 'Sales Manager',       salary: 115000, status: 'Active',   joined: 2019 },
+    { id: 12, name: 'Laura Davis',     department: 'Design',      role: 'Designer',            salary: 75000,  status: 'Active',   joined: 2023 },
+    { id: 13, name: 'Mike Wilson',     department: 'Finance',     role: 'Controller',          salary: 140000, status: 'Active',   joined: 2018 },
+    { id: 14, name: 'Nina Okafor',     department: 'HR',          role: 'Recruiter',           salary: 70000,  status: 'Active',   joined: 2022 },
+    { id: 15, name: 'Oscar Zhang',     department: 'Engineering', role: 'Engineering Manager', salary: 160000, status: 'Active',   joined: 2017 },
+    { id: 16, name: 'Priya Nair',      department: 'Marketing',   role: 'Senior Analyst',      salary: 88000,  status: 'On Leave', joined: 2020 },
+    { id: 17, name: 'Quinn Foster',    department: 'Sales',       role: 'Sales Rep',           salary: 62000,  status: 'Active',   joined: 2023 },
+    { id: 18, name: 'Rachel Adams',    department: 'Design',      role: 'Lead Designer',       salary: 118000, status: 'Active',   joined: 2019 },
+    { id: 19, name: 'Sam Lee',         department: 'Engineering', role: 'Senior Engineer',     salary: 125000, status: 'Active',   joined: 2019 },
+    { id: 20, name: 'Tina Russo',      department: 'Finance',     role: 'Senior Analyst',      salary: 95000,  status: 'Inactive', joined: 2020 },
+    { id: 21, name: 'Uma Singh',       department: 'HR',          role: 'HR Director',         salary: 145000, status: 'Active',   joined: 2016 },
+    { id: 22, name: 'Victor Hoffman',  department: 'Sales',       role: 'Director of Sales',   salary: 165000, status: 'Active',   joined: 2015 },
+    { id: 23, name: 'Wendy Clark',     department: 'Marketing',   role: 'Analyst',             salary: 68000,  status: 'Active',   joined: 2023 },
+    { id: 24, name: 'Xavier Diaz',     department: 'Engineering', role: 'Engineer',            salary: 88000,  status: 'Active',   joined: 2022 },
+    { id: 25, name: 'Yuki Tanaka',     department: 'Design',      role: 'UX Researcher',       salary: 95000,  status: 'On Leave', joined: 2020 },
+    { id: 26, name: 'Zoe Cooper',      department: 'Finance',     role: 'Finance Manager',     salary: 130000, status: 'Active',   joined: 2018 },
+    { id: 27, name: 'Aaron Murphy',    department: 'Engineering', role: 'Lead Engineer',       salary: 148000, status: 'Active',   joined: 2018 },
+    { id: 28, name: 'Beth Nguyen',     department: 'HR',          role: 'HR Coordinator',      salary: 58000,  status: 'Active',   joined: 2024 },
+    { id: 29, name: 'Cole Harrison',   department: 'Sales',       role: 'Account Executive',   salary: 78000,  status: 'Active',   joined: 2021 },
+    { id: 30, name: 'Dana Flores',     department: 'Marketing',   role: 'Manager',             salary: 98000,  status: 'Inactive', joined: 2019 },
+    { id: 31, name: 'Eli Carter',      department: 'Design',      role: 'Senior Designer',     salary: 108000, status: 'Active',   joined: 2020 },
+    { id: 32, name: 'Faye Morales',    department: 'Finance',     role: 'Financial Analyst',   salary: 80000,  status: 'Active',   joined: 2021 },
+    { id: 33, name: 'Greg Kim',        department: 'Engineering', role: 'Staff Engineer',      salary: 172000, status: 'Active',   joined: 2016 },
+    { id: 34, name: 'Hana Iwata',      department: 'Design',      role: 'Designer',            salary: 72000,  status: 'Active',   joined: 2023 },
+    { id: 35, name: 'Isaac Romano',    department: 'Sales',       role: 'Sales Rep',           salary: 60000,  status: 'Active',   joined: 2023 },
+    { id: 36, name: 'Jade Williams',   department: 'HR',          role: 'Recruiter',           salary: 68000,  status: 'On Leave', joined: 2022 },
+    { id: 37, name: 'Kyle Bennett',    department: 'Engineering', role: 'Senior Engineer',     salary: 122000, status: 'Active',   joined: 2020 },
+    { id: 38, name: 'Luna Castillo',   department: 'Marketing',   role: 'Senior Analyst',      salary: 90000,  status: 'Active',   joined: 2021 },
+    { id: 39, name: 'Mason Turner',    department: 'Finance',     role: 'Controller',          salary: 138000, status: 'Active',   joined: 2018 },
+    { id: 40, name: 'Nadia Volkov',    department: 'Sales',       role: 'Sales Manager',       salary: 112000, status: 'Inactive', joined: 2018 },
+    { id: 41, name: 'Owen Jenkins',    department: 'Engineering', role: 'Engineer',            salary: 90000,  status: 'Active',   joined: 2022 },
+    { id: 42, name: 'Paula Ortega',    department: 'HR',          role: 'HR Manager',          salary: 85000,  status: 'Active',   joined: 2020 },
+    { id: 43, name: 'Ron Baker',       department: 'Finance',     role: 'Senior Analyst',      salary: 97000,  status: 'Active',   joined: 2020 },
+    { id: 44, name: 'Sarah Mitchell',  department: 'Marketing',   role: 'Director',            salary: 158000, status: 'Active',   joined: 2016 },
+    { id: 45, name: 'Thomas Brooks',   department: 'Engineering', role: 'Engineering Manager', salary: 162000, status: 'Active',   joined: 2017 },
+    { id: 46, name: 'Vera Santos',     department: 'Design',      role: 'Lead Designer',       salary: 115000, status: 'Active',   joined: 2019 },
+    { id: 47, name: 'Will Thompson',   department: 'Sales',       role: 'Director of Sales',   salary: 168000, status: 'Inactive', joined: 2015 },
+    { id: 48, name: 'Xena Reyes',      department: 'Finance',     role: 'Finance Manager',     salary: 132000, status: 'Active',   joined: 2019 },
+    { id: 49, name: 'Yvonne Laurent',  department: 'HR',          role: 'HR Director',         salary: 148000, status: 'Active',   joined: 2017 },
+    { id: 50, name: 'Zach Morris',     department: 'Engineering', role: 'Senior Engineer',     salary: 118000, status: 'On Leave', joined: 2021 },
+  ];
+
+  filteredSorted = this.computed(() => {
+    const q = this.searchQuery.value.toLowerCase();
+    const dept = this.filterDept.value;
+    let result = this.data;
+    if (dept !== 'All') result = result.filter(r => r.department === dept);
+    if (q) result = result.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.role.toLowerCase().includes(q) ||
+      r.department.toLowerCase().includes(q)
+    );
+    const col = this.sortColumn.value;
+    const dir = this.sortDir.value === 'asc' ? 1 : -1;
+    return [...result].sort((a, b) => {
+      if (a[col] < b[col]) return -dir;
+      if (a[col] > b[col]) return dir;
+      return 0;
+    });
+  });
+
+  totalPages = this.computed(() =>
+    Math.max(1, Math.ceil(this.filteredSorted.value.length / this.pageSize))
+  );
+
+  rows = this.computed(() => {
+    const start = (this.page.value - 1) * this.pageSize;
+    return this.filteredSorted.value.slice(start, start + this.pageSize);
+  });
+
+  pageButtons = this.computed(() =>
+    Array.from({ length: this.totalPages.value }, (_, i) => ({
+      num: i + 1,
+      active: i + 1 === this.page.value,
+    }))
+  );
+
+  formatSalary(n) {
+    return '$' + n.toLocaleString();
+  }
+
+  onSearch(event) {
+    this.searchQuery.value = event.target.value;
+    this.page.value = 1;
+  }
+
+  onDeptFilter(event) {
+    this.filterDept.value = event.target.value;
+    this.page.value = 1;
+  }
+
+  sort(col) {
+    if (this.sortColumn.value === col) {
+      this.sortDir.value = this.sortDir.value === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn.value = col;
+      this.sortDir.value = 'asc';
+    }
+    this.page.value = 1;
+  }
+
+  prevPage() {
+    if (this.page.value > 1) this.page.value--;
+  }
+
+  nextPage() {
+    if (this.page.value < this.totalPages.value) this.page.value++;
+  }
+
+  goToPage(p) {
+    this.page.value = p;
+  }
+}
+</script>
+
+<style>
+.dt-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.dt-wrap h1 {
+  margin: 0 0 1.5rem;
+}
+
+.dt-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.dt-search {
+  flex: 1;
+  min-width: 220px;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.dt-search:focus {
+  border-color: var(--color-primary);
+}
+
+.dt-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.dt-select:focus {
+  border-color: var(--color-primary);
+}
+
+.dt-count {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.dt-wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.dt-th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-border);
+  transition: color 0.15s;
+}
+
+.dt-th:hover {
+  color: var(--color-text);
+}
+
+.dt-th--sorted {
+  color: var(--color-primary);
+}
+
+.dt-row td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.dt-row:last-child td {
+  border-bottom: none;
+}
+
+.dt-row:hover td {
+  background: var(--color-bg);
+}
+
+.td-name {
+  font-weight: 600;
+  color: #0f172a !important;
+}
+
+.td-salary {
+  font-family: monospace;
+  font-size: 0.825rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.badge--active   { background: #d1fae5; color: #065f46; }
+.badge--inactive { background: #fee2e2; color: #991b1b; }
+.badge--on-leave { background: #fef3c7; color: #92400e; }
+
+.dt-empty {
+  text-align: center;
+  padding: 2rem !important;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.dt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dt-page-info {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.dt-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pg-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--color-text-muted);
+}
+
+.pg-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pg-btn--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  font-weight: 700;
+}
+</style>

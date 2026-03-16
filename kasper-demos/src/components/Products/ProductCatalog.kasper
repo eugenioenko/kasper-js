@@ -1,0 +1,311 @@
+<template>
+  <div class="catalog-page">
+    <div class="page-header">
+      <div>
+        <h1>Product Catalog</h1>
+        <p class="subtitle">
+          Showing {{ filteredProducts.value.length }} products
+        </p>
+      </div>
+      <ui-button @:onClick="() => isAddOpen.value = true" @:variant="'success'"
+        >+ Add Product</ui-button
+      >
+    </div>
+
+    <div class="filters-bar">
+      <input
+        type="text"
+        placeholder="Search products..."
+        @value="searchQuery.value"
+        @on:input="searchQuery.value = $event.target.value"
+        class="search-input"
+      />
+      <select
+        @on:change="sortBy.value = $event.target.value"
+        class="sort-select"
+      >
+        <option value="newest">Newest First</option>
+        <option value="price-low">Price: Low to High</option>
+        <option value="price-high">Price: High to Low</option>
+        <option value="name">Name: A-Z</option>
+      </select>
+    </div>
+
+    <div @if="isLoading.value" class="loading-state">
+      <div class="spinner"></div>
+      <p>Fetching products from API...</p>
+    </div>
+
+    <div @if="error.value" class="error-state">
+      <p>Error: {{ error.value }}</p>
+      <ui-button @:onClick="fetchProducts">Retry</ui-button>
+    </div>
+
+    <div @if="!isLoading.value && !error.value" class="product-grid">
+      <div @each="p of filteredProducts.value" @key="p.id">
+        <ui-card>
+          <div @slot="header" class="card-title">
+            <span>{{ p.name }}</span>
+            <span class="price-tag">${{ p.price }}</span>
+          </div>
+          <p class="product-desc">{{ p.description }}</p>
+          <div class="product-meta">
+            <span>{{ p.department }}</span>
+            <span>{{ p.company }}</span>
+          </div>
+          <div @slot="footer" class="card-actions">
+            <ui-button @:onClick="() => handleEdit(p)" @:variant="'outline'"
+              >Edit</ui-button
+            >
+            <ui-button @:onClick="() => confirmDelete(p)" @:variant="'danger'"
+              >Delete</ui-button
+            >
+          </div>
+        </ui-card>
+      </div>
+    </div>
+
+    <product-form
+      @:isOpen="isAddOpen"
+      @:onClose="() => isAddOpen.value = false"
+      @:onSubmit="handleAdd"
+    ></product-form>
+
+    <product-form
+      @if="isEditOpen.value"
+      @:isOpen="isEditOpen"
+      @:onClose="closeEdit"
+      @:product="editingProduct"
+      @:onSubmit="handleUpdate"
+    ></product-form>
+
+    <ui-dialog
+      @:isOpen="isConfirmOpen"
+      @:onClose="() => isConfirmOpen.value = false"
+      @:title="'Confirm Delete'"
+    >
+      <p>Are you sure you want to delete this product?</p>
+      <p class="text-muted">This action cannot be undone.</p>
+
+      <div @slot="footer">
+        <ui-button
+          @:onClick="() => isConfirmOpen.value = false"
+          @:variant="'secondary'"
+          >Cancel</ui-button
+        >
+        <ui-button @:onClick="executeDelete" @:variant="'danger'"
+          >Delete Product</ui-button
+        >
+      </div>
+    </ui-dialog>
+  </div>
+</template>
+
+<script>
+  import { Component, signal, batch } from "kasper-js";
+  import {
+    products,
+    isLoading,
+    error,
+    fetchProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+  } from "../../store/products";
+
+  export class ProductCatalog extends Component {
+    searchQuery = signal("");
+    sortBy = signal("newest");
+    isAddOpen = signal(false);
+    isEditOpen = signal(false);
+    isConfirmOpen = signal(false);
+
+    editingProduct = signal(null);
+    productToDelete = signal(null);
+
+    isLoading = isLoading;
+    error = error;
+
+    filteredProducts = this.computed(() => {
+      let list = [...products.value];
+      if (this.searchQuery.value) {
+        const q = this.searchQuery.value.toLowerCase();
+        list = list.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.department.toLowerCase().includes(q),
+        );
+      }
+      switch (this.sortBy.value) {
+        case "price-low":
+          list.sort((a, b) => Number(a.price) - Number(b.price));
+          break;
+        case "price-high":
+          list.sort((a, b) => Number(b.price) - Number(a.price));
+          break;
+        case "name":
+          list.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        default:
+          list.sort((a, b) => b.id.localeCompare(a.id));
+      }
+      return list;
+    });
+
+    onMount() {
+      if (products.value.length === 0) fetchProducts();
+    }
+
+    fetchProducts() {
+      fetchProducts();
+    }
+
+    async handleAdd(data) {
+      await addProduct(data);
+      this.isAddOpen.value = false;
+    }
+
+    handleEdit(product) {
+      this.editingProduct.value = product;
+      this.isEditOpen.value = true;
+    }
+
+    closeEdit() {
+      this.isEditOpen.value = false;
+      this.editingProduct.value = null;
+    }
+
+    async handleUpdate(data) {
+      if (this.editingProduct.value) {
+        await updateProduct(this.editingProduct.value.id, data);
+        this.closeEdit();
+      }
+    }
+
+    confirmDelete(product) {
+      this.productToDelete.value = product;
+      this.isConfirmOpen.value = true;
+    }
+
+    async executeDelete() {
+      if (this.productToDelete.value) {
+        const id = this.productToDelete.value.id;
+
+        this.isConfirmOpen.value = false;
+        this.productToDelete.value = null;
+
+        await deleteProduct(id);
+      }
+    }
+  }
+</script>
+
+<style>
+  .catalog-page {
+    padding: 1rem;
+  }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+  }
+  .subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+  }
+
+  .filters-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    background: white;
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+  }
+  .search-input {
+    flex: 1;
+    padding: 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-family: inherit;
+  }
+  .sort-select {
+    padding: 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-family: inherit;
+    background: white;
+  }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .price-tag {
+    color: var(--color-primary);
+    font-weight: 800;
+  }
+  .product-desc {
+    font-size: 0.9rem;
+    color: #475569;
+    margin: 0;
+    line-height: 1.6;
+    min-height: 3em;
+  }
+  .product-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .loading-state,
+  .error-state {
+    text-align: center;
+    padding: 4rem;
+    color: var(--color-text-muted);
+  }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+</style>

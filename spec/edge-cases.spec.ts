@@ -586,6 +586,134 @@ describe("Integration Edge Cases", () => {
     await nextTick();
     expect(container.textContent).not.toContain("Visible");
   });
+
+  it("bug repro: $slots is undefined when unmounting a component with @if on named slot", async () => {
+    // Mirrors the exact demos scenario that produced the crash.
+    //
+    // Key conditions:
+    //   1. Dialog controls its OWN visibility via @if="args.isOpen.value" (same signal as parent @if)
+    //   2. Dialog checks @if="$slots.footer" to conditionally render a named slot wrapper
+    //   3. Parent mounts Dialog via an intermediate wrapper that is itself conditionally shown
+    //   4. Two signals change WITHOUT batch():
+    //      - isOpen = false  → triggers BOTH the parent @if AND Dialog's internal @if
+    //      - data = null     → triggers a second reactive update in the dialog content
+    //
+    // This creates concurrent tasks in the scheduler where Dialog's internal @if task runs
+    // AFTER the parent has already destroyed the Dialog, causing $slots to be undefined
+    // when the @if="$slots.footer" condition is re-evaluated.
+
+    // Dialog-like component: controls its own visibility AND checks a named slot
+    class DialogComponent extends Component {
+      static template = `
+        <div class="overlay" @if="args.isOpen.value">
+          <div class="body">
+            <slot />
+          </div>
+          <div @if="$slots.footer">
+            <slot @name="footer" />
+          </div>
+        </div>
+      `;
+    }
+
+    // Intermediate wrapper (like ProductForm): uses Dialog and passes slots through
+    class FormComponent extends Component {
+      static template = `
+        <dialog-comp @:isOpen="args.isOpen" @:data="args.data">
+          <p>{{ args.data.value?.name ?? 'no data' }}</p>
+          <div @slot="footer">
+            <button>Submit</button>
+          </div>
+        </dialog-comp>
+      `;
+    }
+
+    // Parent: controls FormComponent visibility AND has a second independent signal
+    class ParentComponent extends Component {
+      isOpen = signal(true);
+      data = signal<any>({ name: "Product A" });
+      static template = `
+        <form-comp @if="isOpen.value" @:isOpen="isOpen" @:data="data"></form-comp>
+      `;
+    }
+
+    const parser = new TemplateParser();
+    const dialogNodes = parser.parse(DialogComponent.template!);
+    const formNodes = parser.parse(FormComponent.template!);
+    const registry = {
+      "dialog-comp": { component: DialogComponent as any, template: DialogComponent.template, nodes: dialogNodes },
+      "form-comp": { component: FormComponent as any, template: FormComponent.template, nodes: formNodes },
+    };
+
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+    const parent = new ParentComponent();
+
+    transpiler.transpile(parser.parse(ParentComponent.template!), parent, container);
+    await nextTick();
+    expect(container.textContent).toContain("Product A");
+
+    // Spy on console.error — the scheduler swallows thrown errors via try/catch
+    // and logs them. If the bug is present we'll see the TypeError here.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Two separate signal changes WITHOUT batch() — the original buggy pattern
+    parent.isOpen.value = false;
+    parent.data.value = null;
+
+    await nextTick();
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+
+    expect(container.textContent).not.toContain("Product A");
+  });
+
+  it("does not crash when unmounting a component that checks $slots in @if", async () => {
+    class Child extends Component {
+      // Accessing a property of a signal that might become null
+      static template = `
+        <div @if="$slots.header">
+          Has Header: {{ args.data.value?.name }}
+        </div>
+      `;
+    }
+
+    class Parent extends Component {
+      isVisible = signal(true);
+      data = signal<any>({ name: "Initial" });
+      
+      static template = `
+        <child-comp @if="isVisible.value" @:data="data">
+          <div @slot="header">Header</div>
+        </child-comp>
+      `;
+    }
+
+    const parser = new TemplateParser();
+    const registry = {
+      "child-comp": {
+        component: Child as any,
+        template: Child.template,
+        nodes: parser.parse(Child.template)
+      }
+    };
+
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+    const parent = new Parent();
+
+    transpiler.transpile(parser.parse(Parent.template), parent, container);
+    expect(container.textContent).toContain("Has Header");
+
+    // Trigger race condition: Unmount and clear data in separate ticks (no batch)
+    parent.isVisible.value = false;
+    parent.data.value = null; 
+    
+    await nextTick();
+    
+    expect(container.textContent).not.toContain("Has Header");
+  });
 });
 
 describe("Advanced Reactivity & Lifecycle Edge Cases", () => {

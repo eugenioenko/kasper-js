@@ -1,0 +1,126 @@
+<template>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">👻</span>
+      <span class="logo-text">Kasper Demos</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Demos</p>
+      <a @each="link of links"
+         @on:click.prevent="args.onNavigate(link.path)"
+         @href="link.path"
+         @class="args.currentPath.value === link.path ? 'active' : ''">
+        <span class="nav-icon">{{link.icon}}</span>
+        {{link.label}}
+      </a>
+    </nav>
+  </aside>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+
+export class UISidebar extends Component {
+  links = [
+    { path: '/',         icon: '🏠', label: 'Home' },
+    { path: '/todo',     icon: '✅', label: 'Todo App' },
+    { path: '/counter',  icon: '🔢', label: 'Counter' },
+    { path: '/kanban',   icon: '📋', label: 'Kanban Board' },
+    { path: '/game',     icon: '🎮', label: 'Game of Life' },
+    { path: '/products', icon: '🛍️', label: 'Products' },
+    { path: '/table',    icon: '📊', label: 'Data Table' },
+  ];
+}
+</script>
+
+<style>
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: white;
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 1.25rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.logo-icon {
+  background: var(--color-primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.sidebar-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  padding: 0 1.25rem;
+  margin: 0 0 0.375rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 1.25rem;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 0;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.sidebar-nav a:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.sidebar-nav a.active {
+  background: #eef2ff;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.nav-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+</style>

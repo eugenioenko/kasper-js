@@ -1,0 +1,60 @@
+<template>
+  <div class="counter-example">
+    <h1>Counter & Props</h1>
+    <p>This example demonstrates reactive signals and passing them as props to child components.</p>
+    
+    <div class="controls">
+      <ui-button @:onClick="decrement" @:variant="'outline'">-</ui-button>
+      <span class="value">{{count.value}}</span>
+      <ui-button @:onClick="increment" @:variant="'outline'">+</ui-button>
+    </div>
+
+    <hr />
+
+    <h3>Child Component (Reactive Prop)</h3>
+    <display-counter @:value="count" @:label="'Counter 1'"></display-counter>
+
+    <h3>Child Component (Snapshot Prop)</h3>
+    <display-counter @:value="count.value" @:label="'Snapshot (Non-reactive)'"></display-counter>
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+import { DisplayCounter } from './DisplayCounter.kasper';
+
+export class CounterExample extends Component {
+  count = signal(0);
+
+  increment() { this.count.value++; }
+  decrement() { this.count.value--; }
+}
+</script>
+
+<style>
+.counter-example {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.value {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid #eee;
+}
+</style>

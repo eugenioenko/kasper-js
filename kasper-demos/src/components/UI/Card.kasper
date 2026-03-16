@@ -1,0 +1,52 @@
+<template>
+  <div class="card">
+    <!-- Removed @if to prevent $slots undefined error during teardown -->
+    <div class="card-header">
+      <slot @name="header" />
+    </div>
+    <div class="card-body">
+      <slot />
+    </div>
+    <div class="card-footer">
+      <slot @name="footer" />
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+export class Card extends Component {}
+</script>
+
+<style>
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: #cbd5e1;
+}
+/* Hide header/footer if they don't contain anything (basic support) */
+.card-header:empty, .card-footer:empty { display: none; }
+
+.card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  color: #0f172a;
+}
+.card-body {
+  padding: 1.25rem;
+}
+.card-footer {
+  padding: 0.75rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid var(--color-border);
+}
+</style>

@@ -1,0 +1,288 @@
+<template>
+  <div class="game-container">
+    <div class="game-header">
+      <h1>Conway's Game of Life</h1>
+
+      <div class="controls">
+        <ui-button @:onClick="togglePlay" @:variant="isPlaying.value ? 'danger' : 'success'">
+          {{ isPlaying.value ? 'Stop' : 'Start' }}
+        </ui-button>
+        <ui-button @:onClick="step" @:variant="'primary'">Step</ui-button>
+        <ui-button @:onClick="randomize" @:variant="'secondary'">Randomize</ui-button>
+        <ui-button @:onClick="clearGrid" @:variant="'outline'">Clear</ui-button>
+      </div>
+
+      <div class="mode-row">
+        <label class="mode-label">
+          <input type="checkbox" @ref="modeCheckbox" @on:change="toggleMode($event)" />
+          Use <code>render()</code> instead of signals
+        </label>
+        <span @class="'mode-badge ' + (useRender.value ? 'render' : 'signal')">
+          {{ useRender.value ? 'manual render()' : 'fine-grained signals' }}
+        </span>
+      </div>
+
+      <p @if="useRender.value" class="render-warning">
+        ⚠️ <strong>render() mode:</strong> every tick destroys and rebuilds all 2,500 cells from scratch.
+        Expect low FPS — this is intentional and demonstrates why fine-grained signals exist.
+      </p>
+
+      <div class="stats">
+        <span>Gen <strong>{{ generation.value }}</strong></span>
+        <span class="stat-sep">|</span>
+        <span>FPS <strong>{{ fps.value }}</strong></span>
+        <span class="stat-sep">|</span>
+        <span>50 × 50</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div
+        @each="cell with i of grid.value"
+        @class="'cell ' + (cell ? 'alive' : 'dead')"
+        @on:click="toggleCell(i)"
+      ></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component, signal, batch } from 'kasper-js';
+
+export class GameOfLife extends Component {
+  rows = 50;
+  cols = 50;
+
+  grid = signal(new Array(50 * 50).fill(false));
+  generation = signal(0);
+  fps = signal(0);
+  useRender = signal(false);
+  isPlaying = signal(false);
+
+  timer = null;
+  _lastFrameTime = 0;
+  _pendingFps = 0;
+
+  onMount() {
+    this.randomize();
+  }
+
+  onDestroy() {
+    this.stop();
+  }
+
+  // ── Mode ──────────────────────────────────────────────────────────────────
+
+  toggleMode(event) {
+    this.stop();
+    this._lastFrameTime = 0;
+    this._pendingFps = 0;
+    this.fps.value = 0;
+    this.useRender.value = event.target.checked;
+  }
+
+  // ── Controls ──────────────────────────────────────────────────────────────
+
+  togglePlay() {
+    this.isPlaying.value ? this.stop() : this.start();
+  }
+
+  start() {
+    this.isPlaying.value = true;
+    this.timer = setInterval(() => this.step(), 50);
+  }
+
+  stop() {
+    this.isPlaying.value = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+  }
+
+  randomize() {
+    this._lastFrameTime = 0;
+    this._pendingFps = 0;
+    batch(() => {
+      this.grid.value = this.grid.value.map(() => Math.random() > 0.8);
+      this.generation.value = 0;
+      this.fps.value = 0;
+    });
+  }
+
+  clearGrid() {
+    this.stop();
+    this._lastFrameTime = 0;
+    this._pendingFps = 0;
+    batch(() => {
+      this.grid.value = new Array(this.rows * this.cols).fill(false);
+      this.generation.value = 0;
+      this.fps.value = 0;
+    });
+  }
+
+  toggleCell(index) {
+    const g = [...this.grid.value];
+    g[index] = !g[index];
+    this.grid.value = g;
+    if (this.useRender.value) this.render();
+  }
+
+  // ── Game logic ────────────────────────────────────────────────────────────
+
+  step() {
+    const current = this.grid.value;
+    const next = new Array(this.rows * this.cols);
+    let changed = false;
+
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const i = r * this.cols + c;
+        const n = this.countNeighbors(current, r, c);
+        const alive = current[i];
+        const nextAlive = alive ? n === 2 || n === 3 : n === 3;
+        next[i] = nextAlive;
+        if (nextAlive !== alive) changed = true;
+      }
+    }
+
+    if (!changed) { this.stop(); return; }
+
+    this.tickFps();
+
+    if (this.useRender.value) {
+      // Manual render: set signal values then force a full teardown+rebuild.
+      // This bypasses fine-grained reactivity — every frame rebuilds all 2500 cells.
+      this.grid.value = next;
+      this.generation.value++;
+      this.fps.value = this._pendingFps;
+      this.render();
+    } else {
+      // Signal mode: batch lets the reactive system surgically update only what changed.
+      batch(() => {
+        this.grid.value = next;
+        this.generation.value++;
+        this.fps.value = this._pendingFps;
+      });
+    }
+  }
+
+  countNeighbors(grid, r, c) {
+    let count = 0;
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (i === 0 && j === 0) continue;
+        const nr = r + i, nc = c + j;
+        if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols) {
+          if (grid[nr * this.cols + nc]) count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  tickFps() {
+    const now = performance.now();
+    if (this._lastFrameTime > 0) {
+      this._pendingFps = Math.round(1000 / (now - this._lastFrameTime));
+    }
+    this._lastFrameTime = now;
+  }
+}
+</script>
+
+<style>
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.game-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.game-header h1 { margin: 0; }
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.mode-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.mode-label input { cursor: pointer; }
+.mode-label code {
+  background: #f1f5f9;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+}
+
+.mode-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2em 0.6em;
+  border-radius: 999px;
+}
+.mode-badge.signal { background: #d1fae5; color: #065f46; }
+.mode-badge.render { background: #fef3c7; color: #92400e; }
+
+.render-warning {
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #78350f;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-family: monospace;
+  color: var(--color-text-muted);
+}
+.stats strong { color: var(--color-text); }
+.stat-sep { color: var(--color-border); }
+
+.grid {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 600px;
+  background: #ccc;
+  border: 1px solid #999;
+  grid-template-columns: repeat(50, 1fr);
+  grid-template-rows: repeat(50, 1fr);
+}
+
+.cell { background: white; cursor: pointer; }
+.cell.alive { background: #2c3e50; }
+.cell:hover { background: #ecf0f1; }
+.cell.alive:hover { background: #34495e; }
+</style>
