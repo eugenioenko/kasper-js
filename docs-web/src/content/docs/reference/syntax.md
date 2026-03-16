@@ -591,7 +591,7 @@ Bootstrap the application using `App` (aliased to `bootstrap` internally).
 
 ```js
 App({
-  root: "#app",         // CSS selector or HTMLElement for the mount point
+  root: document.body,  // HTMLElement for the mount point
   entry: "my-app",      // tag name of the root component
   registry: {
     "my-app": {
@@ -610,8 +610,6 @@ App({
 ```
 
 ```html
-<div id="app"></div>
-
 <template id="my-app">
   <h1>{{title}}</h1>
   <user-card @:userId="currentUser.id"></user-card>

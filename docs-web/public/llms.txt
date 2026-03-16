@@ -85,7 +85,7 @@ import { Example } from './components/Example.kasper';
 import { App } from 'kasper-js';
 
 App({
-  root: document.querySelector<HTMLElement>('#app')!,
+  root: document.body,
   entry: 'app',
   registry: {
     app: { component: KasperApp },
@@ -106,7 +106,7 @@ import { App } from 'kasper-js';
 import { MyApp } from './App.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'my-app',
   registry: {
     'my-app': { component: MyApp },

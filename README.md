@@ -70,7 +70,7 @@ import { App } from 'kasper-js';
 import { Counter } from './Counter.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'counter',
   registry: { counter: { component: Counter } },
 });
@@ -297,7 +297,7 @@ Args are evaluated as full expressions and passed by reference. Signals passed a
 
 ```ts
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'app',
   registry: {
     'user-card':   { component: UserCard },
@@ -696,7 +696,7 @@ import { App } from 'kasper-js';
 import { MyApp } from './App.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'my-app',
   registry: {
     'my-app': { component: MyApp },

@@ -23,7 +23,7 @@ import { ProductForm } from './components/Products/ProductForm.kasper';
 import { App } from 'kasper-js';
 
 App({
-  root: document.querySelector<HTMLElement>('#app')!,
+  root: document.body,
   entry: 'app',
   registry: {
     app: { component: KasperApp },
