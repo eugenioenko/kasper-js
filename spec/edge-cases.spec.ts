@@ -964,6 +964,96 @@ describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
   });
 });
 
+describe("onDestroy", () => {
+  it("fires when a component is removed via @if", async () => {
+    let destroyed = false;
+
+    class Child extends Component {
+      static template = '<span>child</span>';
+      onDestroy() { destroyed = true; }
+    }
+
+    const parser = new TemplateParser();
+    const registry = { 'x-child': { component: Child as any, nodes: parser.parse(Child.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    transpiler.transpile(parser.parse('<x-child @if="visible.value"></x-child>'), { visible }, container);
+
+    expect(destroyed).toBe(false);
+    visible.value = false;
+    await nextTick();
+    expect(destroyed).toBe(true);
+  });
+
+  it("does not fire again on subsequent re-renders after removal", async () => {
+    let destroyCount = 0;
+
+    class Child extends Component {
+      static template = '<span>child</span>';
+      onDestroy() { destroyCount++; }
+    }
+
+    const parser = new TemplateParser();
+    const registry = { 'x-child': { component: Child as any, nodes: parser.parse(Child.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    transpiler.transpile(parser.parse('<x-child @if="visible.value"></x-child>'), { visible }, container);
+
+    visible.value = false;
+    await nextTick();
+    expect(destroyCount).toBe(1);
+
+    // further signal changes should not re-trigger onDestroy
+    visible.value = true;
+    await nextTick();
+    visible.value = false;
+    await nextTick();
+    expect(destroyCount).toBe(2); // one destroy per removal, not accumulating
+  });
+
+  it("cleans up effects registered in onMount when destroyed", async () => {
+    let effectRuns = 0;
+    const shared = signal(0);
+
+    class Child extends Component {
+      static template = '<span>child</span>';
+      onMount() {
+        this.effect(() => {
+          shared.value; // subscribe
+          effectRuns++;
+        });
+      }
+    }
+
+    const parser = new TemplateParser();
+    const registry = { 'x-child': { component: Child as any, nodes: parser.parse(Child.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    transpiler.transpile(parser.parse('<x-child @if="visible.value"></x-child>'), { visible }, container);
+
+    expect(effectRuns).toBe(1); // initial run
+
+    shared.value++;
+    await nextTick();
+    expect(effectRuns).toBe(2); // effect still active
+
+    // destroy the component
+    visible.value = false;
+    await nextTick();
+
+    // effect should be cleaned up — further signal changes should not trigger it
+    shared.value++;
+    await nextTick();
+    expect(effectRuns).toBe(2); // still 2, effect was stopped
+  });
+});
+
 describe("@class reactivity", () => {
   it("@class with a multi-token expression does not accumulate on repeated updates", async () => {
     // Bug: @class reads element.className on each reactive update instead of the
