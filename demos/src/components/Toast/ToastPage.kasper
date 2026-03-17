@@ -1,0 +1,157 @@
+<template>
+  <div class="tp-wrap">
+    <div class="tp-header">
+      <h2>Global Notifications</h2>
+      <p class="tp-subtitle">Toasts are driven by a global signal. They appear from any page — try navigating away and firing one.</p>
+    </div>
+
+    <div class="tp-card">
+      <h3 class="tp-section-title">Send a toast</h3>
+      <form @on:submit.prevent="send()" class="tp-form">
+        <input
+          type="text"
+          class="tp-input"
+          @value="message.value"
+          @on:input="message.value = $event.target.value"
+          placeholder="Type your message..."
+          @ref="inputEl"
+        />
+        <select class="tp-select" @on:change="type.value = $event.target.value">
+          <option value="info">Info</option>
+          <option value="success">Success</option>
+          <option value="warning">Warning</option>
+          <option value="error">Error</option>
+        </select>
+        <button type="submit" class="tp-btn tp-btn--primary" @disabled="!message.value.trim()">
+          Send
+        </button>
+      </form>
+    </div>
+
+    <div class="tp-card">
+      <h3 class="tp-section-title">Quick fire</h3>
+      <div class="tp-quick">
+        <button @on:click="quick('success', '✓ Changes saved successfully')"    class="tp-btn tp-btn--success">Success</button>
+        <button @on:click="quick('error',   '✕ Failed to connect to server')"   class="tp-btn tp-btn--error">Error</button>
+        <button @on:click="quick('warning', '⚠ Session expires in 5 minutes')" class="tp-btn tp-btn--warning">Warning</button>
+        <button @on:click="quick('info',    'ℹ New version available')"         class="tp-btn tp-btn--info">Info</button>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+import { addToast } from './toast-store';
+import type { ToastType } from './toast-store';
+
+export class ToastPage extends Component {
+  inputEl!: HTMLInputElement;
+  message = signal('');
+  type    = signal<ToastType>('info');
+
+  send() {
+    const msg = this.message.value.trim();
+    if (!msg) return;
+    addToast(msg, this.type.value);
+    this.message.value = '';
+    this.inputEl.focus();
+  }
+
+  quick(type: ToastType, msg: string) {
+    addToast(msg, type);
+  }
+}
+</script>
+
+<style>
+.tp-wrap {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tp-header h2 { margin: 0 0 0.25rem; }
+
+.tp-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.tp-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tp-section-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tp-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tp-input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.tp-input:focus { border-color: var(--color-primary); }
+
+.tp-select {
+  padding: 0.625rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.tp-quick {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tp-btn {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.tp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.tp-btn--primary { background: var(--color-primary);  color: white; }
+.tp-btn--success { background: var(--color-success);  color: white; }
+.tp-btn--error   { background: var(--color-danger);   color: white; }
+.tp-btn--warning { background: var(--color-warning);  color: white; }
+.tp-btn--info    { background: var(--color-info);     color: white; }
+</style>

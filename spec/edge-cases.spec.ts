@@ -733,11 +733,13 @@ describe("@: prop binding gotchas", () => {
 
     const entity = { doSomething() { callCount++; } };
 
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     transpiler.transpile(
       parser.parse('<x-btn @:onClick="doSomething()"></x-btn>'),
       entity,
       container
     );
+    warnSpy.mockRestore();
 
     // doSomething() was called once during render, not deferred until click
     expect(callCount).toBe(1);
@@ -788,8 +790,10 @@ describe("@: prop binding gotchas", () => {
     // During flushSync the loop hits a stack overflow synchronously.
     // The error should contain exactly one [K007-1] code — not thousands of
     // accumulated wrappers from each retry re-catching and re-wrapping the error.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     let thrown: Error | null = null;
     try { transpiler.mountComponent(Parent, container); } catch (e: any) { thrown = e; }
+    warnSpy.mockRestore();
 
     expect(thrown).not.toBeNull();
     expect(thrown!.message).toMatch(/K007-1/);

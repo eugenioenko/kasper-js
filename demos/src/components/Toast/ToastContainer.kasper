@@ -1,0 +1,93 @@
+<template>
+  <div class="tc-wrap">
+    <div @each="toast of toasts.value" @key="toast.id" @class="'tc-toast tc-toast--' + toast.type">
+      <span class="tc-icon">{{icon(toast.type)}}</span>
+      <span class="tc-message">{{toast.message}}</span>
+      <button @on:click="removeToast(toast.id)" class="tc-close">✕</button>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+import { toasts, removeToast } from './toast-store';
+
+export class ToastContainer extends Component {
+  toasts = toasts;
+  removeToast = removeToast;
+
+  icon(type: string): string {
+    return { info: 'ℹ', success: '✓', warning: '⚠', error: '✕' }[type] ?? 'ℹ';
+  }
+}
+</script>
+
+<style>
+.tc-wrap {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tc-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  min-width: 280px;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: all;
+  animation: tc-slide-in 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+@keyframes tc-slide-in {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.tc-toast--info    { background: #eff6ff; border-color: var(--color-info);    }
+.tc-toast--success { background: #f0fdf4; border-color: var(--color-success); }
+.tc-toast--warning { background: #fffbeb; border-color: var(--color-warning); }
+.tc-toast--error   { background: #fff1f2; border-color: var(--color-danger);  }
+
+.tc-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.tc-toast--info    .tc-icon { color: var(--color-info);    }
+.tc-toast--success .tc-icon { color: var(--color-success); }
+.tc-toast--warning .tc-icon { color: var(--color-warning); }
+.tc-toast--error   .tc-icon { color: var(--color-danger);  }
+
+.tc-message {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.tc-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  padding: 0.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.tc-close:hover { opacity: 1; }
+</style>

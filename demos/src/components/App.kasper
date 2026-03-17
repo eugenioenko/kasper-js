@@ -15,8 +15,10 @@
         <route @path="/form" @component="SignupForm" />
         <route @path="/dashboard" @component="Dashboard" />
         <route @path="/markdown" @component="MarkdownEditor" />
+        <route @path="/toast" @component="ToastPage" />
       </router>
     </main>
+    <toast-container></toast-container>
   </div>
 </template>
 
@@ -34,6 +36,8 @@ import { CartPage } from './Cart/CartPage.kasper';
 import { SignupForm } from './Form/SignupForm.kasper';
 import { Dashboard } from './Dashboard/Dashboard.kasper';
 import { MarkdownEditor } from './MarkdownEditor.kasper';
+import { ToastContainer } from './Toast/ToastContainer.kasper';
+import { ToastPage } from './Toast/ToastPage.kasper';
 
 export class App extends Component {
   currentPath = signal(window.location.pathname);

@@ -22,9 +22,23 @@
         </span>
       </div>
 
+      <div class="mode-row">
+        <label class="mode-label">
+          <input type="checkbox" checked @on:change="useKey.value = $event.target.checked" />
+          Use <code>@key</code> on cells
+        </label>
+        <span @class="'mode-badge ' + (useKey.value ? 'signal' : 'render')">
+          {{ useKey.value ? 'keyed reconciliation' : 'full rebuild' }}
+        </span>
+      </div>
+
       <p @if="useRender.value" class="render-warning">
         ⚠️ <strong>render() mode:</strong> every tick destroys and rebuilds all 2,500 cells from scratch.
         Expect low FPS — this is intentional and demonstrates why fine-grained signals exist.
+      </p>
+      <p @if="!useKey.value && !useRender.value" class="render-warning">
+        ⚠️ <strong>No @key:</strong> every tick destroys and rebuilds all 2,500 cell DOM nodes.
+        Expect lower FPS — this shows why keyed reconciliation matters.
       </p>
 
       <div class="stats">
@@ -37,11 +51,20 @@
     </div>
 
     <div class="grid">
-      <div
-        @each="cell with i of grid.value"
-        @class="'cell ' + (cell ? 'alive' : 'dead')"
-        @on:click="toggleCell(i)"
-      ></div>
+      <void @if="useKey.value">
+        <div
+          @each="cell with i of grid.value" @key="i"
+          @class="'cell ' + (cell ? 'alive' : 'dead')"
+          @on:click="toggleCell(i)"
+        ></div>
+      </void>
+      <void @if="!useKey.value">
+        <div
+          @each="cell with i of grid.value"
+          @class="'cell ' + (cell ? 'alive' : 'dead')"
+          @on:click="toggleCell(i)"
+        ></div>
+      </void>
     </div>
   </div>
 </template>
@@ -57,6 +80,7 @@ export class GameOfLife extends Component {
   generation = signal(0);
   fps = signal(0);
   useRender = signal(false);
+  useKey = signal(true);
   isPlaying = signal(false);
 
   timer = null;

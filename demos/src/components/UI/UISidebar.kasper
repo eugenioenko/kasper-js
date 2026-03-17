@@ -34,6 +34,7 @@ export class UISidebar extends Component {
     { path: '/form',      icon: '📝', label: 'Form Validation' },
     { path: '/dashboard', icon: '📡', label: 'Live Dashboard' },
     { path: '/markdown',  icon: '✍️',  label: 'Markdown Editor' },
+    { path: '/toast',     icon: '🔔', label: 'Notifications' },
   ];
 }
 </script>

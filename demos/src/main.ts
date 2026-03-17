@@ -21,6 +21,8 @@ import { ProductCatalog } from './components/Products/ProductCatalog.kasper';
 import { SignupForm } from './components/Form/SignupForm.kasper';
 import { Dashboard } from './components/Dashboard/Dashboard.kasper';
 import { MarkdownEditor } from './components/MarkdownEditor.kasper';
+import { ToastContainer } from './components/Toast/ToastContainer.kasper';
+import { ToastPage } from './components/Toast/ToastPage.kasper';
 import { ProductForm } from './components/Products/ProductForm.kasper';
 import { App } from 'kasper-js';
 
@@ -51,6 +53,8 @@ App({
     'signup-form': { component: SignupForm },
     'dashboard': { component: Dashboard },
     'markdown-editor': { component: MarkdownEditor },
+    'toast-container': { component: ToastContainer },
+    'toast-page': { component: ToastPage },
     'product-form': { component: ProductForm },
   },
 });
