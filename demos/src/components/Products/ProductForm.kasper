@@ -1,0 +1,90 @@
+<template>
+  <ui-dialog @:isOpen="args.isOpen" @:onClose="args.onClose" @:title="formTitle">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" @value="name.value" @on:input="name.value = $event.target.value" placeholder="e.g. Steel Chair" />
+      </div>
+      <div class="form-group">
+        <label>Price</label>
+        <input type="number" step="0.01" @value="price.value" @on:input="price.value = $event.target.value" placeholder="0.00" />
+      </div>
+      <div class="form-group wide">
+        <label>Description</label>
+        <textarea @value="description.value" @on:input="description.value = $event.target.value" placeholder="Details..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <input type="text" @value="department.value" @on:input="department.value = $event.target.value" />
+      </div>
+      <div class="form-group">
+        <label>Company</label>
+        <input type="text" @value="company.value" @on:input="company.value = $event.target.value" />
+      </div>
+    </div>
+    
+    <ui-button @slot="footer" @:onClick="args.onClose" @:variant="'secondary'">Cancel</ui-button>
+    <ui-button @slot="footer" @:onClick="handleSubmit" @:variant="'primary'">{{ submitLabel }}</ui-button>
+  </ui-dialog>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+export class ProductForm extends Component {
+  name = signal('');
+  description = signal('');
+  price = signal('');
+  department = signal('');
+  company = signal('');
+
+  get productData() {
+    const p = this.args.product;
+    return (p && typeof p === 'object' && 'value' in p) ? p.value : p;
+  }
+
+  get formTitle() {
+    return this.productData ? 'Edit Product' : 'Add Product';
+  }
+
+  get submitLabel() {
+    return this.productData ? 'Save Changes' : 'Create Product';
+  }
+
+  onMount() {
+    const p = this.productData;
+    if (p) {
+      this.name.value = p.name ?? '';
+      this.description.value = p.description ?? '';
+      this.price.value = p.price ?? '';
+      this.department.value = p.department ?? '';
+      this.company.value = p.company ?? '';
+    }
+  }
+
+  handleSubmit() {
+    this.args.onSubmit({
+      name: this.name.value,
+      description: this.description.value,
+      price: this.price.value,
+      department: this.department.value,
+      company: this.company.value,
+    });
+  }
+}
+</script>
+
+<style>
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.form-group.wide { grid-column: span 2; }
+.form-group label { display: block; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.85rem; color: #475569; }
+.form-group input, .form-group textarea {
+  width: 100%; padding: 0.6rem; border: 1px solid var(--color-border); border-radius: 8px; box-sizing: border-box;
+  font-family: inherit; font-size: 0.9rem;
+}
+.form-group textarea { min-height: 80px; resize: vertical; }
+</style>

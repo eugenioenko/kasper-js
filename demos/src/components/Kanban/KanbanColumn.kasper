@@ -1,0 +1,74 @@
+<template>
+  <div 
+    class="column" 
+    @on:dragover.prevent="" 
+    @on:drop="onDrop($event)"
+  >
+    <div class="column-header">
+      <h3>{{ args.title }}</h3>
+      <span class="count">{{ tasks.value.length }}</span>
+    </div>
+    <div class="column-tasks">
+      <task-card @each="task of tasks.value" @:task="task" @key="task.id"></task-card>
+      <div @if="!tasks.value.length" class="empty-state">No tasks</div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+
+export class KanbanColumn extends Component {
+  onMount() {
+    console.log('KanbanColumn:', this.args.title);
+  }
+
+  tasks = this.computed(() => {
+    const all = this.args.allTasks?.value ?? [];
+    const status = this.args.status;
+    return all.filter(t => t && t.status === status);
+  });
+
+  onDrop(event) {
+    const taskId = event.dataTransfer.getData('task-id');
+    this.args.onMoveTask(taskId, this.args.status);
+  }
+}
+</script>
+
+<style>
+.column {
+  background: #f1f5f9;
+  border-radius: var(--radius);
+  width: 300px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+}
+.column-header {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.column-header h3 { margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 700; }
+.count { background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; color: var(--color-text); }
+.column-tasks {
+  padding: 0.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 3rem 0;
+  font-style: italic;
+  font-size: 0.875rem;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  margin: 0.5rem;
+}
+</style>

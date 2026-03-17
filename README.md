@@ -70,7 +70,7 @@ import { App } from 'kasper-js';
 import { Counter } from './Counter.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'counter',
   registry: { counter: { component: Counter } },
 });
@@ -86,7 +86,7 @@ App({
 - **Event modifiers** — `@on:submit.prevent`, `@on:click.stop`, `@on:click.once`, `@on:scroll.passive`, `@on:click.capture`. All `@on:` listeners are registered via the component's `AbortController` and removed automatically on destroy.
 - **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template — no configuration object needed.
 - **Slots** — default and named content transclusion via `<slot />` and `@slot`. Named slots use `@name` / `@slot` for attribute consistency across the framework.
-- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
+- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle — after `onMount` on first render, then after each reactive update. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
 - **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. 
 - **Manual rendering** — `this.render()` triggers a full template teardown and rebuild for cases where imperative updates are preferred over reactive bindings. Prefer signals for normal use; `render()` exists for third-party library integration and non-reactive data sources.
 - **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function` — compatible with strict Content Security Policies out of the box.
@@ -280,11 +280,24 @@ export class UserCard extends Component {
 
 Args are evaluated as full expressions and passed by reference. Signals passed as args remain reactive inside the child.
 
+> **Note:** `@:onClick="add(item)"` evaluates `add(item)` immediately during render and passes its return value as the prop. This is intentional — it supports patterns like factory functions that return a handler. If `add(item)` returns a function, that function becomes the click handler. If it returns `undefined` (a void function), the prop receives `undefined` and the click does nothing. When the called function has reactive side effects that write to a signal it also reads, this creates an infinite reactive loop. In development mode, Kasper warns when a call expression is detected in an `on*` prop binding as a reminder.
+>
+> ```html
+> <!-- add(item) is called during render — if it returns a function, that's the handler -->
+> <my-btn @:onClick="add(item)"></my-btn>
+>
+> <!-- pass a method reference directly (no args) -->
+> <my-btn @:onClick="add"></my-btn>
+>
+> <!-- for parameterized handlers on native elements, use @on:click -->
+> <button @on:click="add(item)">Add</button>
+> ```
+
 ### Registration
 
 ```ts
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'app',
   registry: {
     'user-card':   { component: UserCard },
@@ -317,7 +330,7 @@ export class DataTable extends Component {
   }
 
   onRender() {
-    // Fires after every render cycle — first render and every reactive update.
+    // Fires after every render cycle — after onMount on first render, then after each reactive update.
     // Use for things that must run on each update: scroll sync, external state.
     // Do not use for one-time setup — that belongs in onMount.
     console.log('table rendered, rows:', this.rows.value.length);
@@ -683,7 +696,7 @@ import { App } from 'kasper-js';
 import { MyApp } from './App.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'my-app',
   registry: {
     'my-app': { component: MyApp },

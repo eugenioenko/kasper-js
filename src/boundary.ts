@@ -5,8 +5,13 @@ export class Boundary {
   constructor(parent: Node, label: string = "boundary") {
     this.start = document.createComment(`${label}-start`);
     this.end = document.createComment(`${label}-end`);
-    parent.appendChild(this.start);
-    parent.appendChild(this.end);
+    if ((parent as any).insert && typeof (parent as any).insert === "function") {
+      (parent as any).insert(this.start);
+      (parent as any).insert(this.end);
+    } else {
+      parent.appendChild(this.start);
+      parent.appendChild(this.end);
+    }
   }
 
   public clear(): void {

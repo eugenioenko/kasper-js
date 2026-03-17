@@ -141,31 +141,27 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   }
 
   public visitTextKNode(node: KNode.Text, parent?: Node): void {
-    try {
-      const text = document.createTextNode("");
-      if (parent) {
-        if ((parent as any).insert && typeof (parent as any).insert === "function") {
-          (parent as any).insert(text);
-        } else {
-          parent.appendChild(text);
-        }
+    const text = document.createTextNode("");
+    if (parent) {
+      if ((parent as any).insert && typeof (parent as any).insert === "function") {
+        (parent as any).insert(text);
+      } else {
+        parent.appendChild(text);
       }
-
-      const stop = this.scopedEffect(() => {
-        const newValue = this.evaluateTemplateString(node.value);
-        const instance = this.interpreter.scope.get("$instance");
-        if (instance) {
-          queueUpdate(instance, () => {
-            text.textContent = newValue;
-          });
-        } else {
-          text.textContent = newValue;
-        }
-      });
-      this.trackEffect(text, stop);
-    } catch (e: any) {
-      this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, "text node");
     }
+
+    const stop = this.scopedEffect(() => {
+      const newValue = this.evaluateTemplateString(node.value);
+      const instance = this.interpreter.scope.get("$instance");
+      if (instance) {
+        queueUpdate(instance, () => {
+          text.textContent = newValue;
+        });
+      } else {
+        text.textContent = newValue;
+      }
+    });
+    this.trackEffect(text, stop);
   }
 
   public visitAttributeKNode(node: KNode.Attribute, parent?: Node): void {
@@ -388,7 +384,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           }
         }
 
-        // Insert/reuse nodes in new order
+        // Insert/reuse nodes in new order using a cursor to avoid unnecessary moves
+        const parent = (boundary as any).end.parentNode as Node;
+        let lastInserted: Node = (boundary as any).start;
+
         for (const { item, idx, key } of newItems) {
           const scopeValues: any = { [name]: item };
           if (indexKey) scopeValues[indexKey] = idx;
@@ -396,7 +395,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
           if (keyedNodes.has(key)) {
             const domNode = keyedNodes.get(key)!;
-            boundary.insert(domNode);
+
+            // Only move the node if it's not already in the correct position
+            if (lastInserted.nextSibling !== domNode) {
+              parent.insertBefore(domNode, lastInserted.nextSibling);
+            }
+            lastInserted = domNode;
 
             // Update scope and trigger re-render of nested structural directives
             const nodeScope = (domNode as any).$kasperScope;
@@ -410,6 +414,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           } else {
             const created = this.createElement(node, boundary as any);
             if (created) {
+              // createElement inserts before end; move to correct position if needed
+              if (lastInserted.nextSibling !== created) {
+                parent.insertBefore(created, lastInserted.nextSibling);
+              }
+              lastInserted = created;
               keyedNodes.set(key, created);
               // Store the scope on the DOM node so we can update it later
               (created as any).$kasperScope = this.interpreter.scope;
@@ -659,18 +668,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const realName = (attr as KNode.Attribute).name.slice(1);
 
           if (realName === "class") {
-            let lastDynamicValue = "";
             const stop = this.scopedEffect(() => {
               const value = this.execute((attr as KNode.Attribute).value);
               const instance = this.interpreter.scope.get("$instance");
               const task = () => {
-                const staticClass = (element as HTMLElement).getAttribute("class") || "";
-                const currentClasses = staticClass.split(" ")
-                  .filter(c => c !== lastDynamicValue && c !== "")
-                  .join(" ");
-                const newValue = currentClasses ? `${currentClasses} ${value}` : value;
-                (element as HTMLElement).setAttribute("class", newValue);
-                lastDynamicValue = value;
+                (element as HTMLElement).setAttribute("class", value);
               };
 
               if (instance) {
@@ -741,6 +743,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       return element;
     } catch (e: any) {
+      if (e instanceof KasperError && e.code === KErrorCode.RUNTIME_ERROR) throw e;
       this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, node.name);
     }
   }
@@ -752,6 +755,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const result: Record<string, any> = {};
     for (const arg of args) {
       const key = arg.name.split(":")[1];
+      if (this.mode === "development" && key.toLowerCase().startsWith("on")) {
+        const trimmed = arg.value.trim();
+        const isCallExpr = /^[\w$.][\w$.]*\s*\(.*\)\s*$/.test(trimmed) && !trimmed.includes("=>");
+        if (isCallExpr) {
+          console.warn(
+            `[Kasper] @:${key}="${arg.value}" — the expression is called during render and its return value is passed as the prop. ` +
+            `If it returns a function, that function becomes the handler (factory pattern). ` +
+            `If it returns undefined, the prop receives undefined. ` +
+            `If the function has reactive side effects, ensure it does not both read and write the same signal.`
+          );
+        }
+      }
       result[key] = this.execute(arg.value);
     }
     return result;
@@ -899,20 +914,18 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       }
     };
 
-    if (typeof component.onMount === "function") component.onMount();
-
     const scope = new Scope(null, component);
     scope.set("$instance", component);
     const prev = this.interpreter.scope;
     this.interpreter.scope = scope;
-    
+
     flushSync(() => {
       this.createSiblings(nodes, host);
-      if (typeof component.onRender === "function") component.onRender();
     });
-    
+
     this.interpreter.scope = prev;
 
+    if (typeof component.onMount === "function") component.onMount();
     if (typeof component.onRender === "function") component.onRender();
   }
 

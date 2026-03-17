@@ -586,6 +586,276 @@ describe("Integration Edge Cases", () => {
     await nextTick();
     expect(container.textContent).not.toContain("Visible");
   });
+
+  it("bug repro: $slots is undefined when unmounting a component with @if on named slot", async () => {
+    // Mirrors the exact demos scenario that produced the crash.
+    //
+    // Key conditions:
+    //   1. Dialog controls its OWN visibility via @if="args.isOpen.value" (same signal as parent @if)
+    //   2. Dialog checks @if="$slots.footer" to conditionally render a named slot wrapper
+    //   3. Parent mounts Dialog via an intermediate wrapper that is itself conditionally shown
+    //   4. Two signals change WITHOUT batch():
+    //      - isOpen = false  → triggers BOTH the parent @if AND Dialog's internal @if
+    //      - data = null     → triggers a second reactive update in the dialog content
+    //
+    // This creates concurrent tasks in the scheduler where Dialog's internal @if task runs
+    // AFTER the parent has already destroyed the Dialog, causing $slots to be undefined
+    // when the @if="$slots.footer" condition is re-evaluated.
+
+    // Dialog-like component: controls its own visibility AND checks a named slot
+    class DialogComponent extends Component {
+      static template = `
+        <div class="overlay" @if="args.isOpen.value">
+          <div class="body">
+            <slot />
+          </div>
+          <div @if="$slots.footer">
+            <slot @name="footer" />
+          </div>
+        </div>
+      `;
+    }
+
+    // Intermediate wrapper (like ProductForm): uses Dialog and passes slots through
+    class FormComponent extends Component {
+      static template = `
+        <dialog-comp @:isOpen="args.isOpen" @:data="args.data">
+          <p>{{ args.data.value?.name ?? 'no data' }}</p>
+          <div @slot="footer">
+            <button>Submit</button>
+          </div>
+        </dialog-comp>
+      `;
+    }
+
+    // Parent: controls FormComponent visibility AND has a second independent signal
+    class ParentComponent extends Component {
+      isOpen = signal(true);
+      data = signal<any>({ name: "Product A" });
+      static template = `
+        <form-comp @if="isOpen.value" @:isOpen="isOpen" @:data="data"></form-comp>
+      `;
+    }
+
+    const parser = new TemplateParser();
+    const dialogNodes = parser.parse(DialogComponent.template!);
+    const formNodes = parser.parse(FormComponent.template!);
+    const registry = {
+      "dialog-comp": { component: DialogComponent as any, template: DialogComponent.template, nodes: dialogNodes },
+      "form-comp": { component: FormComponent as any, template: FormComponent.template, nodes: formNodes },
+    };
+
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+    const parent = new ParentComponent();
+
+    transpiler.transpile(parser.parse(ParentComponent.template!), parent, container);
+    await nextTick();
+    expect(container.textContent).toContain("Product A");
+
+    // Spy on console.error — the scheduler swallows thrown errors via try/catch
+    // and logs them. If the bug is present we'll see the TypeError here.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Two separate signal changes WITHOUT batch() — the original buggy pattern
+    parent.isOpen.value = false;
+    parent.data.value = null;
+
+    await nextTick();
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+
+    expect(container.textContent).not.toContain("Product A");
+  });
+
+  it("does not crash when unmounting a component that checks $slots in @if", async () => {
+    class Child extends Component {
+      // Accessing a property of a signal that might become null
+      static template = `
+        <div @if="$slots.header">
+          Has Header: {{ args.data.value?.name }}
+        </div>
+      `;
+    }
+
+    class Parent extends Component {
+      isVisible = signal(true);
+      data = signal<any>({ name: "Initial" });
+      
+      static template = `
+        <child-comp @if="isVisible.value" @:data="data">
+          <div @slot="header">Header</div>
+        </child-comp>
+      `;
+    }
+
+    const parser = new TemplateParser();
+    const registry = {
+      "child-comp": {
+        component: Child as any,
+        template: Child.template,
+        nodes: parser.parse(Child.template)
+      }
+    };
+
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+    const parent = new Parent();
+
+    transpiler.transpile(parser.parse(Parent.template), parent, container);
+    expect(container.textContent).toContain("Has Header");
+
+    // Trigger race condition: Unmount and clear data in separate ticks (no batch)
+    parent.isVisible.value = false;
+    parent.data.value = null; 
+    
+    await nextTick();
+    
+    expect(container.textContent).not.toContain("Has Header");
+  });
+});
+
+describe("@: prop binding gotchas", () => {
+  it("@:prop with a call expression evaluates the call immediately during render", () => {
+    // Gotcha: @:onClick="fn()" calls fn() during render, it does NOT pass fn as a callback.
+    // The correct pattern for parameterized callbacks is @on:click="fn(arg)" on the
+    // native element, or @:onClick="fn" (reference, no args) for ui-button.
+    let callCount = 0;
+
+    class Btn extends Component {
+      static template = '<button>btn</button>';
+    }
+    const parser = new TemplateParser();
+    const registry = { 'x-btn': { component: Btn as any, nodes: parser.parse(Btn.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const entity = { doSomething() { callCount++; } };
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    transpiler.transpile(
+      parser.parse('<x-btn @:onClick="doSomething()"></x-btn>'),
+      entity,
+      container
+    );
+    warnSpy.mockRestore();
+
+    // doSomething() was called once during render, not deferred until click
+    expect(callCount).toBe(1);
+
+    // The button click does nothing because args.onClick received the return value
+    // of doSomething() (undefined), not the function itself
+    container.querySelector('button')!.click();
+    expect(callCount).toBe(1); // still 1 — click did not call doSomething
+  });
+
+  it("@:prop call expression with reactive side effects causes an infinite loop", async () => {
+    // When the called function both reads AND writes the same signal, the @: reactive
+    // effect subscribes to the signal (via the read), then the write re-triggers the
+    // effect, which calls the function again — infinite loop.
+    //
+    // This is what caused the shopping cart demo to freeze: @:onClick="add(product)"
+    // where add() does cartItems.value.find() (read) then cartItems.value = [...] (write).
+    //
+    // Requires mountComponent to get the full reactive lifecycle.
+
+    // The loop only manifests when @: is inside @each — the @each subscribes to the
+    // signal, the call expression writes it, and @each tries to rebuild infinitely.
+    // This mirrors the demo exactly: @each over products, @:onClick="add(product)"
+    // where add() reads+writes cartItems.
+
+    class Btn extends Component {
+      static template = '<button>btn</button>';
+    }
+
+    class Parent extends Component {
+      products = signal([{ id: 1 }, { id: 2 }]);
+
+      addProduct(p: any) {
+        const current = this.products.value;        // READ  → @each subscribes to products
+        this.products.value = [...current, { id: current.length + 1 }]; // WRITE → @each rebuilds → calls addProduct again
+      }
+
+      static template = '<x-btn @each="p of products.value" @:onClick="addProduct(p)"></x-btn>';
+    }
+
+    const parser = new TemplateParser();
+    const registry = {
+      'x-btn': { component: Btn as any, nodes: parser.parse(Btn.template!) },
+    };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    // During flushSync the loop hits a stack overflow synchronously.
+    // The error should contain exactly one [K007-1] code — not thousands of
+    // accumulated wrappers from each retry re-catching and re-wrapping the error.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let thrown: Error | null = null;
+    try { transpiler.mountComponent(Parent, container); } catch (e: any) { thrown = e; }
+    warnSpy.mockRestore();
+
+    expect(thrown).not.toBeNull();
+    expect(thrown!.message).toMatch(/K007-1/);
+    const count = (thrown!.message.match(/K007-1/g) ?? []).length;
+    expect(count).toBe(1);
+  });
+});
+
+describe("@each + outer signal reactivity", () => {
+  it("@class inside @each reacts to an outer signal change (plain array iterable)", async () => {
+    // Replicates the data-table pagination bug:
+    // clicking page 3 highlighted pages 1, 2 AND 3 instead of only 3.
+    const selected = signal(1);
+    const items = [1, 2, 3];
+
+    const source = `
+      <button @each="n of items" @class="selected.value === n ? 'active' : ''">{{ n }}</button>
+    `;
+    const container = transpile(source, { items, selected });
+    const buttons = () => container.querySelectorAll("button");
+
+    expect(buttons()[0].className).toBe("active");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("");
+
+    selected.value = 3;
+    await nextTick();
+
+    expect(buttons()[0].className).toBe("");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("active");
+  });
+
+  it("@class inside @each reacts to outer signal when iterable is also a signal", async () => {
+    // Closer to the real demo: pageNumbers is a signal, page is a separate signal.
+    // Both are read in the same @class expression — the @each rebuilds only when
+    // pageNumbers changes, but @class should still update when page changes alone.
+    // Could not reproduce the demo accumulation bug (pages 1+2+3 all active after
+    // clicking 3) in isolation — the framework handles it correctly here.
+    // Tests serve as regression guards for this expected behavior.
+    const page = signal(1);
+    const pageNumbers = signal([1, 2, 3]);
+
+    const source = `
+      <button @each="n of pageNumbers.value" @class="page.value === n ? 'active' : ''">{{ n }}</button>
+    `;
+    const container = transpile(source, { page, pageNumbers });
+    const buttons = () => container.querySelectorAll("button");
+
+    expect(buttons()[0].className).toBe("active");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("");
+
+    page.value = 3;
+    await nextTick();
+
+    // Bug: all previously-active buttons retain the class → [0] and [2] both have "active"
+    // Expected: only [2] has "active"
+    expect(buttons()[0].className).toBe("");
+    expect(buttons()[1].className).toBe("");
+    expect(buttons()[2].className).toBe("active");
+  });
 });
 
 describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
@@ -666,6 +936,52 @@ describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
     expect(container.textContent).toBe("Ab");
   });
 
+  it("appending to keyed @each does not move existing DOM nodes", async () => {
+    // Bug: doEachKeyed called boundary.insert(domNode) for every existing keyed node
+    // unconditionally, detaching and reinserting them in order. This caused ALL items
+    // to restart CSS animations (e.g. slide-in) whenever a single new item was appended.
+    // Fix: use a cursor — only move a node if it's not already in the correct position.
+    const list = signal([
+      { id: 1, text: "first" },
+      { id: 2, text: "second" },
+    ]);
+
+    const source = '<div @each="item of list.value" @key="item.id">{{item.text}}</div>';
+    const container = transpile(source, { list });
+
+    const divsBefore = Array.from(container.querySelectorAll("div"));
+    expect(divsBefore).toHaveLength(2);
+
+    // Track every childList mutation on the container
+    const moves: Node[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const r of records) {
+        r.addedNodes.forEach((n) => moves.push(n));
+      }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+
+    // Append a new item
+    list.value = [...list.value, { id: 3, text: "third" }];
+    await nextTick();
+
+    observer.disconnect();
+
+    const divsAfter = Array.from(container.querySelectorAll("div"));
+    expect(divsAfter).toHaveLength(3);
+
+    // Existing nodes must be the exact same DOM elements (not re-created or moved)
+    expect(divsAfter[0]).toBe(divsBefore[0]);
+    expect(divsAfter[1]).toBe(divsBefore[1]);
+
+    // Existing nodes must NOT appear in the mutation records (were not moved)
+    expect(moves).not.toContain(divsBefore[0]);
+    expect(moves).not.toContain(divsBefore[1]);
+    // Only the new node was added at the list level
+    expect(moves).toContain(divsAfter[2]);
+    expect(divsAfter[2].textContent).toBe("third");
+  });
+
   it("swapping first and last items in keyed @each", async () => {
     const list = signal([
       { id: 1, text: "first" },
@@ -695,5 +1011,150 @@ describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
     // Nodes should be physically reused
     expect(newDivs[0]).toBe(lastNode);
     expect(newDivs[2]).toBe(firstNode);
+  });
+});
+
+describe("onDestroy", () => {
+  it("fires when a component is removed via @if", async () => {
+    let destroyed = false;
+
+    class Child extends Component {
+      static template = '<span>child</span>';
+      onDestroy() { destroyed = true; }
+    }
+
+    const parser = new TemplateParser();
+    const registry = { 'x-child': { component: Child as any, nodes: parser.parse(Child.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    transpiler.transpile(parser.parse('<x-child @if="visible.value"></x-child>'), { visible }, container);
+
+    expect(destroyed).toBe(false);
+    visible.value = false;
+    await nextTick();
+    expect(destroyed).toBe(true);
+  });
+
+  it("does not fire again on subsequent re-renders after removal", async () => {
+    let destroyCount = 0;
+
+    class Child extends Component {
+      static template = '<span>child</span>';
+      onDestroy() { destroyCount++; }
+    }
+
+    const parser = new TemplateParser();
+    const registry = { 'x-child': { component: Child as any, nodes: parser.parse(Child.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    transpiler.transpile(parser.parse('<x-child @if="visible.value"></x-child>'), { visible }, container);
+
+    visible.value = false;
+    await nextTick();
+    expect(destroyCount).toBe(1);
+
+    // further signal changes should not re-trigger onDestroy
+    visible.value = true;
+    await nextTick();
+    visible.value = false;
+    await nextTick();
+    expect(destroyCount).toBe(2); // one destroy per removal, not accumulating
+  });
+
+  it("cleans up effects registered in onMount when destroyed", async () => {
+    let effectRuns = 0;
+    const shared = signal(0);
+
+    class Child extends Component {
+      static template = '<span>child</span>';
+      onMount() {
+        this.effect(() => {
+          shared.value; // subscribe
+          effectRuns++;
+        });
+      }
+    }
+
+    const parser = new TemplateParser();
+    const registry = { 'x-child': { component: Child as any, nodes: parser.parse(Child.template!) } };
+    const transpiler = new Transpiler({ registry });
+    const container = makeContainer();
+
+    const visible = signal(true);
+    transpiler.transpile(parser.parse('<x-child @if="visible.value"></x-child>'), { visible }, container);
+
+    expect(effectRuns).toBe(1); // initial run
+
+    shared.value++;
+    await nextTick();
+    expect(effectRuns).toBe(2); // effect still active
+
+    // destroy the component
+    visible.value = false;
+    await nextTick();
+
+    // effect should be cleaned up — further signal changes should not trigger it
+    shared.value++;
+    await nextTick();
+    expect(effectRuns).toBe(2); // still 2, effect was stopped
+  });
+});
+
+describe("@class reactivity", () => {
+  it("@class with a multi-token expression does not accumulate on repeated updates", async () => {
+    // Bug: @class reads element.className on each reactive update instead of the
+    // original static class. When the expression returns multiple tokens like
+    // 'sf-field sf-field--error', the filter removes only exact token matches —
+    // but lastDynamicValue is the full multi-token string, not individual tokens.
+    // Result: each update appends the full string again.
+    const hasError = signal(true);
+
+    const source = `<div @class="hasError.value ? 'box box--error' : 'box'">content</div>`;
+    const container = transpile(source, { hasError });
+    const div = container.querySelector("div")!;
+
+    expect(div.className).toBe("box box--error");
+
+    // Toggle to no-error and back several times
+    hasError.value = false;
+    await nextTick();
+    expect(div.className).toBe("box");
+
+    hasError.value = true;
+    await nextTick();
+    // Bug: would produce "box box--error box box--error" after second toggle
+    expect(div.className).toBe("box box--error");
+
+    hasError.value = false;
+    await nextTick();
+    expect(div.className).toBe("box");
+  });
+
+  it("@class overrides a static class attribute — static class goes in the expression", async () => {
+    // @class replaces the class attribute entirely.
+    // Static + dynamic classes should both be in the @class expression.
+    const active = signal(false);
+
+    const source = `<div @class="'base' + (active.value ? ' active' : '')">x</div>`;
+    const container = transpile(source, { active });
+    const div = container.querySelector("div")!;
+
+    expect(div.className).toBe("base");
+
+    active.value = true;
+    await nextTick();
+    expect(div.className).toBe("base active");
+
+    active.value = false;
+    await nextTick();
+    expect(div.className).toBe("base");
+
+    active.value = true;
+    await nextTick();
+    expect(div.className).toBe("base active");
   });
 });

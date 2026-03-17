@@ -1,0 +1,23 @@
+<template>
+  <div class="cartpage">
+    <cart-product-grid></cart-product-grid>
+    <cart-panel></cart-panel>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+import { ProductGrid } from './ProductGrid.kasper';
+import { CartPanel } from './CartPanel.kasper';
+
+export class CartPage extends Component {}
+</script>
+
+<style>
+.cartpage {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  align-items: start;
+}
+</style>

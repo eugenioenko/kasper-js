@@ -1,0 +1,43 @@
+<template>
+  <div 
+    class="task-card-wrapper" 
+    draggable="true" 
+    @on:dragstart="onDragStart($event)"
+  >
+    <ui-card>
+      <div @slot="header">{{ args.task.title }}</div>
+      <p class="desc" @if="args.task.description">{{ args.task.description }}</p>
+    </ui-card>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+
+export class TaskCard extends Component {
+  onMount() {
+    console.log('TaskCard:', this.args.task.title);
+  }
+
+  onDragStart(event) {
+    event.dataTransfer.setData('task-id', this.args.task.id);
+    event.dataTransfer.effectAllowed = 'move';
+  }
+}
+</script>
+
+<style>
+.task-card-wrapper {
+  cursor: grab;
+  display: block;
+}
+.task-card-wrapper:active {
+  cursor: grabbing;
+}
+.desc {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0;
+  white-space: pre-wrap;
+}
+</style>

@@ -13,7 +13,7 @@ Bootstrap a Kasper application.
 import { App } from 'kasper-js';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'my-app',
   registry: {
     'my-app': { component: MyApp },

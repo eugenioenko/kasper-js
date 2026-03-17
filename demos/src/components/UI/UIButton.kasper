@@ -1,0 +1,63 @@
+<template>
+  <button 
+    @class="'btn ' + variantClass + (args.class ? ' ' + args.class : '')" 
+    @type="args.type ?? 'button'"
+    @on:click="args.onClick ? args.onClick($event) : null"
+    @disabled="args.disabled"
+  >
+    <slot />
+  </button>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+
+export class UIButton extends Component {
+  get variantClass() {
+    const v = this.args.variant ?? 'primary';
+    return `btn-${v}`;
+  }
+}
+</script>
+
+<style>
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  gap: 0.5rem;
+  width: auto;
+  min-width: fit-content;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+
+.btn-secondary { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+.btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
+
+.btn-success { background: var(--color-success); color: white; }
+.btn-success:hover:not(:disabled) { filter: brightness(1.1); }
+
+.btn-danger { background: var(--color-danger); color: white; }
+.btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
+
+.btn-outline { background: transparent; border-color: var(--color-border); color: var(--color-text-muted); }
+.btn-outline:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+</style>

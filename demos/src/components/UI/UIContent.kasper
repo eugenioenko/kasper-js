@@ -1,0 +1,26 @@
+<template>
+  <div class="ui-content-wrapper">
+    <div class="ui-content">
+      <slot />
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+export class UIContent extends Component {}
+</script>
+
+<style>
+.ui-content-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.ui-content {
+  width: 100%;
+  max-width: var(--max-content-width, 1280px);
+  padding: 2rem;
+  box-sizing: border-box;
+}
+</style>

@@ -1,0 +1,41 @@
+<template>
+  <div class="display-box">
+    <strong>{{args.label}}</strong>
+    <p>Value: {{displayValue.value}}</p>
+    <p class="status">{{message.value}}</p>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+
+export class DisplayCounter extends Component {
+  // Using a signal wrapper to handle both direct values and signals
+  displayValue = this.computed(() => {
+    const val = this.args.value;
+    return (val && typeof val === 'object' && 'value' in val) ? val.value : val;
+  });
+
+  message = this.computed(() => {
+    const v = this.displayValue.value;
+    if (v === 0) return 'Zero';
+    return v > 0 ? 'Positive' : 'Negative';
+  });
+}
+</script>
+
+<style>
+.display-box {
+  padding: 1rem;
+  border: 1px dashed #3498db;
+  border-radius: 4px;
+  margin: 1rem 0;
+  background: #f0f8ff;
+}
+
+.status {
+  font-style: italic;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+}
+</style>

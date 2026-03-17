@@ -21,8 +21,7 @@ window.EXAMPLES.push({
 
   <div class="grid-canvas">
     <div @each="cell of grid.value"
-         class="cell"
-         @class="cell.alive ? 'alive' : ''"
+         @class="cell.alive ? 'cell alive' : 'cell'"
          @on:click="clickCell(index)">
     </div>
   </div>
@@ -140,5 +139,5 @@ class App extends Component {
 }
 .cell { background: #000; cursor: crosshair; transition: background 0.05s; }
 .cell.alive { background: #00f2ff; box-shadow: 0 0 4px #00f2ff; }
-`
+`,
 });

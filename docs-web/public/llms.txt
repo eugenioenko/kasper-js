@@ -85,7 +85,7 @@ import { Example } from './components/Example.kasper';
 import { App } from 'kasper-js';
 
 App({
-  root: document.querySelector<HTMLElement>('#app')!,
+  root: document.body,
   entry: 'app',
   registry: {
     app: { component: KasperApp },
@@ -106,7 +106,7 @@ import { App } from 'kasper-js';
 import { MyApp } from './App.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'my-app',
   registry: {
     'my-app': { component: MyApp },
@@ -171,7 +171,7 @@ export class MyComponent extends Component {
       console.log(`Changed from ${oldVal} to ${newVal}`);  // does NOT run immediately
     });
   }
-  onRender()  {}  // after every render cycle — both mount and reactive updates
+  onRender()  {}  // after every render cycle — fires after onMount on first render, then after each reactive update
   onChanges() {}  // before each reactive re-render (not first mount)
   onDestroy() {}  // when removed from DOM
 
@@ -295,9 +295,10 @@ user.value.name = 'Alice';                       // does NOT trigger ✗
 <a @href="url" @aria-label="linkLabel">link</a>
 <button @disabled="isLoading">Submit</button>
 
-<!-- Object form — @attr="{ ... }" binds multiple attributes at once; class and style are merged -->
+<!-- Object form — @attr="{ ... }" binds multiple attributes at once -->
 <div @attr="{ class: isActive ? 'active' : '', disabled: isDisabled }"></div>
-<div @class="isActive ? 'active' : ''"></div>
+<!-- @class replaces the class attribute entirely — put static and dynamic classes together in the expression -->
+<div @class="'base-class ' + (isActive ? 'active' : '')"></div>
 <div @style="{ color: textColor }"></div>
 <!-- Both forms use setAttribute — reliable for most attributes -->
 <!-- Exception: boolean DOM properties (checked, selected) diverge from their attribute after user interaction -->

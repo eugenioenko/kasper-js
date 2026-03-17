@@ -1,0 +1,284 @@
+<template>
+  <div class="db-wrap">
+
+    <div class="db-header">
+      <div>
+        <h2 class="db-title">System Dashboard</h2>
+        <p class="db-subtitle">Live metrics · 5 independent APIs · updated every 2s</p>
+      </div>
+      <div class="db-header-right">
+        <span class="db-uptime">⬆ {{formatUptime(uptime.value)}}</span>
+        <span @class="'db-badge db-badge--' + status.value">{{status.value}}</span>
+      </div>
+    </div>
+
+    <div class="db-grid">
+
+      <div class="db-card">
+        <span class="db-card-label">CPU Usage</span>
+        <div class="db-card-row">
+          <span class="db-big-num">{{cpu.value}}</span>
+          <span class="db-unit">%</span>
+        </div>
+        <div class="db-bar">
+          <div class="db-bar-fill" @style="{ width: cpu.value + '%', background: barColor(cpu.value, 60, 80) }"></div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <span class="db-card-label">Memory Usage</span>
+        <div class="db-card-row">
+          <span class="db-big-num">{{memory.value}}</span>
+          <span class="db-unit">%</span>
+        </div>
+        <div class="db-bar">
+          <div class="db-bar-fill" @style="{ width: memory.value + '%', background: barColor(memory.value, 70, 85) }"></div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <span class="db-card-label">Request Rate</span>
+        <div class="db-card-row">
+          <span class="db-big-num db-big-num--primary">{{requests.value}}</span>
+          <span class="db-unit">req/s</span>
+        </div>
+        <div class="db-bar">
+          <div class="db-bar-fill db-bar-fill--primary" @style="{ width: (requests.value / 4800 * 100) + '%' }"></div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <span class="db-card-label">Error Rate</span>
+        <div class="db-card-row">
+          <span class="db-big-num" @style="{ color: barColor(errorRate.value, 2, 5) }">{{errorRate.value}}</span>
+          <span class="db-unit">%</span>
+        </div>
+        <div class="db-bar">
+          <div class="db-bar-fill" @style="{ width: (errorRate.value / 12 * 100) + '%', background: barColor(errorRate.value, 2, 5) }"></div>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <span class="db-card-label">Avg Latency</span>
+        <div class="db-card-row">
+          <span class="db-big-num" @style="{ color: barColor(latency.value, 200, 400) }">{{latency.value}}</span>
+          <span class="db-unit">ms</span>
+        </div>
+        <div class="db-bar">
+          <div class="db-bar-fill" @style="{ width: (latency.value / 600 * 100) + '%', background: barColor(latency.value, 200, 400) }"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="db-log">
+      <div class="db-log-header">Event Log</div>
+      <div class="db-log-body">
+        <div @each="event of events.value" @key="event.id" @class="'db-event db-event--' + event.level">
+          <div class="db-event-dot"></div>
+          <span class="db-event-time">{{event.time}}</span>
+          <span class="db-event-msg">{{event.message}}</span>
+        </div>
+        <div @if="!events.value.length" class="db-event-empty">Waiting for data...</div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+import { cpu, memory, requests, errorRate, latency, uptime, events, status, startPolling, stopPolling } from './metrics-store';
+
+export class Dashboard extends Component {
+  cpu       = cpu;
+  memory    = memory;
+  requests  = requests;
+  errorRate = errorRate;
+  latency   = latency;
+  uptime    = uptime;
+  events    = events;
+  status    = status;
+
+  onMount() { startPolling(); }
+  onDestroy() { stopPolling(); }
+
+  formatUptime(s: number): string {
+    const h   = Math.floor(s / 3600);
+    const m   = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return [h, m, sec].map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  barColor(value: number, warn: number, critical: number): string {
+    if (value >= critical) return 'var(--color-danger)';
+    if (value >= warn)     return 'var(--color-warning)';
+    return 'var(--color-success)';
+  }
+}
+</script>
+
+<style>
+.db-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.db-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.db-title  { margin: 0 0 0.25rem; }
+.db-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.db-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.db-uptime {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.db-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.db-badge--healthy  { background: #d1fae5; color: #065f46; }
+.db-badge--warning  { background: #fef3c7; color: #92400e; }
+.db-badge--critical { background: #fee2e2; color: #991b1b; }
+
+.db-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.db-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.db-card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.db-card-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.db-big-num {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.6s ease;
+}
+
+.db-big-num--primary { color: var(--color-primary); }
+
+.db-unit {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.db-bar {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.db-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1.2s ease, background 0.6s ease;
+}
+
+.db-bar-fill--primary { background: var(--color-primary); }
+
+.db-log {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.db-log-header {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.db-log-body {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.db-event {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.8rem;
+}
+
+.db-event:last-child { border-bottom: none; }
+
+.db-event-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.db-event--info  .db-event-dot { background: var(--color-info); }
+.db-event--warn  .db-event-dot { background: var(--color-warning); }
+.db-event--error .db-event-dot { background: var(--color-danger); }
+
+.db-event-time {
+  font-family: monospace;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+.db-event-msg { color: var(--color-text); }
+
+.db-event-empty {
+  padding: 1.5rem 1.25rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+</style>

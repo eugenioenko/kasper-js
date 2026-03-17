@@ -78,7 +78,7 @@ import { Counter } from './Counter.kasper';
 import { Greeting } from './Greeting.kasper';
 
 App({
-  root: document.querySelector('#app'),
+  root: document.body,
   entry: 'app',
   registry: {
     counter: { component: Counter },

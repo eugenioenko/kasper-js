@@ -28,6 +28,24 @@ describe("Boundary", () => {
     expect(b.parent).toBe(parent);
   });
 
+  it("accepts another Boundary as parent (nested boundaries)", () => {
+    // Bug: Boundary constructor called parent.appendChild() assuming a real DOM node.
+    // When void+@if passes a Boundary as parent to a child @each, a nested Boundary
+    // was created with a Boundary parent — throwing "parent.appendChild is not a function".
+    const dom = document.createElement("div");
+    const outer = new Boundary(dom, "if");
+    // Should not throw — inner boundary must use outer.insert() instead of appendChild
+    expect(() => new Boundary(outer as any, "each")).not.toThrow();
+
+    const inner = new Boundary(outer as any, "each");
+    const span = document.createElement("span");
+    inner.insert(span);
+
+    // span should be inside the outer boundary (before outer's end marker)
+    const outerNodes = outer.nodes();
+    expect(outerNodes).toContain(span);
+  });
+
   it("clears only nodes between markers", () => {
     const parent = document.createElement("div");
     const before = document.createTextNode("before");
