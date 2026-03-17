@@ -932,6 +932,52 @@ describe("Advanced Reactivity & Lifecycle Edge Cases", () => {
     expect(container.textContent).toBe("Ab");
   });
 
+  it("appending to keyed @each does not move existing DOM nodes", async () => {
+    // Bug: doEachKeyed called boundary.insert(domNode) for every existing keyed node
+    // unconditionally, detaching and reinserting them in order. This caused ALL items
+    // to restart CSS animations (e.g. slide-in) whenever a single new item was appended.
+    // Fix: use a cursor — only move a node if it's not already in the correct position.
+    const list = signal([
+      { id: 1, text: "first" },
+      { id: 2, text: "second" },
+    ]);
+
+    const source = '<div @each="item of list.value" @key="item.id">{{item.text}}</div>';
+    const container = transpile(source, { list });
+
+    const divsBefore = Array.from(container.querySelectorAll("div"));
+    expect(divsBefore).toHaveLength(2);
+
+    // Track every childList mutation on the container
+    const moves: Node[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const r of records) {
+        r.addedNodes.forEach((n) => moves.push(n));
+      }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+
+    // Append a new item
+    list.value = [...list.value, { id: 3, text: "third" }];
+    await nextTick();
+
+    observer.disconnect();
+
+    const divsAfter = Array.from(container.querySelectorAll("div"));
+    expect(divsAfter).toHaveLength(3);
+
+    // Existing nodes must be the exact same DOM elements (not re-created or moved)
+    expect(divsAfter[0]).toBe(divsBefore[0]);
+    expect(divsAfter[1]).toBe(divsBefore[1]);
+
+    // Existing nodes must NOT appear in the mutation records (were not moved)
+    expect(moves).not.toContain(divsBefore[0]);
+    expect(moves).not.toContain(divsBefore[1]);
+    // Only the new node was added at the list level
+    expect(moves).toContain(divsAfter[2]);
+    expect(divsAfter[2].textContent).toBe("third");
+  });
+
   it("swapping first and last items in keyed @each", async () => {
     const list = signal([
       { id: 1, text: "first" },

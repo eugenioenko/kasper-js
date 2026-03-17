@@ -384,7 +384,10 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           }
         }
 
-        // Insert/reuse nodes in new order
+        // Insert/reuse nodes in new order using a cursor to avoid unnecessary moves
+        const parent = (boundary as any).end.parentNode as Node;
+        let lastInserted: Node = (boundary as any).start;
+
         for (const { item, idx, key } of newItems) {
           const scopeValues: any = { [name]: item };
           if (indexKey) scopeValues[indexKey] = idx;
@@ -392,7 +395,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
           if (keyedNodes.has(key)) {
             const domNode = keyedNodes.get(key)!;
-            boundary.insert(domNode);
+
+            // Only move the node if it's not already in the correct position
+            if (lastInserted.nextSibling !== domNode) {
+              parent.insertBefore(domNode, lastInserted.nextSibling);
+            }
+            lastInserted = domNode;
 
             // Update scope and trigger re-render of nested structural directives
             const nodeScope = (domNode as any).$kasperScope;
@@ -406,6 +414,11 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           } else {
             const created = this.createElement(node, boundary as any);
             if (created) {
+              // createElement inserts before end; move to correct position if needed
+              if (lastInserted.nextSibling !== created) {
+                parent.insertBefore(created, lastInserted.nextSibling);
+              }
+              lastInserted = created;
               keyedNodes.set(key, created);
               // Store the scope on the DOM node so we can update it later
               (created as any).$kasperScope = this.interpreter.scope;
