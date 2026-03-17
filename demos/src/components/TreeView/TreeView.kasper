@@ -1,0 +1,179 @@
+<template>
+  <div class="tv-wrap">
+    <div class="tv-header">
+      <h2>File Explorer</h2>
+      <p class="tv-subtitle">Recursive components — each node renders itself for its children, no depth limit.</p>
+    </div>
+
+    <div class="tv-layout">
+      <aside class="tv-sidebar">
+        <div class="tv-sidebar-title">Explorer</div>
+        <div class="tv-tree">
+          <tree-node
+            @each="node of treeData"
+            @key="node.id"
+            @:item="node"
+          ></tree-node>
+        </div>
+      </aside>
+
+      <div class="tv-detail">
+        <div @if="selected.value" class="tv-file-card">
+          <div class="tv-file-icon">{{ selected.value.type === 'folder' ? '📁' : '📄' }}</div>
+          <h3 class="tv-file-name">{{ selected.value.name }}</h3>
+          <p class="tv-file-meta">{{ selected.value.type === 'folder' ? 'Directory' : 'File' }}</p>
+          <div @if="selected.value.type === 'folder' && selected.value.children" class="tv-children-list">
+            <p class="tv-children-label">Contents</p>
+            <div @each="child of selected.value.children" class="tv-child-row">
+              <span>{{ child.type === 'folder' ? '📁' : '📄' }}</span>
+              <span>{{ child.name }}</span>
+            </div>
+          </div>
+        </div>
+        <div @else class="tv-empty">
+          <span class="tv-empty-icon">📂</span>
+          <p>Select a file or folder to inspect</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component } from 'kasper-js';
+import { selectedNode, treeData } from './tree-store';
+
+export class TreeView extends Component {
+  selected = selectedNode;
+  treeData = treeData;
+}
+</script>
+
+<style>
+.tv-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.tv-header h2 { margin: 0 0 0.25rem; }
+
+.tv-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.tv-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1.5rem;
+  min-height: 500px;
+}
+
+.tv-sidebar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tv-sidebar-title {
+  padding: 0.75rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tv-tree {
+  padding: 0.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.tv-detail {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.tv-file-card {
+  text-align: center;
+  width: 100%;
+  max-width: 360px;
+}
+
+.tv-file-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+
+.tv-file-name {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.tv-file-meta {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.tv-children-list {
+  text-align: left;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.tv-children-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.tv-child-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tv-child-row:last-child { border-bottom: none; }
+
+.tv-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.tv-empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.tv-empty p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+</style>

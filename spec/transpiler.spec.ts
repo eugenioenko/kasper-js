@@ -696,10 +696,9 @@ describe("Transpiler", () => {
       expect(() => transpile("{{ 1 + }}")).toThrow(/\[K004-3\]/);
     });
 
-    it("includes the tag name in the error context", () => {
-      // Trigger error inside a specific tag
+    it("expression parse errors inside a tag preserve original error code", () => {
       const source = '<div id="{{ 1 + }}"></div>';
-      expect(() => transpile(source)).toThrow(/at <div>/s);
+      expect(() => transpile(source)).toThrow(/\[K004-3\]/);
     });
   });
 

@@ -485,12 +485,22 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const expressions: IfElseNode[] = [[el, ifAttr]];
 
           while (current < nodes.length) {
-            const attr = this.findAttr(nodes[current] as KNode.Element, [
+            const next = nodes[current];
+            // skip comment nodes and whitespace-only text nodes between if/elseif/else
+            if (
+              next.type === "comment" ||
+              (next.type === "text" && !(next as KNode.Text).value?.trim())
+            ) {
+              current += 1;
+              continue;
+            }
+            if (next.type !== "element") break;
+            const attr = this.findAttr(next as KNode.Element, [
               "@else",
               "@elseif",
             ]);
             if (attr) {
-              expressions.push([nodes[current] as KNode.Element, attr]);
+              expressions.push([next as KNode.Element, attr]);
               current += 1;
             } else {
               break;
@@ -743,7 +753,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       return element;
     } catch (e: any) {
-      if (e instanceof KasperError && e.code === KErrorCode.RUNTIME_ERROR) throw e;
+      if (e instanceof KasperError) throw e;
       this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, node.name);
     }
   }
