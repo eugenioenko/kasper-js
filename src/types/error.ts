@@ -107,4 +107,12 @@ export class KasperError extends Error {
     super(`[${code}] ${message}${location}${tagInfo}${link}`);
     this.name = "KasperError";
   }
+
+  public withTag(tagName: string): this {
+    if (!this.tagName) {
+      this.tagName = tagName;
+      this.message += `\n  at <${tagName}>`;
+    }
+    return this;
+  }
 }

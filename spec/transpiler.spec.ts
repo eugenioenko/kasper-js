@@ -196,12 +196,12 @@ describe("Transpiler", () => {
   });
 
   describe("comment nodes", () => {
-    it("creates a comment node", () => {
+    it("strips comments from DOM output", () => {
       const container = transpile("<!-- hello -->");
       const comment = Array.from(container.childNodes).find(
         (n) => n.nodeType === Node.COMMENT_NODE
       );
-      expect(comment).toBeDefined();
+      expect(comment).toBeUndefined();
     });
   });
 
@@ -696,9 +696,11 @@ describe("Transpiler", () => {
       expect(() => transpile("{{ 1 + }}")).toThrow(/\[K004-3\]/);
     });
 
-    it("expression parse errors inside a tag preserve original error code", () => {
+    it("includes the tag name and original error code in context", () => {
       const source = '<div id="{{ 1 + }}"></div>';
-      expect(() => transpile(source)).toThrow(/\[K004-3\]/);
+      const err = (() => { try { transpile(source); } catch(e) { return e as any; } })();
+      expect(err.message).toMatch(/\[K004-3\]/);
+      expect(err.message).toMatch(/at <div>/);
     });
   });
 
