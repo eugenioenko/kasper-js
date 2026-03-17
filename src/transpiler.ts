@@ -479,11 +479,6 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
           while (current < nodes.length) {
             const next = nodes[current];
-            // skip whitespace-only text nodes between if/elseif/else
-            if (next.type === "text" && !(next as KNode.Text).value?.trim()) {
-              current += 1;
-              continue;
-            }
             if (next.type !== "element") break;
             const attr = this.findAttr(next as KNode.Element, [
               "@else",
