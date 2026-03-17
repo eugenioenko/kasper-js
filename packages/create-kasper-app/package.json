@@ -1,6 +1,6 @@
 {
   "name": "create-kasper-app",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "description": "Scaffold a new Kasper.js app",
   "type": "module",
   "bin": {

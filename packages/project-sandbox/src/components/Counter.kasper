@@ -12,7 +12,7 @@
   import { signal, Component } from 'kasper-js';
 
   export class Counter extends Component {
-    count = signal(0);
+    count = signal(1);
 
     increment() {
       this.count.value++;

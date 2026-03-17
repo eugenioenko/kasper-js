@@ -1,0 +1,231 @@
+<template>
+  <div class="hx-wrap">
+    <div class="hx-header">
+      <div>
+        <h2>Hex Explorer</h2>
+        <p class="hx-subtitle">Virtual scroll — 5,000 rows, 50,000 cells. Only ~30 rows are in the DOM at any time.</p>
+      </div>
+      <div class="hx-stats">
+        <div class="hx-stat">
+          <span class="hx-stat-label">Rows</span>
+          <span class="hx-stat-value">5,000</span>
+        </div>
+        <div class="hx-stat">
+          <span class="hx-stat-label">Cells</span>
+          <span class="hx-stat-value">50,000</span>
+        </div>
+        <div class="hx-stat">
+          <span class="hx-stat-label">Offset</span>
+          <span class="hx-stat-value">{{ offsetY.value }}px</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hx-card">
+      <div class="hx-col-header">
+        <div class="hx-index-cell"></div>
+        <div @each="col of columns" class="hx-col-label">+{{ col }}</div>
+      </div>
+
+      <div class="hx-scroll" @ref="scrollEl" @on:scroll="onScroll($event)">
+        <div class="hx-phantom" @style="'height: ' + totalHeight + 'px'">
+          <div class="hx-viewport" @style="'transform: translateY(' + offsetY.value + 'px)'">
+            <div @each="row of visibleRows.value" @key="row.index" class="hx-row">
+              <div class="hx-index">{{ row.index }}</div>
+              <div @each="cell of row.cells" @class="'hx-cell' + (cell.highlight ? ' hx-cell--hi' : '')">
+                {{ cell.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+export class HexExplorer extends Component {
+  rowHeight  = 32;
+  totalRows  = 5000;
+  visibleCount = 30;
+  totalHeight = 5000 * 32;
+  columns = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+  offsetY     = signal(0);
+  visibleRows = signal<any[]>([]);
+
+  scrollEl!: HTMLElement;
+
+  onMount() {
+    this.update(0);
+  }
+
+  onScroll(e: Event) {
+    this.update((e.target as HTMLElement).scrollTop);
+  }
+
+  update(top: number) {
+    const start = Math.floor(top / this.rowHeight);
+    const end   = Math.min(this.totalRows, start + this.visibleCount);
+    const rows  = [];
+
+    for (let i = start; i < end; i++) {
+      rows.push({
+        index: i,
+        cells: Array.from({ length: 10 }, () => ({
+          value:     (Math.random() * 255 | 0).toString(16).padStart(2, '0').toUpperCase(),
+          highlight: Math.random() > 0.95,
+        }))
+      });
+    }
+
+    this.visibleRows.value = rows;
+    this.offsetY.value     = start * this.rowHeight;
+  }
+}
+</script>
+
+<style>
+.hx-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hx-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hx-header h2 { margin: 0 0 0.25rem; }
+
+.hx-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.hx-stats {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.hx-stat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.875rem;
+  text-align: center;
+}
+
+.hx-stat-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.hx-stat-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--color-primary);
+}
+
+.hx-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.hx-col-header {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  height: 32px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.hx-index-cell {
+  width: 56px;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+
+.hx-col-label {
+  flex: 1;
+  text-align: center;
+}
+
+.hx-scroll {
+  height: 500px;
+  overflow-y: scroll;
+  position: relative;
+}
+
+.hx-phantom {
+  width: 100%;
+  pointer-events: none;
+}
+
+.hx-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: auto;
+  padding: 0 1rem;
+}
+
+.hx-row {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-bottom: 1px solid var(--color-border);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.hx-index {
+  width: 56px;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  text-align: right;
+  padding-right: 0.5rem;
+  border-right: 1px solid var(--color-border);
+}
+
+.hx-cell {
+  flex: 1;
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+}
+
+.hx-cell--hi {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.hx-scroll::-webkit-scrollbar { width: 8px; }
+.hx-scroll::-webkit-scrollbar-track { background: var(--color-bg); }
+.hx-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 8px; }
+.hx-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+</style>

@@ -49,6 +49,41 @@ describe("Error System (New Checks)", () => {
       }).toThrow(/\[K003-7\] @else must be preceded by an @if or @elseif block/);
     });
 
+    it("comment node between @if and @elseif is skipped (chain is preserved)", () => {
+      // Fix: createSiblings now skips comment nodes and whitespace-only text nodes
+      // when scanning for @elseif/@else, so HTML comments no longer break the chain.
+      const parser = new TemplateParser();
+      const transpiler = new Transpiler();
+      const container = document.createElement("div");
+
+      const nodes = parser.parse('<div @if="false">A</div><!-- comment --><div @elseif="true">B</div>');
+      expect(() => {
+        transpiler.transpile(nodes, {}, container);
+      }).not.toThrow();
+      // The @elseif branch renders since @if is false
+      expect(container.textContent).toBe("B");
+    });
+
+    it("K003-7 error nested inside a parent element is not wrapped in K007-1", () => {
+      // Bug: when @elseif is inside a parent element, K003-7 is thrown inside
+      // createElement's try/catch which re-wraps it as K007-1. The developer
+      // sees "[K007-1] [K003-7]..." instead of just "[K003-7]...".
+      // Structural directive errors should bubble through createElement unwrapped.
+      const parser = new TemplateParser();
+      const transpiler = new Transpiler();
+      const container = document.createElement("div");
+
+      // @elseif nested inside a <div> — triggers createElement's try/catch
+      const nodes = parser.parse('<div><div @elseif="true">orphan</div></div>');
+      let thrown: Error | null = null;
+      try { transpiler.transpile(nodes, {}, container); } catch (e: any) { thrown = e; }
+
+      expect(thrown).not.toBeNull();
+      expect(thrown!.message).toMatch(/\[K003-7\]/);
+      // Should NOT be double-wrapped: K007-1 should not appear
+      expect(thrown!.message).not.toMatch(/\[K007-1\]/);
+    });
+
     it("K003-9: throws if multiple structural directives on same element", () => {
       const parser = new TemplateParser();
       const transpiler = new Transpiler();

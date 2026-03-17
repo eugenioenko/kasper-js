@@ -1,0 +1,95 @@
+<template>
+  <div class="tn-node">
+    <div @class="'tn-row' + (isSelected.value ? ' tn-row--selected' : '')" @on:click="handleClick()">
+      <span @class="'tn-toggle' + (args.item.type === 'file' ? ' tn-toggle--hidden' : '')">
+        {{ isOpen.value ? '▾' : '▸' }}
+      </span>
+      <span class="tn-icon">{{ args.item.type === 'folder' ? '📁' : '📄' }}</span>
+      <span class="tn-name">{{ args.item.name }}</span>
+    </div>
+    <div @if="isOpen.value && args.item.children" class="tn-children">
+      <tree-node
+        @each="child of args.item.children"
+        @key="child.id"
+        @:item="child"
+      ></tree-node>
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component, signal, computed } from 'kasper-js';
+import { selectedNode } from './tree-store';
+
+export class TreeNode extends Component {
+  isOpen = signal(false);
+
+  isSelected = this.computed(() =>
+    selectedNode.value !== null && selectedNode.value.id === this.args.item.id
+  );
+
+  handleClick() {
+    selectedNode.value = this.args.item;
+    if (this.args.item.type === 'folder') {
+      this.isOpen.value = !this.isOpen.value;
+    }
+  }
+}
+</script>
+
+<style>
+.tn-node {
+  user-select: none;
+}
+
+.tn-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.625rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.tn-row:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.tn-row--selected {
+  background: #eef2ff;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tn-toggle {
+  font-size: 0.65rem;
+  width: 12px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.tn-toggle--hidden {
+  visibility: hidden;
+}
+
+.tn-icon {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.tn-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tn-children {
+  margin-left: 1rem;
+  border-left: 1px solid var(--color-border);
+  margin-bottom: 0.125rem;
+}
+</style>

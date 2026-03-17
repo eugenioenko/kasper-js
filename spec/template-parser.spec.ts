@@ -94,25 +94,21 @@ describe("TemplateParser", () => {
   });
 
   describe("comment nodes", () => {
-    it("parses a comment", () => {
-      const node = parseOne("<!-- hello -->") as Node.Comment;
-      expect(node.type).toBe("comment");
+    it("comments are stripped from the AST", () => {
+      const nodes = parse("<!-- hello -->");
+      expect(nodes).toHaveLength(0);
     });
 
-    it("comment value contains the inner text", () => {
-      const node = parseOne("<!-- hello -->") as Node.Comment;
-      expect(node.value).toContain("hello");
+    it("comment between elements does not appear in AST", () => {
+      const nodes = parse("<div></div><!-- note --><span></span>");
+      expect(nodes).toHaveLength(2);
+      expect(nodes[0].type).toBe("element");
+      expect(nodes[1].type).toBe("element");
     });
 
-    it("parses a multiline comment", () => {
-      const node = parseOne("<!--\nline1\nline2\n-->") as Node.Comment;
-      expect(node.type).toBe("comment");
-      expect(node.value).toContain("line1");
-    });
-
-    it("comment does not appear as element", () => {
-      const node = parseOne("<!-- note -->");
-      expect(node.type).not.toBe("element");
+    it("multiline comment is stripped", () => {
+      const nodes = parse("<!--\nline1\nline2\n-->");
+      expect(nodes).toHaveLength(0);
     });
   });
 

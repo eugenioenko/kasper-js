@@ -36,4 +36,5 @@ export declare class KasperError extends Error {
     col?: number;
     tagName?: string;
     constructor(code: KErrorCodeType, args?: any, line?: number, col?: number, tagName?: string);
+    withTag(tagName: string): this;
 }

@@ -94,13 +94,11 @@ export class TemplateParser {
     return node;
   }
 
-  private comment(): Node.KNode {
-    const start = this.current;
+  private comment(): null {
     do {
       this.advance("Expected comment closing '-->'");
     } while (!this.match(`-->`));
-    const comment = this.source.slice(start, this.current - 3);
-    return new Node.Comment(comment, this.line);
+    return null;
   }
 
   private doctype(): Node.KNode {

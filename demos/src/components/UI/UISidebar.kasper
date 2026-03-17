@@ -35,6 +35,9 @@ export class UISidebar extends Component {
     { path: '/dashboard', icon: '📡', label: 'Live Dashboard' },
     { path: '/markdown',  icon: '✍️',  label: 'Markdown Editor' },
     { path: '/toast',     icon: '🔔', label: 'Notifications' },
+    { path: '/tree',      icon: '🌳', label: 'File Explorer' },
+    { path: '/hex',       icon: '🗂️',  label: 'Hex Explorer' },
+    { path: '/wizard',    icon: '🧙', label: 'Setup Wizard' },
   ];
 }
 </script>

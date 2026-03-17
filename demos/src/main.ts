@@ -24,6 +24,10 @@ import { MarkdownEditor } from './components/MarkdownEditor.kasper';
 import { ToastContainer } from './components/Toast/ToastContainer.kasper';
 import { ToastPage } from './components/Toast/ToastPage.kasper';
 import { ProductForm } from './components/Products/ProductForm.kasper';
+import { TreeView } from './components/TreeView/TreeView.kasper';
+import { TreeNode } from './components/TreeView/TreeNode.kasper';
+import { HexExplorer } from './components/HexExplorer.kasper';
+import { WizardPage } from './components/WizardPage.kasper';
 import { App } from 'kasper-js';
 
 App({
@@ -56,5 +60,9 @@ App({
     'toast-container': { component: ToastContainer },
     'toast-page': { component: ToastPage },
     'product-form': { component: ProductForm },
+    'tree-view': { component: TreeView },
+    'tree-node': { component: TreeNode },
+    'hex-explorer': { component: HexExplorer },
+    'wizard-page': { component: WizardPage },
   },
 });

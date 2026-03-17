@@ -16,6 +16,9 @@
         <route @path="/dashboard" @component="Dashboard" />
         <route @path="/markdown" @component="MarkdownEditor" />
         <route @path="/toast" @component="ToastPage" />
+        <route @path="/tree" @component="TreeView" />
+        <route @path="/hex" @component="HexExplorer" />
+        <route @path="/wizard" @component="WizardPage" />
       </router>
     </main>
     <toast-container></toast-container>
@@ -38,6 +41,9 @@ import { Dashboard } from './Dashboard/Dashboard.kasper';
 import { MarkdownEditor } from './MarkdownEditor.kasper';
 import { ToastContainer } from './Toast/ToastContainer.kasper';
 import { ToastPage } from './Toast/ToastPage.kasper';
+import { TreeView } from './TreeView/TreeView.kasper';
+import { HexExplorer } from './HexExplorer.kasper';
+import { WizardPage } from './WizardPage.kasper';
 
 export class App extends Component {
   currentPath = signal(window.location.pathname);

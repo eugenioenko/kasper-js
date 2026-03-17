@@ -177,15 +177,8 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
-  public visitCommentKNode(node: KNode.Comment, parent?: Node): void {
-    const result = new Comment(node.value);
-    if (parent) {
-      if ((parent as any).insert && typeof (parent as any).insert === "function") {
-        (parent as any).insert(result);
-      } else {
-        parent.appendChild(result);
-      }
-    }
+  public visitCommentKNode(_node: KNode.Comment, _parent?: Node): void {
+    // template comments are stripped from DOM output
   }
 
   private trackEffect(target: any, stop: any) {
@@ -485,12 +478,14 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           const expressions: IfElseNode[] = [[el, ifAttr]];
 
           while (current < nodes.length) {
-            const attr = this.findAttr(nodes[current] as KNode.Element, [
+            const next = nodes[current];
+            if (next.type !== "element") break;
+            const attr = this.findAttr(next as KNode.Element, [
               "@else",
               "@elseif",
             ]);
             if (attr) {
-              expressions.push([nodes[current] as KNode.Element, attr]);
+              expressions.push([next as KNode.Element, attr]);
               current += 1;
             } else {
               break;
@@ -743,7 +738,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
       return element;
     } catch (e: any) {
-      if (e instanceof KasperError && e.code === KErrorCode.RUNTIME_ERROR) throw e;
+      if (e instanceof KasperError) throw e.withTag(node.name);
       this.error(KErrorCode.RUNTIME_ERROR, { message: e.message || `${e}` }, node.name);
     }
   }

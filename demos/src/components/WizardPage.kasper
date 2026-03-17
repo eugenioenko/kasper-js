@@ -1,0 +1,400 @@
+<template>
+  <div class="wz-wrap">
+    <div class="wz-header">
+      <h2>Setup Wizard</h2>
+      <p class="wz-subtitle">Multi-step flow with progress tracking, per-step validation, and a summary screen.</p>
+    </div>
+
+    <div class="wz-card">
+
+      <!-- Progress -->
+      <div class="wz-progress">
+        <div class="wz-progress-bar">
+          <div class="wz-progress-fill" @style="'width: ' + ((step.value + 1) / steps.length * 100) + '%'"></div>
+        </div>
+        <div class="wz-steps">
+          <div @each="s with i of steps" @class="'wz-step' + (i < step.value ? ' wz-step--done' : '') + (i === step.value ? ' wz-step--active' : '')">
+            <div class="wz-step-dot">{{ i < step.value ? '✓' : i + 1 }}</div>
+            <span class="wz-step-label">{{ s }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div @if="step.value === 0" class="wz-pane">
+        <h3>Your details</h3>
+        <p class="wz-pane-desc">Let's start with the basics.</p>
+        <div class="wz-fields">
+          <div class="wz-field">
+            <label>Full name</label>
+            <input type="text" @value="form.value.name" @on:input="set('name', $event.target.value)" placeholder="Jane Smith" />
+          </div>
+          <div class="wz-field">
+            <label>Email</label>
+            <input type="email" @value="form.value.email" @on:input="set('email', $event.target.value)" placeholder="jane@example.com" />
+          </div>
+        </div>
+      </div>
+      <div @elseif="step.value === 1" class="wz-pane">
+        <h3>Choose a plan</h3>
+        <p class="wz-pane-desc">You can change this later.</p>
+        <div class="wz-plans">
+          <div @each="plan of plans" @on:click="set('plan', plan.id)" @class="'wz-plan' + (form.value.plan === plan.id ? ' wz-plan--selected' : '')">
+            <div class="wz-plan-icon">{{ plan.icon }}</div>
+            <div class="wz-plan-name">{{ plan.name }}</div>
+            <div class="wz-plan-price">{{ plan.price }}</div>
+          </div>
+        </div>
+      </div>
+      <div @elseif="step.value === 2" class="wz-pane">
+        <h3>Features</h3>
+        <p class="wz-pane-desc">Select the features you need.</p>
+        <div class="wz-features">
+          <label @each="feat of features" class="wz-feature">
+            <input type="checkbox" @on:change="toggleFeature(feat.id, $event.target.checked)" />
+            <div class="wz-feature-info">
+              <span class="wz-feature-name">{{ feat.name }}</span>
+              <span class="wz-feature-desc">{{ feat.desc }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div @elseif="step.value === 3" class="wz-pane">
+        <h3>Review & confirm</h3>
+        <p class="wz-pane-desc">Everything look right?</p>
+        <div class="wz-summary">
+          <div class="wz-summary-row">
+            <span>Name</span>
+            <strong>{{ form.value.name }}</strong>
+          </div>
+          <div class="wz-summary-row">
+            <span>Email</span>
+            <strong>{{ form.value.email }}</strong>
+          </div>
+          <div class="wz-summary-row">
+            <span>Plan</span>
+            <strong>{{ planLabel() }}</strong>
+          </div>
+          <div class="wz-summary-row">
+            <span>Features</span>
+            <strong>{{ form.value.selectedFeatures.length || 'None' }}</strong>
+          </div>
+        </div>
+      </div>
+      <div @else class="wz-pane wz-done">
+        <div class="wz-done-icon">🎉</div>
+        <h3>All set, {{ form.value.name }}!</h3>
+        <p>Your <strong>{{ planLabel() }}</strong> workspace is ready.</p>
+        <button class="wz-btn wz-btn--primary" @on:click="restart()">Start over</button>
+      </div>
+
+      <div @if="step.value <= 3" class="wz-footer">
+        <button @if="step.value > 0" class="wz-btn wz-btn--ghost" @on:click="step.value--">Back</button>
+        <div class="wz-spacer"></div>
+        <button
+          @if="step.value < 3"
+          class="wz-btn wz-btn--primary"
+          @disabled="!canAdvance.value"
+          @on:click="step.value++"
+        >Next</button>
+        <button @if="step.value === 3" class="wz-btn wz-btn--primary" @on:click="step.value++">Finish</button>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component, signal, computed } from 'kasper-js';
+
+export class WizardPage extends Component {
+  steps = ['Details', 'Plan', 'Features', 'Review'];
+  step  = signal(0);
+
+  plans = [
+    { id: 'free',       name: 'Free',       price: '$0 / mo',    icon: '🌱' },
+    { id: 'pro',        name: 'Pro',        price: '$12 / mo',   icon: '⚡' },
+    { id: 'enterprise', name: 'Enterprise', price: 'Custom',     icon: '🏢' },
+  ];
+
+  features = [
+    { id: 'analytics', name: 'Analytics',      desc: 'Usage reports and insights' },
+    { id: 'api',       name: 'API Access',      desc: 'REST and GraphQL endpoints' },
+    { id: 'collab',    name: 'Collaboration',   desc: 'Invite team members' },
+    { id: 'sso',       name: 'SSO',             desc: 'Single sign-on integration' },
+  ];
+
+  form = signal({
+    name:             '',
+    email:            '',
+    plan:             'free',
+    selectedFeatures: [] as string[],
+  });
+
+  canAdvance = this.computed(() => {
+    if (this.step.value === 0) {
+      return this.form.value.name.trim().length > 0 && this.form.value.email.includes('@');
+    }
+    return true;
+  });
+
+  set(field: string, value: any) {
+    this.form.value = { ...this.form.value, [field]: value };
+  }
+
+  toggleFeature(id: string, checked: boolean) {
+    const current = this.form.value.selectedFeatures;
+    this.form.value = {
+      ...this.form.value,
+      selectedFeatures: checked ? [...current, id] : current.filter(f => f !== id),
+    };
+  }
+
+  planLabel() {
+    return this.plans.find(p => p.id === this.form.value.plan)?.name ?? '';
+  }
+
+  restart() {
+    this.step.value = 0;
+    this.form.value = { name: '', email: '', plan: 'free', selectedFeatures: [] };
+  }
+}
+</script>
+
+<style>
+.wz-wrap {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.wz-header h2 { margin: 0 0 0.25rem; }
+
+.wz-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.wz-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* Progress */
+.wz-progress {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wz-progress-bar {
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  margin-bottom: 1rem;
+}
+
+.wz-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 2px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wz-steps {
+  display: flex;
+  gap: 0;
+}
+
+.wz-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.wz-step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.wz-step--active .wz-step-dot {
+  background: var(--color-primary);
+  color: white;
+}
+
+.wz-step--done .wz-step-dot {
+  background: var(--color-success);
+  color: white;
+}
+
+.wz-step--active .wz-step-label,
+.wz-step--done .wz-step-label {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* Pane */
+.wz-pane {
+  padding: 1.75rem 1.5rem;
+  min-height: 260px;
+}
+
+.wz-pane h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+
+.wz-pane-desc {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* Fields */
+.wz-fields { display: flex; flex-direction: column; gap: 1rem; }
+
+.wz-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.375rem;
+  color: var(--color-text);
+}
+
+.wz-field input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.wz-field input:focus { border-color: var(--color-primary); }
+
+/* Plans */
+.wz-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.wz-plan {
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.wz-plan:hover { border-color: var(--color-primary); }
+
+.wz-plan--selected {
+  border-color: var(--color-primary);
+  background: #eef2ff;
+}
+
+.wz-plan-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+.wz-plan-name { font-weight: 700; font-size: 0.875rem; margin-bottom: 0.2rem; }
+.wz-plan-price { font-size: 0.75rem; color: var(--color-text-muted); }
+
+/* Features */
+.wz-features { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.wz-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.wz-feature:hover { border-color: var(--color-primary); }
+
+.wz-feature input[type="checkbox"] { margin-top: 2px; cursor: pointer; }
+
+.wz-feature-info { display: flex; flex-direction: column; gap: 0.15rem; }
+.wz-feature-name { font-size: 0.875rem; font-weight: 600; }
+.wz-feature-desc { font-size: 0.775rem; color: var(--color-text-muted); }
+
+/* Summary */
+.wz-summary {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wz-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wz-summary-row:last-child { border-bottom: none; }
+.wz-summary-row span { color: var(--color-text-muted); }
+
+/* Done */
+.wz-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.wz-done-icon { font-size: 3rem; }
+.wz-done h3 { margin: 0; }
+.wz-done p { margin: 0; color: var(--color-text-muted); }
+
+/* Footer */
+.wz-footer {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.wz-spacer { flex: 1; }
+
+.wz-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.wz-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.wz-btn--primary { background: var(--color-primary); color: white; }
+.wz-btn--primary:hover:not(:disabled) { background: var(--color-primary-dark); }
+.wz-btn--ghost { background: transparent; color: var(--color-text-muted); }
+.wz-btn--ghost:hover { background: var(--color-border); }
+</style>

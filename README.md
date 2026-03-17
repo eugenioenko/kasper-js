@@ -7,6 +7,7 @@
 A lightweight component framework with fine-grained Signal-based reactivity. No virtual DOM. No magic compiler. Just components, signals, and surgical DOM updates.
 
 - **[Documentation](https://kasperjs.top)**
+- **[Live Demos](https://stackblitz.com/github/eugenioenko/kasper-js/tree/main/demos)**
 - **[LLM AI Agent Documentation](https://kasperjs.top/llms.txt)**
 
 ---

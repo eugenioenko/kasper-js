@@ -21,7 +21,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     visitElementKNode(node: KNode.Element, parent?: Node): void;
     visitTextKNode(node: KNode.Text, parent?: Node): void;
     visitAttributeKNode(node: KNode.Attribute, parent?: Node): void;
-    visitCommentKNode(node: KNode.Comment, parent?: Node): void;
+    visitCommentKNode(_node: KNode.Comment, _parent?: Node): void;
     private trackEffect;
     private findAttr;
     private doIf;
