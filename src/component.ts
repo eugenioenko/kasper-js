@@ -73,9 +73,8 @@ export type KasperEntity = Component | Record<string, any> | null | undefined;
 export type ComponentClass = { new(args?: ComponentArgs<any>): Component };
 export interface ComponentRegistry {
   [tagName: string]: {
-    selector?: string;
     component: ComponentClass;
-    template?: Element | string | null;
+    template?: string;
     nodes?: KNode[];
   };
 }

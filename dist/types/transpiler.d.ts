@@ -6,13 +6,15 @@ import * as KNode from "./types/nodes";
 export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private scanner;
     private parser;
+    private templateParser;
     private interpreter;
-    private registry;
+    registry: ComponentRegistry;
     mode: "development" | "production";
     private isRendering;
     constructor(options?: {
         registry: ComponentRegistry;
     });
+    resolveNodes(tag: string): KNode.KNode[];
     private evaluate;
     private bindMethods;
     private scopedEffect;

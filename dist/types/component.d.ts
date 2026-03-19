@@ -42,9 +42,8 @@ export type ComponentClass = {
 };
 export interface ComponentRegistry {
     [tagName: string]: {
-        selector?: string;
         component: ComponentClass;
-        template?: Element | string | null;
+        template?: string;
         nodes?: KNode[];
     };
 }

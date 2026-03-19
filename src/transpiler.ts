@@ -36,17 +36,30 @@ type IfElseNode = [KNode.Element, KNode.Attribute];
 export class Transpiler implements KNode.KNodeVisitor<void> {
   private scanner = new Scanner();
   private parser = new ExpressionParser();
+  private templateParser = new TemplateParser();
   private interpreter = new Interpreter();
-  private registry: ComponentRegistry = {};
+  public registry: ComponentRegistry = {};
   public mode: "development" | "production" = "development";
   private isRendering = false;
 
   constructor(options?: { registry: ComponentRegistry }) {
-    this.registry["router"] = { component: Router, nodes: [] };
+    this.registry["router"] = { component: Router };
     if (!options) return;
     if (options.registry) {
       this.registry = { ...this.registry, ...options.registry };
     }
+  }
+
+  public resolveNodes(tag: string): KNode.KNode[] {
+    const entry = this.registry[tag];
+    if (entry.nodes !== undefined) return entry.nodes;
+    const source = entry.template ?? (entry.component as any).template;
+    if (!source) {
+      entry.nodes = [];
+      return entry.nodes;
+    }
+    entry.nodes = this.templateParser.parse(source);
+    return entry.nodes;
   }
 
   private evaluate(node: KNode.KNode, parent?: Node): void {
@@ -569,7 +582,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           this.bindMethods(component);
           (element as any).$kasperInstance = component;
 
-          const componentNodes = this.registry[node.name].nodes!;
+          const componentNodes = this.resolveNodes(node.name);
           component.$render = () => {
             this.isRendering = true;
             try {
@@ -609,7 +622,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
         // create the children of the component
         flushSync(() => {
-          this.createSiblings(this.registry[node.name].nodes!, element);
+          this.createSiblings(this.resolveNodes(node.name), element);
 
           if (component && typeof component.onRender === "function") {
             component.onRender();
@@ -879,7 +892,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const template = (ComponentClass as any).template;
     if (!template) return;
 
-    const nodes = new TemplateParser().parse(template);
+    const nodes = this.templateParser.parse(template);
     const host = document.createElement("div");
     container.appendChild(host);
 
