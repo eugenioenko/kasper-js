@@ -43,7 +43,6 @@ export type ComponentClass = {
 export interface ComponentRegistry {
     [tagName: string]: {
         component: ComponentClass;
-        template?: string;
         nodes?: KNode[];
     };
 }

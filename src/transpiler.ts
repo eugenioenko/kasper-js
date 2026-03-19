@@ -53,7 +53,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   public resolveNodes(tag: string): KNode.KNode[] {
     const entry = this.registry[tag];
     if (entry.nodes !== undefined) return entry.nodes;
-    const source = entry.template ?? (entry.component as any).template;
+    const source = (entry.component as any).template;
     if (!source) {
       entry.nodes = [];
       return entry.nodes;

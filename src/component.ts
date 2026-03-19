@@ -74,7 +74,6 @@ export type ComponentClass = { new(args?: ComponentArgs<any>): Component };
 export interface ComponentRegistry {
   [tagName: string]: {
     component: ComponentClass;
-    template?: string;
     nodes?: KNode[];
   };
 }
