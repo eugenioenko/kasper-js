@@ -50,6 +50,47 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     }
   }
 
+  private renderComponentInstance(
+    instance: any,
+    nodes: KNode.KNode[],
+    element: HTMLElement,
+    restoreScope: Scope,
+    slots?: Record<string, any>
+  ): void {
+    if (slots) instance.$slots = slots;
+
+    instance.$render = () => {
+      this.isRendering = true;
+      try {
+        this.destroy(element);
+        element.innerHTML = "";
+        const scope = new Scope(restoreScope, instance);
+        scope.set("$instance", instance);
+        if (slots) instance.$slots = slots;
+        const prevScope = this.interpreter.scope;
+        this.interpreter.scope = scope;
+        flushSync(() => {
+          this.createSiblings(nodes, element);
+          if (typeof instance.onRender === "function") instance.onRender();
+        });
+        this.interpreter.scope = prevScope;
+      } finally {
+        this.isRendering = false;
+      }
+    };
+
+    if (typeof instance.onMount === "function") instance.onMount();
+
+    const scope = new Scope(restoreScope, instance);
+    scope.set("$instance", instance);
+    this.interpreter.scope = scope;
+    flushSync(() => {
+      this.createSiblings(nodes, element);
+      if (typeof instance.onRender === "function") instance.onRender();
+    });
+    this.interpreter.scope = restoreScope;
+  }
+
   public resolveNodes(tag: string): KNode.KNode[] {
     const entry = this.registry[tag];
     if (entry.nodes !== undefined) return entry.nodes;
@@ -572,8 +613,48 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           slots.default.push(child);
         }
 
+        if (this.registry[node.name]?.lazy) {
+          const entry = this.registry[node.name];
+
+          if (entry.fallback) {
+            const fallbackNodes = this.templateParser.parse((entry.fallback as any).template ?? "");
+            const fallbackInstance: any = new entry.fallback({ args: {}, ref: element, transpiler: this });
+            this.bindMethods(fallbackInstance);
+            (element as any).$kasperInstance = fallbackInstance;
+            this.renderComponentInstance(fallbackInstance, fallbackNodes, element as HTMLElement, restoreScope);
+          }
+
+          if (!(entry as any)._promise) {
+            (entry as any)._promise = (entry.component as () => Promise<ComponentClass>)().then((cls) => {
+              entry.nodes = this.templateParser.parse((cls as any).template ?? "");
+              entry.component = cls;
+              delete entry.lazy;
+              delete (entry as any)._promise;
+            });
+          }
+
+          (entry as any)._promise.then(() => {
+            this.destroy(element as HTMLElement);
+            (element as HTMLElement).innerHTML = "";
+            const cls = entry.component as ComponentClass;
+            const instance: any = new cls({ args, ref: element, transpiler: this });
+            this.bindMethods(instance);
+            (element as any).$kasperInstance = instance;
+            this.renderComponentInstance(instance, entry.nodes!, element as HTMLElement, restoreScope, slots);
+          });
+
+          if (parent) {
+            if ((parent as any).insert && typeof (parent as any).insert === "function") {
+              (parent as any).insert(element);
+            } else {
+              parent.appendChild(element);
+            }
+          }
+          return element;
+        }
+
         if (this.registry[node.name]?.component) {
-          component = new this.registry[node.name].component({
+          component = new (this.registry[node.name].component as ComponentClass)({
             args: args,
             ref: element,
             transpiler: this,
@@ -582,54 +663,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           this.bindMethods(component);
           (element as any).$kasperInstance = component;
 
-          const componentNodes = this.resolveNodes(node.name);
-          component.$render = () => {
-            this.isRendering = true;
-            try {
-              this.destroy(element as HTMLElement);
-              (element as HTMLElement).innerHTML = "";
-              const scope = new Scope(restoreScope, component);
-              scope.set("$instance", component);
-              component.$slots = slots;
-              const prevScope = this.interpreter.scope;
-              this.interpreter.scope = scope;
-              
-              flushSync(() => {
-                this.createSiblings(componentNodes, element);
-                if (typeof component.onRender === "function") component.onRender();
-              });
-              
-              this.interpreter.scope = prevScope;
-            } finally {
-              this.isRendering = false;
-            }
-          };
-
           if (node.name === "router" && component instanceof Router) {
             const routeScope = new Scope(restoreScope, component);
             component.setRoutes(this.extractRoutes(node.children, undefined, routeScope));
           }
 
-          if (typeof component.onMount === "function") {
-            component.onMount();
-          }
+          this.renderComponentInstance(component, this.resolveNodes(node.name), element as HTMLElement, restoreScope, slots);
         }
-        // Expose slots in component scope
-        component.$slots = slots;
-
-        this.interpreter.scope = new Scope(restoreScope, component);
-        this.interpreter.scope.set("$instance", component);
-
-        // create the children of the component
-        flushSync(() => {
-          this.createSiblings(this.resolveNodes(node.name), element);
-
-          if (component && typeof component.onRender === "function") {
-            component.onRender();
-          }
-        });
-
-        this.interpreter.scope = restoreScope;
         if (parent) {
           if ((parent as any).insert && typeof (parent as any).insert === "function") {
             (parent as any).insert(element);

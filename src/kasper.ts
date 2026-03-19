@@ -1,4 +1,4 @@
-import { ComponentRegistry } from "./component";
+import { ComponentClass, ComponentRegistry } from "./component";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 import { KasperError, KErrorCode } from "./types/error";
@@ -35,7 +35,7 @@ export interface KasperConfig {
 
 function createComponent(transpiler: Transpiler, tag: string) {
   const element = document.createElement(tag);
-  const component = new transpiler.registry[tag].component({
+  const component = new (transpiler.registry[tag].component as ComponentClass)({
     ref: element,
     transpiler: transpiler,
     args: {},
