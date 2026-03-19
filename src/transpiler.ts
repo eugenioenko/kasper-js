@@ -36,17 +36,71 @@ type IfElseNode = [KNode.Element, KNode.Attribute];
 export class Transpiler implements KNode.KNodeVisitor<void> {
   private scanner = new Scanner();
   private parser = new ExpressionParser();
+  private templateParser = new TemplateParser();
   private interpreter = new Interpreter();
-  private registry: ComponentRegistry = {};
+  public registry: ComponentRegistry = {};
   public mode: "development" | "production" = "development";
   private isRendering = false;
 
   constructor(options?: { registry: ComponentRegistry }) {
-    this.registry["router"] = { component: Router, nodes: [] };
+    this.registry["router"] = { component: Router };
     if (!options) return;
     if (options.registry) {
       this.registry = { ...this.registry, ...options.registry };
     }
+  }
+
+  private renderComponentInstance(
+    instance: any,
+    nodes: KNode.KNode[],
+    element: HTMLElement,
+    restoreScope: Scope,
+    slots?: Record<string, any>
+  ): void {
+    if (slots) instance.$slots = slots;
+
+    instance.$render = () => {
+      this.isRendering = true;
+      try {
+        this.destroy(element);
+        element.innerHTML = "";
+        const scope = new Scope(restoreScope, instance);
+        scope.set("$instance", instance);
+        if (slots) instance.$slots = slots;
+        const prevScope = this.interpreter.scope;
+        this.interpreter.scope = scope;
+        flushSync(() => {
+          this.createSiblings(nodes, element);
+          if (typeof instance.onRender === "function") instance.onRender();
+        });
+        this.interpreter.scope = prevScope;
+      } finally {
+        this.isRendering = false;
+      }
+    };
+
+    if (typeof instance.onMount === "function") instance.onMount();
+
+    const scope = new Scope(restoreScope, instance);
+    scope.set("$instance", instance);
+    this.interpreter.scope = scope;
+    flushSync(() => {
+      this.createSiblings(nodes, element);
+      if (typeof instance.onRender === "function") instance.onRender();
+    });
+    this.interpreter.scope = restoreScope;
+  }
+
+  public resolveNodes(tag: string): KNode.KNode[] {
+    const entry = this.registry[tag];
+    if (entry.nodes !== undefined) return entry.nodes;
+    const source = (entry.component as any).template;
+    if (!source) {
+      entry.nodes = [];
+      return entry.nodes;
+    }
+    entry.nodes = this.templateParser.parse(source);
+    return entry.nodes;
   }
 
   private evaluate(node: KNode.KNode, parent?: Node): void {
@@ -124,12 +178,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.bindMethods(entity);
       this.interpreter.scope.init(entity);
       this.interpreter.scope.set("$instance", entity);
-      
+
       flushSync(() => {
         this.createSiblings(nodes, container);
         this.triggerRender();
       });
-      
+
       return container;
     } finally {
       this.isRendering = false;
@@ -208,7 +262,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
     const run = () => {
       const instance = this.interpreter.scope.get("$instance");
-      
+
       const trackingScope = instance ? new Scope(this.interpreter.scope) : this.interpreter.scope;
       const prevScope = this.interpreter.scope;
       this.interpreter.scope = trackingScope;
@@ -216,7 +270,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       // Evaluate conditions synchronously to ensure signal tracking
       const results: boolean[] = [];
       results.push(!!this.execute((expressions[0][1] as KNode.Attribute).value));
-      
+
       if (!results[0]) {
         for (const expression of expressions.slice(1)) {
           if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
@@ -321,7 +375,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if ((node as any).$kasperRefresh) {
       (node as any).$kasperRefresh();
     }
-    
+
     // 2. Re-run all surgical effects (text interpolation, attributes, etc.)
     if ((node as any).$kasperEffects) {
       (node as any).$kasperEffects.forEach((stop: any) => {
@@ -496,7 +550,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
       }
-      
+
       this.evaluate(node, parent);
     }
 
@@ -559,8 +613,48 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           slots.default.push(child);
         }
 
+        if (this.registry[node.name]?.lazy) {
+          const entry = this.registry[node.name];
+
+          if (entry.fallback) {
+            const fallbackNodes = this.templateParser.parse((entry.fallback as any).template ?? "");
+            const fallbackInstance: any = new entry.fallback({ args: {}, ref: element, transpiler: this });
+            this.bindMethods(fallbackInstance);
+            (element as any).$kasperInstance = fallbackInstance;
+            this.renderComponentInstance(fallbackInstance, fallbackNodes, element as HTMLElement, restoreScope);
+          }
+
+          if (!(entry as any)._promise) {
+            (entry as any)._promise = (entry.component as () => Promise<ComponentClass>)().then((cls) => {
+              entry.nodes = this.templateParser.parse((cls as any).template ?? "");
+              entry.component = cls;
+              delete entry.lazy;
+              delete (entry as any)._promise;
+            });
+          }
+
+          (entry as any)._promise.then(() => {
+            this.destroy(element as HTMLElement);
+            (element as HTMLElement).innerHTML = "";
+            const cls = entry.component as ComponentClass;
+            const instance: any = new cls({ args: args, ref: element, transpiler: this });
+            this.bindMethods(instance);
+            (element as any).$kasperInstance = instance;
+            this.renderComponentInstance(instance, entry.nodes!, element as HTMLElement, restoreScope, slots);
+          });
+
+          if (parent) {
+            if ((parent as any).insert && typeof (parent as any).insert === "function") {
+              (parent as any).insert(element);
+            } else {
+              parent.appendChild(element);
+            }
+          }
+          return element;
+        }
+
         if (this.registry[node.name]?.component) {
-          component = new this.registry[node.name].component({
+          component = new (this.registry[node.name].component as ComponentClass)({
             args: args,
             ref: element,
             transpiler: this,
@@ -569,54 +663,13 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           this.bindMethods(component);
           (element as any).$kasperInstance = component;
 
-          const componentNodes = this.registry[node.name].nodes!;
-          component.$render = () => {
-            this.isRendering = true;
-            try {
-              this.destroy(element as HTMLElement);
-              (element as HTMLElement).innerHTML = "";
-              const scope = new Scope(restoreScope, component);
-              scope.set("$instance", component);
-              component.$slots = slots;
-              const prevScope = this.interpreter.scope;
-              this.interpreter.scope = scope;
-              
-              flushSync(() => {
-                this.createSiblings(componentNodes, element);
-                if (typeof component.onRender === "function") component.onRender();
-              });
-              
-              this.interpreter.scope = prevScope;
-            } finally {
-              this.isRendering = false;
-            }
-          };
-
           if (node.name === "router" && component instanceof Router) {
             const routeScope = new Scope(restoreScope, component);
             component.setRoutes(this.extractRoutes(node.children, undefined, routeScope));
           }
 
-          if (typeof component.onMount === "function") {
-            component.onMount();
-          }
+          this.renderComponentInstance(component, this.resolveNodes(node.name), element as HTMLElement, restoreScope, slots);
         }
-        // Expose slots in component scope
-        component.$slots = slots;
-
-        this.interpreter.scope = new Scope(restoreScope, component);
-        this.interpreter.scope.set("$instance", component);
-
-        // create the children of the component
-        flushSync(() => {
-          this.createSiblings(this.registry[node.name].nodes!, element);
-
-          if (component && typeof component.onRender === "function") {
-            component.onRender();
-          }
-        });
-
-        this.interpreter.scope = restoreScope;
         if (parent) {
           if ((parent as any).insert && typeof (parent as any).insert === "function") {
             (parent as any).insert(element);
@@ -776,7 +829,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (instance && instance.$abortController) {
       options.signal = instance.$abortController.signal;
     }
-    if (modifiers.includes("once"))    options.once    = true;
+    if (modifiers.includes("once")) options.once = true;
     if (modifiers.includes("passive")) options.passive = true;
     if (modifiers.includes("capture")) options.capture = true;
 
@@ -879,7 +932,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     const template = (ComponentClass as any).template;
     if (!template) return;
 
-    const nodes = new TemplateParser().parse(template);
+    const nodes = this.templateParser.parse(template);
     const host = document.createElement("div");
     container.appendChild(host);
 
@@ -897,12 +950,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         scope.set("$instance", component);
         const prev = this.interpreter.scope;
         this.interpreter.scope = scope;
-        
+
         flushSync(() => {
           this.createSiblings(componentNodes, host);
           if (typeof component.onRender === "function") component.onRender();
         });
-        
+
         this.interpreter.scope = prev;
       } finally {
         this.isRendering = false;

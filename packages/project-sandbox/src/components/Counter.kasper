@@ -5,6 +5,9 @@
       <button @on:click="decrement()">-</button>
       <button @on:click="increment()">+</button>
     </div>
+
+    <lazy />
+
   </div>
 </template>
 

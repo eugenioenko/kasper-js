@@ -42,10 +42,10 @@ export type ComponentClass = {
 };
 export interface ComponentRegistry {
     [tagName: string]: {
-        selector?: string;
-        component: ComponentClass;
-        template?: Element | string | null;
+        component: ComponentClass | (() => Promise<ComponentClass>);
         nodes?: KNode[];
+        lazy?: boolean;
+        fallback?: ComponentClass;
     };
 }
 export {};

@@ -1,0 +1,13 @@
+<template>
+  LAZY COMPONENT
+</template>
+
+<script>
+  import { Component } from 'kasper-js';
+
+  export class Lazy extends Component { }
+</script>
+
+<style>
+
+</style>

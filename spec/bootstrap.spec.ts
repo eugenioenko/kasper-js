@@ -7,16 +7,15 @@ describe("Kasper Bootstrap (App / bootstrap)", () => {
     root.id = "app";
     document.body.appendChild(root);
     
-    class RootComp extends Component {}
-    
+    class RootComp extends Component {
+      static template = "<span>Hello World</span>";
+    }
+
     App({
       root: "#app",
       entry: "root-comp",
       registry: {
-        "root-comp": {
-          component: RootComp as any,
-          template: "<span>Hello World</span>"
-        }
+        "root-comp": { component: RootComp as any }
       }
     });
     
@@ -35,16 +34,15 @@ describe("Kasper Bootstrap (App / bootstrap)", () => {
 
   it("works with HTMLElement as root", () => {
     const root = document.createElement("div");
-    class RootComp extends Component {}
-    
+    class RootComp extends Component {
+      static template = "<span>Using HTMLElement</span>";
+    }
+
     App({
       root: root,
       entry: "root-comp",
       registry: {
-        "root-comp": {
-          component: RootComp as any,
-          template: "<span>Using HTMLElement</span>"
-        }
+        "root-comp": { component: RootComp as any }
       }
     });
     
