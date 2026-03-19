@@ -38,6 +38,7 @@ export class UISidebar extends Component {
     { path: '/tree',      icon: '🌳', label: 'File Explorer' },
     { path: '/hex',       icon: '🗂️',  label: 'Hex Explorer' },
     { path: '/wizard',    icon: '🧙', label: 'Setup Wizard' },
+    { path: '/pipeline',  icon: '⚗️',  label: 'Pipeline Lab' },
   ];
 }
 </script>

@@ -4,6 +4,12 @@
     <p>Explore these examples of Kasper.js features and components.</p>
     <ul class="example-list">
       <li>
+        <a @on:click.prevent="navigate('/pipeline')" href="/pipeline">
+          <strong>Pipeline Lab</strong>
+          <span>Employee directory built entirely with |> pipes — sync formatting, filtering, sorting, and async score loading.</span>
+        </a>
+      </li>
+      <li>
         <a @on:click.prevent="navigate('/todo')" href="/todo">
           <strong>Todo App</strong>
           <span>A classic Todo application with signals, effects, and list reconciliation.</span>
