@@ -178,12 +178,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.bindMethods(entity);
       this.interpreter.scope.init(entity);
       this.interpreter.scope.set("$instance", entity);
-      
+
       flushSync(() => {
         this.createSiblings(nodes, container);
         this.triggerRender();
       });
-      
+
       return container;
     } finally {
       this.isRendering = false;
@@ -262,7 +262,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
     const run = () => {
       const instance = this.interpreter.scope.get("$instance");
-      
+
       const trackingScope = instance ? new Scope(this.interpreter.scope) : this.interpreter.scope;
       const prevScope = this.interpreter.scope;
       this.interpreter.scope = trackingScope;
@@ -270,7 +270,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       // Evaluate conditions synchronously to ensure signal tracking
       const results: boolean[] = [];
       results.push(!!this.execute((expressions[0][1] as KNode.Attribute).value));
-      
+
       if (!results[0]) {
         for (const expression of expressions.slice(1)) {
           if (this.findAttr(expression[0] as KNode.Element, ["@elseif"])) {
@@ -375,7 +375,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if ((node as any).$kasperRefresh) {
       (node as any).$kasperRefresh();
     }
-    
+
     // 2. Re-run all surgical effects (text interpolation, attributes, etc.)
     if ((node as any).$kasperEffects) {
       (node as any).$kasperEffects.forEach((stop: any) => {
@@ -550,7 +550,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
           continue;
         }
       }
-      
+
       this.evaluate(node, parent);
     }
 
@@ -637,7 +637,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
             this.destroy(element as HTMLElement);
             (element as HTMLElement).innerHTML = "";
             const cls = entry.component as ComponentClass;
-            const instance: any = new cls({ args, ref: element, transpiler: this });
+            const instance: any = new cls({ args: args, ref: element, transpiler: this });
             this.bindMethods(instance);
             (element as any).$kasperInstance = instance;
             this.renderComponentInstance(instance, entry.nodes!, element as HTMLElement, restoreScope, slots);
@@ -829,7 +829,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     if (instance && instance.$abortController) {
       options.signal = instance.$abortController.signal;
     }
-    if (modifiers.includes("once"))    options.once    = true;
+    if (modifiers.includes("once")) options.once = true;
     if (modifiers.includes("passive")) options.passive = true;
     if (modifiers.includes("capture")) options.capture = true;
 
@@ -950,12 +950,12 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
         scope.set("$instance", component);
         const prev = this.interpreter.scope;
         this.interpreter.scope = scope;
-        
+
         flushSync(() => {
           this.createSiblings(componentNodes, host);
           if (typeof component.onRender === "function") component.onRender();
         });
-        
+
         this.interpreter.scope = prev;
       } finally {
         this.isRendering = false;

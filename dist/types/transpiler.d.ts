@@ -14,6 +14,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     constructor(options?: {
         registry: ComponentRegistry;
     });
+    private renderComponentInstance;
     resolveNodes(tag: string): KNode.KNode[];
     private evaluate;
     private bindMethods;

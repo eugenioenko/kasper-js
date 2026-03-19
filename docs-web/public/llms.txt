@@ -508,6 +508,25 @@ declare module '*.kasper' {
 
 ---
 
+## Lazy loading
+
+```ts
+// Registry entry — component is a dynamic import thunk, lazy: true defers loading
+registry: {
+  'heavy-chart': {
+    component: () => import('./HeavyChart.kasper').then(m => m.HeavyChart),
+    lazy: true,
+    fallback: Skeleton, // optional — shown synchronously while loading
+  },
+}
+```
+
+- The import promise is deduplicated — multiple instances on the same page trigger one fetch.
+- After first load the entry converts to eager — subsequent mounts are synchronous.
+- Args are forwarded to the real component; fallback receives no args.
+
+---
+
 ## Key rules
 
 - One component per `.kasper` file

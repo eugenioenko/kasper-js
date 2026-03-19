@@ -3,6 +3,15 @@ import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 import { KasperError, KErrorCode } from "./types/error";
 
+export function lazy(
+  importer: () => Promise<Record<string, ComponentClass>>
+): { component: () => Promise<ComponentClass>; lazy: true } {
+  return {
+    lazy: true,
+    component: () => importer().then((m) => Object.values(m)[0]),
+  };
+}
+
 export function execute(source: string): string {
   const parser = new TemplateParser();
   try {

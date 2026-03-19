@@ -8,6 +8,9 @@ App({
   registry: {
     app: { component: KasperApp },
     example: { component: Example },
+    lazy: {
+      component: () => import('./components/Lazy.kasper').then(m => m.Lazy), lazy: true
+    },
   },
   mode: import.meta.env.MODE as any,
 });
