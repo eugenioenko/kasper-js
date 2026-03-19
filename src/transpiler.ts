@@ -150,6 +150,21 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
     });
   }
 
+  // Wraps a refresh function so it restores the correct scope when called
+  // directly by triggerRefresh (outside of the signal effect machinery).
+  private scopedRefresh(fn: () => void): () => void {
+    const scope = this.interpreter.scope;
+    return () => {
+      const prev = this.interpreter.scope;
+      this.interpreter.scope = scope;
+      try {
+        fn();
+      } finally {
+        this.interpreter.scope = prev;
+      }
+    };
+  }
+
   // evaluates expressions and returns the result of the first evaluation
   private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
@@ -315,7 +330,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       }
     };
 
-    (boundary as any).start.$kasperRefresh = run;
+    (boundary as any).start.$kasperRefresh = this.scopedRefresh(run);
 
     const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);
@@ -364,7 +379,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       }
     };
 
-    (boundary as any).start.$kasperRefresh = run;
+    (boundary as any).start.$kasperRefresh = this.scopedRefresh(run);
 
     const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);
@@ -482,7 +497,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       }
     };
 
-    (boundary as any).start.$kasperRefresh = run;
+    (boundary as any).start.$kasperRefresh = this.scopedRefresh(run);
 
     const stop = this.scopedEffect(run);
     this.trackEffect(boundary, stop);

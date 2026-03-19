@@ -5,6 +5,20 @@ import { Transpiler } from "../src/transpiler";
 import { signal } from "../src/signal";
 import { nextTick } from "../src/scheduler";
 
+function makeTranspiler(registry: any) {
+  return new Transpiler({ registry });
+}
+
+function render(html: string, transpiler: Transpiler, entity: Record<string, any> = {}) {
+  const container = document.createElement("div");
+  transpiler.transpile(
+    (transpiler as any).templateParser.parse(html),
+    entity,
+    container
+  );
+  return container;
+}
+
 function makeContainer(): HTMLElement {
   return document.createElement("div");
 }
@@ -57,5 +71,42 @@ describe("Nested Reactivity (Kanban Case)", () => {
     expect(container.querySelectorAll(".task")).toHaveLength(1);
     expect(container.textContent).not.toContain("task 1");
     expect(container.textContent).toContain("task 2");
+  });
+
+  it("@if inside a keyed @each child component evaluates in the correct scope after list update", async () => {
+    // Regression: triggerRefresh called $kasperRefresh on child @if nodes without
+    // restoring the scope they were created in. The @if would run in the parent
+    // @each's scope (the column), making args.task undefined and throwing.
+    class TaskCard extends Component {
+      static template = `<p @if="args.task.description">{{args.task.description}}</p>`;
+    }
+
+    const tasks = signal([
+      { id: "1", description: "first" },
+      { id: "2", description: "second" },
+    ]);
+
+    const transpiler = makeTranspiler({
+      "task-card": { component: TaskCard },
+    });
+
+    const container = render(
+      `<task-card @each="task of tasks.value" @:task="task" @key="task.id"></task-card>`,
+      transpiler,
+      { tasks }
+    );
+
+    expect(container.textContent).toContain("first");
+    expect(container.textContent).toContain("second");
+
+    // Add a new task — this triggers triggerRefresh on existing keyed nodes,
+    // which previously ran @if in the wrong scope and threw.
+    tasks.value = [...tasks.value, { id: "3", description: "third" }];
+
+    await nextTick();
+
+    expect(container.textContent).toContain("first");
+    expect(container.textContent).toContain("second");
+    expect(container.textContent).toContain("third");
   });
 });

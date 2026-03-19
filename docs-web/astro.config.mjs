@@ -16,8 +16,8 @@ export default defineConfig({
       ],
       sidebar: [
         { label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
-        { 
-          label: 'Guides', 
+        {
+          label: 'Guides',
           items: [
             { label: 'Components', link: '/guides/components/' },
             { label: 'Template Syntax', link: '/guides/templates/' },
@@ -28,6 +28,7 @@ export default defineConfig({
             { label: 'Styling', link: '/guides/styling/' },
             { label: 'Slots', link: '/guides/slots/' },
             { label: 'Routing', link: '/guides/routing/' },
+            { label: 'Lazy Loading', link: '/guides/lazy-loading/' },
             { label: 'AI-Driven Development', link: '/guides/agents/' },
             { label: 'Vite Integration', link: '/guides/vite/' }
           ]

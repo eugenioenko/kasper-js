@@ -19,6 +19,7 @@ export declare class Transpiler implements KNode.KNodeVisitor<void> {
     private evaluate;
     private bindMethods;
     private scopedEffect;
+    private scopedRefresh;
     private execute;
     transpile(nodes: KNode.KNode[], entity: any, container: Element): Node;
     visitElementKNode(node: KNode.Element, parent?: Node): void;
