@@ -1,0 +1,366 @@
+<template>
+  <div class="pipeline-page">
+    <div class="page-header">
+      <div>
+        <h1>Pipeline Lab</h1>
+        <p class="subtitle">
+          {{ employees.value |> filterList(query.value) |> countOf }} of {{ employees.value.length }} employees
+          — sorted by <strong>{{ sortField.value }}</strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search by name or department..."
+        @value="query.value"
+        @on:input="query.value = $event.target.value"
+      />
+      <div class="sort-buttons">
+        <button
+          @each="field of sortOptions"
+          @key="field.value"
+          @class="'sort-btn' + (sortField.value === field.value ? ' active' : '')"
+          @on:click="sortField.value = field.value"
+        >{{ field.label }}</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-value">{{ employees.value |> filterList(query.value) |> activeOnly |> countOf }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ employees.value |> filterList(query.value) |> avgSalary |> formatCurrency }}</span>
+        <span class="stat-label">Avg Salary</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ employees.value |> filterList(query.value) |> seniorOnly |> countOf }}</span>
+        <span class="stat-label">Senior (5y+)</span>
+      </div>
+    </div>
+
+    <div class="employee-grid">
+      <div
+        @each="emp of employees.value |> filterList(query.value) |> sortList(sortField.value)"
+        @key="emp.id"
+        class="employee-card"
+      >
+        <div class="card-top">
+          <div class="avatar" @style="{ background: emp.dept |> deptColor }">
+            {{ emp.name |> initials }}
+          </div>
+          <div class="card-info">
+            <div class="emp-name">{{ emp.name |> capitalize }}</div>
+            <div class="emp-dept">
+              <span class="dept-badge" @style="{ background: emp.dept |> deptColor }">
+                {{ emp.dept }}
+              </span>
+            </div>
+          </div>
+          <div @class="'status-dot' + (emp.active ? ' active' : ' inactive')"></div>
+        </div>
+
+        <div class="card-body">
+          <div class="field">
+            <span class="field-label">Salary</span>
+            <span class="field-value salary">{{ emp.salary |> formatCurrency }}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Joined</span>
+            <span class="field-value">{{ emp.joinDate |> formatDate }}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Tenure</span>
+            <span class="field-value">{{ emp.joinDate |> yearsAgo }}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Score</span>
+            <span class="field-value score">{{ emp.id |> fetchScore }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div @if="(employees.value |> filterList(query.value) |> countOf) === 0" class="empty-state">
+      No employees match "{{ query.value }}"
+    </div>
+  </div>
+</template>
+
+<script>
+import { Component, signal } from 'kasper-js';
+
+const DEPARTMENTS = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR'];
+const DEPT_COLORS = {
+  Engineering: '#6366f1',
+  Design:      '#ec4899',
+  Marketing:   '#f59e0b',
+  Sales:       '#10b981',
+  HR:          '#0ea5e9',
+};
+
+const NAMES = [
+  'Alice Mercer', 'Bob Tanaka', 'Clara Osei', 'David Ruiz', 'Elena Novak',
+  'Frank Müller', 'Grace Chen', 'Hugo Patel', 'Iris Johansson', 'Jack Okafor',
+  'Kim Larsen', 'Luca Ferrari', 'Maya Singh', 'Noel Dupont', 'Olivia Brooks',
+];
+
+function randomBetween(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateEmployees() {
+  return NAMES.map((name, i) => {
+    const dept = DEPARTMENTS[i % DEPARTMENTS.length];
+    const yearsAgo = randomBetween(0, 9);
+    const joinDate = new Date();
+    joinDate.setFullYear(joinDate.getFullYear() - yearsAgo);
+    joinDate.setMonth(randomBetween(0, 11));
+    return {
+      id: `emp-${i + 1}`,
+      name,
+      dept,
+      salary: randomBetween(55, 180) * 1000,
+      joinDate: joinDate.toISOString().slice(0, 10),
+      active: Math.random() > 0.2,
+    };
+  });
+}
+
+export class PipelineDemo extends Component {
+  employees = signal(generateEmployees());
+  query = signal('');
+  sortField = signal('name');
+  _scoreCache = signal({});
+
+  sortOptions = [
+    { label: 'Name', value: 'name' },
+    { label: 'Salary', value: 'salary' },
+    { label: 'Joined', value: 'joinDate' },
+    { label: 'Dept', value: 'dept' },
+  ];
+
+  // --- sync pipes ---
+
+  capitalize(str) {
+    return str.replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  initials(name) {
+    return name.split(' ').map(p => p[0]).join('').toUpperCase();
+  }
+
+  deptColor(dept) {
+    return DEPT_COLORS[dept] ?? '#94a3b8';
+  }
+
+  formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+  }
+
+  formatDate(dateStr) {
+    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+  }
+
+  yearsAgo(dateStr) {
+    const years = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24 * 365));
+    return years === 0 ? '< 1 year' : years === 1 ? '1 year' : `${years} years`;
+  }
+
+  countOf(list) {
+    return list.length;
+  }
+
+  avgSalary(list) {
+    if (!list.length) return 0;
+    return Math.round(list.reduce((s, e) => s + e.salary, 0) / list.length);
+  }
+
+  activeOnly(list) {
+    return list.filter(e => e.active);
+  }
+
+  seniorOnly(list) {
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 5);
+    return list.filter(e => new Date(e.joinDate) <= cutoff);
+  }
+
+  filterList(list, query) {
+    if (!query) return list;
+    const q = query.toLowerCase();
+    return list.filter(e =>
+      e.name.toLowerCase().includes(q) || e.dept.toLowerCase().includes(q)
+    );
+  }
+
+  sortList(list, field) {
+    return [...list].sort((a, b) => {
+      const av = a[field], bv = b[field];
+      if (typeof av === 'number') return bv - av;
+      return String(av).localeCompare(String(bv));
+    });
+  }
+
+  // --- async pipe ---
+  // Reads _scoreCache.value to establish reactivity. Returns a placeholder
+  // on first call; when the simulated fetch resolves it updates the cache
+  // which triggers a re-render, and the cached value is returned instead.
+
+  fetchScore(id) {
+    const cache = this._scoreCache.value;
+    if (cache[id] !== undefined) return cache[id];
+
+    const delay = 600 + Math.random() * 1200;
+    setTimeout(() => {
+      const score = randomBetween(60, 99) + '%';
+      this._scoreCache.value = { ...this._scoreCache.value, [id]: score };
+    }, delay);
+
+    return '···';
+  }
+}
+</script>
+
+<style>
+.pipeline-page { padding: 1rem; }
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+.page-header h1 { margin: 0 0 0.25rem; }
+.subtitle { color: var(--color-text-muted); font-size: 0.9rem; margin: 0; }
+
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.sort-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.sort-btn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+.sort-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.stats-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.stat-card {
+  flex: 1;
+  min-width: 120px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--color-primary); }
+.stat-label { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.employee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.employee-card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.card-info { flex: 1; min-width: 0; }
+.emp-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dept-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: white;
+  padding: 1px 7px;
+  border-radius: 99px;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.status-dot.active { background: var(--color-success); }
+.status-dot.inactive { background: var(--color-border); }
+
+.card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.field { display: flex; flex-direction: column; gap: 2px; }
+.field-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); }
+.field-value { font-size: 0.9rem; font-weight: 500; }
+.field-value.salary { color: var(--color-success); }
+.field-value.score { color: var(--color-primary); font-weight: 700; letter-spacing: 0.05em; }
+
+.empty-state {
+  text-align: center;
+  padding: 4rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+</style>

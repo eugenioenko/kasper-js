@@ -28,6 +28,7 @@ import { TreeView } from './components/TreeView/TreeView.kasper';
 import { TreeNode } from './components/TreeView/TreeNode.kasper';
 import { HexExplorer } from './components/HexExplorer.kasper';
 import { WizardPage } from './components/WizardPage.kasper';
+import { PipelineDemo } from './components/PipelineDemo.kasper';
 import { App } from 'kasper-js';
 
 App({
@@ -64,5 +65,6 @@ App({
     'tree-node': { component: TreeNode },
     'hex-explorer': { component: HexExplorer },
     'wizard-page': { component: WizardPage },
+    'pipeline-demo': { component: PipelineDemo },
   },
 });

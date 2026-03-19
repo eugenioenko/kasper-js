@@ -27,6 +27,7 @@ export default defineConfig({
             { label: 'Component Lifecycle', link: '/guides/lifecycle/' },
             { label: 'Styling', link: '/guides/styling/' },
             { label: 'Slots', link: '/guides/slots/' },
+            { label: 'Pipes', link: '/guides/pipes/' },
             { label: 'Routing', link: '/guides/routing/' },
             { label: 'Lazy Loading', link: '/guides/lazy-loading/' },
             { label: 'AI-Driven Development', link: '/guides/agents/' },
