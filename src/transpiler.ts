@@ -179,7 +179,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   // evaluates expressions and returns the result of the first evaluation
   private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
-    const expressions = this.parser.parse(tokens);
+    const expressions = this.parser.parse(tokens, source);
 
     const restoreScope = this.interpreter.scope;
     if (overrideScope) {
@@ -907,7 +907,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private evaluateExpression(source: string): string {
     const tokens = this.scanner.scan(source);
-    const expressions = this.parser.parse(tokens);
+    const expressions = this.parser.parse(tokens, source);
 
     let result = "";
     for (const expression of expressions) {
@@ -1060,7 +1060,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       finalArgs = { message: cleanMessage };
     }
 
-    throw new KasperError(code, finalArgs, undefined, undefined, tagName);
+    throw new KasperError(code, finalArgs, { tag: tagName });
   }
 
 }

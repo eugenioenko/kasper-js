@@ -29,12 +29,18 @@ export declare const KErrorCode: {
 };
 export type KErrorCodeType = (typeof KErrorCode)[keyof typeof KErrorCode];
 export declare const ErrorTemplates: Record<string, (args: any) => string>;
+export interface KasperErrorOptions {
+    line?: number;
+    col?: number;
+    tag?: string;
+    source?: string;
+}
 export declare class KasperError extends Error {
     code: KErrorCodeType;
     args: any;
     line?: number;
     col?: number;
     tagName?: string;
-    constructor(code: KErrorCodeType, args?: any, line?: number, col?: number, tagName?: string);
+    constructor(code: KErrorCodeType, args?: any, options?: KasperErrorOptions);
     withTag(tagName: string): this;
 }
