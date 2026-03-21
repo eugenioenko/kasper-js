@@ -527,6 +527,33 @@ registry: {
 
 ---
 
+## Error handling
+
+Errors during reactive updates are caught by the framework. Configure handlers to surface them:
+
+```ts
+// Global handler — receives all unhandled errors
+App({
+  onError(error, { component, phase }) {
+    // phase: 'render' | 'watcher'
+    Sentry.captureException(error);
+  },
+});
+
+// Component-level — handle locally, optionally show fallback UI
+export class MyComponent extends Component {
+  onError(error: Error, phase: string) {
+    this.hasError.value = true;
+    // re-throw to also reach the global handler
+  }
+}
+```
+
+Propagation order: component `onError` → global `onError` → `console.error`.
+Component `onError` suppresses the global handler unless it re-throws.
+
+---
+
 ## Key rules
 
 - One component per `.kasper` file

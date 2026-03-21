@@ -62,6 +62,7 @@ export class Component<TArgs extends Record<string, any> = Record<string, any>> 
   onRender() { }
   onChanges() { }
   onDestroy() { }
+  onError?(error: Error, phase: string): void;
 
   render() {
     this.$render?.();

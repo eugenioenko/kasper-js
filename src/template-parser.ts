@@ -69,7 +69,7 @@ export class TemplateParser {
   }
 
   private error(code: KErrorCodeType, args: any = {}): any {
-    throw new KasperError(code, args, this.line, this.col);
+    throw new KasperError(code, args, { line: this.line, col: this.col, source: this.source });
   }
 
   private node(): Node.KNode {

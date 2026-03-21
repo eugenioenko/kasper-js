@@ -5,10 +5,12 @@ import { Token, TokenType } from "./types/token";
 export class ExpressionParser {
   private current: number;
   private tokens: Token[];
+  private source: string;
 
-  public parse(tokens: Token[]): Expr.Expr[] {
+  public parse(tokens: Token[], source = ""): Expr.Expr[] {
     this.current = 0;
     this.tokens = tokens;
+    this.source = source;
     const expressions: Expr.Expr[] = [];
     while (!this.eof()) {
       expressions.push(this.expression());
@@ -62,7 +64,7 @@ export class ExpressionParser {
   }
 
   private error(code: KErrorCodeType, token: Token, args: any = {}): any {
-    throw new KasperError(code, args, token.line, token.col);
+    throw new KasperError(code, args, { line: token.line, col: token.col, source: this.source });
   }
 
   private synchronize(): void {

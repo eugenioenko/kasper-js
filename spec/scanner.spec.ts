@@ -294,8 +294,8 @@ describe("Scanner", () => {
       expect(() => new Scanner().scan("@")).toThrow("Unexpected character");
     });
 
-    it("error message includes line and column", () => {
-      expect(() => new Scanner().scan("@")).toThrow(/\(\d+:\d+\)/);
+    it("error message includes a code snippet", () => {
+      expect(() => new Scanner().scan("@")).toThrow(/>\s+\|/);
     });
   });
 

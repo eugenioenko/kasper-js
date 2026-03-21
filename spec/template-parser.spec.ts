@@ -331,8 +331,8 @@ describe("TemplateParser", () => {
       expect(() => new TemplateParser().parse("<div>")).toThrow();
     });
 
-    it("thrown error message includes line and column info", () => {
-      expect(() => new TemplateParser().parse("</div>")).toThrow(/\(\d+:\d+\)/);
+    it("thrown error message includes a code snippet", () => {
+      expect(() => new TemplateParser().parse("</div>")).toThrow(/>\s+\|/);
     });
   });
 });

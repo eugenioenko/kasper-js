@@ -9,6 +9,8 @@ import { Boundary } from "./boundary";
 import { TemplateParser } from "./template-parser";
 import { queueUpdate, flushSync } from "./scheduler";
 import { KasperError, KErrorCode, KErrorCodeType } from "./types/error";
+import { handleError } from "./error-handler";
+import { isBatching } from "./scheduler";
 import * as KNode from "./types/nodes";
 
 const KEY_MAP: Record<string, string[]> = {
@@ -144,6 +146,15 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       this.interpreter.scope = scope;
       try {
         fn();
+      } catch (e) {
+        // Only route to error handler during reactive re-runs (batching enabled).
+        // During initial mount (flushSync / batching disabled) errors propagate normally.
+        if (isBatching()) {
+          const instance = this.interpreter.scope.get("$instance");
+          handleError(e, "render", instance);
+        } else {
+          throw e;
+        }
       } finally {
         this.interpreter.scope = prev;
       }
@@ -168,7 +179,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
   // evaluates expressions and returns the result of the first evaluation
   private execute(source: string, overrideScope?: Scope): any {
     const tokens = this.scanner.scan(source);
-    const expressions = this.parser.parse(tokens);
+    const expressions = this.parser.parse(tokens, source);
 
     const restoreScope = this.interpreter.scope;
     if (overrideScope) {
@@ -896,7 +907,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
 
   private evaluateExpression(source: string): string {
     const tokens = this.scanner.scan(source);
-    const expressions = this.parser.parse(tokens);
+    const expressions = this.parser.parse(tokens, source);
 
     let result = "";
     for (const expression of expressions) {
@@ -1049,7 +1060,7 @@ export class Transpiler implements KNode.KNodeVisitor<void> {
       finalArgs = { message: cleanMessage };
     }
 
-    throw new KasperError(code, finalArgs, undefined, undefined, tagName);
+    throw new KasperError(code, finalArgs, { tag: tagName });
   }
 
 }

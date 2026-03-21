@@ -1,7 +1,67 @@
 import { describe, it, expect } from "vitest";
 import { App, Component } from "../src/index";
+import { Scanner } from "../src/scanner";
+import { ExpressionParser } from "../src/expression-parser";
 import { TemplateParser } from "../src/template-parser";
 import { Transpiler } from "../src/transpiler";
+
+describe("Error message format", () => {
+  function catchError(fn: () => void): Error {
+    try { fn(); } catch (e: any) { return e; }
+    throw new Error("expected an error to be thrown");
+  }
+
+  it("scanner: error message contains the source line in the snippet", () => {
+    const err = catchError(() => new Scanner().scan("let x = @;"));
+    expect(err.message).toMatchInlineSnapshot(`
+      "[K002-3] Unexpected character '@'
+        > | let x = @;
+                     ^
+
+      See: https://kasperjs.top/reference/errors#k002-3
+      "
+    `);
+  });
+
+  it("expression parser: error message contains the source expression in the snippet", () => {
+    const source = "foo.bar(";
+    const err = catchError(() =>
+      new ExpressionParser().parse(new Scanner().scan(source), source)
+    );
+    expect(err.message).toMatchInlineSnapshot(`
+      "[K004-3] Expected expression, unexpected token ""
+        > | foo.bar(
+
+      See: https://kasperjs.top/reference/errors#k004-3
+      "
+    `);
+  });
+
+  it("template parser: error message contains the source markup in the snippet", () => {
+    const err = catchError(() => new TemplateParser().parse("<div>\n  </wrong>\n</div>"));
+    expect(err.message).toMatchInlineSnapshot(`
+      "[K003-5] Expected </div>
+          | <div>
+        > |   </wrong>
+          | </div>
+
+      See: https://kasperjs.top/reference/errors#k003-5
+      "
+    `);
+  });
+
+  it("transpiler: error message contains the error code and message, no snippet", () => {
+    const nodes = new TemplateParser().parse('<div @else></div>');
+    const err = catchError(() => new Transpiler().transpile(nodes, {}, document.createElement("div")));
+    expect(err.message).toMatchInlineSnapshot(`
+      "[K003-7] @else must be preceded by an @if or @elseif block.
+        at <div>
+
+      See: https://kasperjs.top/reference/errors#k003-7
+      "
+    `);
+  });
+});
 
 describe("Error System (New Checks)", () => {
   it("K001-2: throws if entry component is missing from registry", () => {
@@ -19,7 +79,7 @@ describe("Error System (New Checks)", () => {
     const parser = new TemplateParser();
     const transpiler = new Transpiler();
     const container = document.createElement("div");
-    
+
     const nodes = parser.parse('<router><route @component="Home" /></router>');
     expect(() => {
       transpiler.transpile(nodes, {}, container);
@@ -30,7 +90,7 @@ describe("Error System (New Checks)", () => {
     const parser = new TemplateParser();
     const transpiler = new Transpiler();
     const container = document.createElement("div");
-    
+
     const nodes = parser.parse('<router><guard><route @path="/" @component="Home" /></guard></router>');
     expect(() => {
       transpiler.transpile(nodes, {}, container);
@@ -42,7 +102,7 @@ describe("Error System (New Checks)", () => {
       const parser = new TemplateParser();
       const transpiler = new Transpiler();
       const container = document.createElement("div");
-      
+
       const nodes = parser.parse('<div @else></div>');
       expect(() => {
         transpiler.transpile(nodes, {}, container);
@@ -88,7 +148,7 @@ describe("Error System (New Checks)", () => {
       const parser = new TemplateParser();
       const transpiler = new Transpiler();
       const container = document.createElement("div");
-      
+
       const nodes = parser.parse('<div @if="true" @else></div>');
       expect(() => {
         transpiler.transpile(nodes, {}, container);
