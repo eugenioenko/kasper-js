@@ -30,6 +30,7 @@ export default defineConfig({
             { label: 'Pipes', link: '/guides/pipes/' },
             { label: 'Routing', link: '/guides/routing/' },
             { label: 'Lazy Loading', link: '/guides/lazy-loading/' },
+            { label: 'Error Handling', link: '/guides/error-handling/' },
             { label: 'AI-Driven Development', link: '/guides/agents/' },
             { label: 'Vite Integration', link: '/guides/vite/' }
           ]

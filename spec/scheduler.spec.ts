@@ -89,7 +89,7 @@ describe("Scheduler", () => {
     queueUpdate(instance, task);
     await nextTick();
     
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Error during component update:"), expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("[Kasper] Error during render:"), expect.any(Error));
     // Even if hook fails, the scheduler should continue (though current implementation might skip tasks for that component)
     // Actually, my current flush handles each component in a try-catch.
     

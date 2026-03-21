@@ -1,4 +1,5 @@
 import { Component } from "./component";
+import { handleError } from "./error-handler";
 
 type Task = () => void;
 
@@ -28,7 +29,7 @@ function flush() {
         instance.onRender();
       }
     } catch (e) {
-      console.error("[Kasper] Error during component update:", e);
+      handleError(e, 'render', instance);
     }
   }
   queue.clear();
@@ -39,7 +40,7 @@ function flush() {
     try {
       cb();
     } catch (e) {
-      console.error("[Kasper] Error in nextTick callback:", e);
+      handleError(e, 'render');
     }
   }
 }
@@ -67,6 +68,10 @@ export function queueUpdate(instance: Component, task: Task) {
  * Executes a function with batching disabled. 
  * Used for initial mount and manual renders.
  */
+export function isBatching(): boolean {
+  return batchingEnabled;
+}
+
 export function flushSync(fn: () => void) {
   const prev = batchingEnabled;
   batchingEnabled = false;
