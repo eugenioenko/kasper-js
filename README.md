@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build & Test](https://github.com/eugenioenko/kasper-js/actions/workflows/node.js.yml/badge.svg)](https://github.com/eugenioenko/kasper-js/actions)
 
-A lightweight component framework with fine-grained Signal-based reactivity. No virtual DOM. No magic compiler. Just components, signals, and surgical DOM updates.
+A signal, a class, and an HTML template. That's all you need, whether you're writing the code yourself or working with an AI agent.
 
 - **[Documentation](https://kasperjs.top)**
 - **[Live Demos](https://stackblitz.com/github/eugenioenko/kasper-js/tree/main/demos)**
@@ -14,17 +14,48 @@ A lightweight component framework with fine-grained Signal-based reactivity. No 
 
 ## Why Kasper.js
 
-Fine-grained signals are not new — SolidJS pioneered direct signal-to-DOM binding, Angular adopted signals in v17, and Vue's Composition API moves in the same direction. The signal primitive itself is a solved problem.
+Kasper exists because building reactive UIs shouldn't require understanding a compiler, a scheduler, a virtual DOM reconciler, and a hook dependency system.
 
-Kasper's position is different: it is a complete, self-contained framework — components, router, slots, lifecycle, expression evaluator, template parser — in under 4000 lines of TypeScript with zero runtime dependencies. No virtual DOM, no scheduler, no compiler that requires a dedicated language server. The entire dependency graph at runtime is the framework itself.
+**No build step required.** Drop a 16KB script tag and you have a complete reactive component framework — signals, router, slots, lazy loading, the works. The only thing a build pipeline adds is the `.kasper` single-file component format, which needs the Vite plugin to transform. Everything else runs directly in the browser.
 
-The design constraints are deliberate. Directives are valid HTML attributes, so templates parse as plain HTML without editor plugins or custom syntax highlighting. The expression evaluator is a custom recursive-descent parser — not `eval`, not `new Function`, not a third-party AST library — supporting arrow functions, optional chaining, nullish coalescing, pipeline operator, and spread without pulling in a single parse dependency. Each `{{expression}}`, `@if`, and `@each` binding registers its own effect directly against the DOM node it controls. When a signal changes, only that node is updated — no component re-render, no diffing pass, no scheduler queue.
+**Templates that read like HTML.** Kasper directives are standard HTML attributes: `@if`, `@each`, `@on:click`. Write `@if` where you'd write `if`, `@each` where you'd write a loop. Any template is readable by anyone who knows HTML, with no framework knowledge required. The expression evaluator is a custom recursive-descent parser, not `eval` and not `new Function`, so it works under strict Content Security Policies too.
 
-The result is a framework you can read in an afternoon, understand completely, and trust in production. It is not trying to replace React or Angular for large teams with complex tooling requirements. It is for projects where the right answer is fewer moving parts.
+**Components that clean up after themselves.** A component is a class. `this.watch()`, `this.effect()`, and `this.computed()` are all released automatically when the component is destroyed, via a single `AbortController` the class owns. No dependency arrays. No `return () => unsubscribe()`. No stale closure warnings. The component lifecycle is the class lifecycle.
+
+Under 4000 lines of TypeScript. 95% test coverage. Zero runtime dependencies. Built to stay that way.
 
 ---
 
 ## Quick Start
+
+**Option 1: Script tag, no build step.**
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <counter></counter>
+  <script type="module">
+    import { App, Component, signal } from 'https://cdn.jsdelivr.net/npm/kasper-js/dist/kasper.min.js';
+
+    class Counter extends Component {
+      count = signal(0);
+    }
+
+    Counter.template = `
+      <div>
+        <p>Count: {{count.value}}</p>
+        <button @on:click="count.value++">+</button>
+      </div>
+    `;
+
+    App({ root: document.body, entry: 'counter', registry: { counter: { component: Counter } } });
+  </script>
+</body>
+</html>
+```
+
+**Option 2: Vite project with single-file components.**
 
 ```bash
 npm create kasper-app@latest my-project
@@ -36,6 +67,8 @@ npm run dev
 ---
 
 ## What it looks like
+
+With the Vite plugin, using single-file components:
 
 ```html
 <!-- Counter.kasper -->
@@ -81,18 +114,19 @@ App({
 
 ## Features
 
+- **No build step** — runs from a CDN import or a local dist file. Signals, router, slots, and lazy loading all work without a bundler. The only thing a build adds is the `.kasper` single-file component format.
+- **HTML-first templates** — directives are standard HTML attributes: `@if`, `@elseif`, `@else`, `@each`, `@let`, `@on:event`, `@attr`, `@class`, `@style`, `@ref`. Structural directives use DOM boundaries — lightweight comment-node bookmarks that surgically replace only their own content when dependencies change.
+- **Automatic cleanup** — components are classes. `this.watch()`, `this.effect()`, and `this.computed()` are all released automatically when the component is destroyed via a shared `AbortController`. No dependency arrays, no manual unsubscribe.
 - **Fine-grained signals** — `signal()`, `computed()`, `effect()`, `batch()`, `peek()`. Reactivity is tracked at the binding level, not the component level. When a signal changes, Kasper updates only the specific DOM text nodes, attributes, and structural boundaries that depend on it. Siblings, parent elements, and unrelated components are untouched.
-- **Single-file components** — `<template>`, `<script>`, `<style>` in one `.kasper` file. The Vite plugin transforms them at build time into standard ES modules with zero runtime overhead. Imports in the script block are automatically hoisted into template scope via `$imports` — no need to re-declare imported functions or classes as component fields.
-- **Template directives** — `@if`, `@elseif`, `@else`, `@each`, `@let`, `@on:event`, `@attr`, `@class`, `@style`, `@ref` as standard HTML attributes. Structural directives (`@if`, `@each`) use DOM Boundaries — lightweight comment-node bookmarks that surgically replace only their own content when dependencies change.
 - **Event modifiers** — `@on:submit.prevent`, `@on:click.stop`, `@on:click.once`, `@on:scroll.passive`, `@on:click.capture`. All `@on:` listeners are registered via the component's `AbortController` and removed automatically on destroy.
-- **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template — no configuration object needed.
+- **Client-side router** — built-in `<router>`, `<route>`, `<guard>` components. Supports static paths, dynamic `:param` segments, catch-all `*` routes, per-route guards, and `<guard>` groups for protecting multiple routes under a single async check. Routes are declared in the template, no configuration object needed.
 - **Slots** — default and named content transclusion via `<slot />` and `@slot`. Named slots use `@name` / `@slot` for attribute consistency across the framework.
-- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle — after `onMount` on first render, then after each reactive update. `onChanges` fires before each reactive re-render, not on first mount. The standard `constructor` covers anything that needs to run before the framework touches the component.
-- **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically. 
-- **Manual rendering** — `this.render()` triggers a full template teardown and rebuild for cases where imperative updates are preferred over reactive bindings. Prefer signals for normal use; `render()` exists for third-party library integration and non-reactive data sources.
-- **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. Evaluated against component scope with fallback to `$imports` and then `window`. No `eval`, no `new Function` — compatible with strict Content Security Policies out of the box.
+- **Lifecycle hooks** — `onMount`, `onRender`, `onChanges`, `onDestroy` with clear execution ordering. `onMount` fires once after the first render with the DOM ready and `args` populated. `onRender` fires after every render cycle. `onChanges` fires before each reactive re-render, not on first mount.
+- **State management** — global signals as plain ES modules. No store class, no reducers, no context API, no provider tree. Import a signal from any file; any component that reads it in its template will update automatically.
+- **Single-file components (optional)** — with the Vite plugin, write `<template>`, `<script>`, and `<style>` in one `.kasper` file. Imports in the script block are hoisted into template scope via `$imports` automatically.
+- **Expression language** — custom recursive-descent parser supporting arrow functions, ternary, optional chaining, nullish coalescing, pipeline operator (`|>`), spread, array/object literals, and method calls. No `eval`, no `new Function`, compatible with strict Content Security Policies.
 - **TypeScript** — fully typed throughout. Declaration files generated separately. `.kasper` files typed via ambient module declaration.
-- **Zero dependencies** — no runtime dependencies. Ships as a single ES module. Vite plugin is the only dev-time tooling required.
+- **Zero dependencies** — no runtime dependencies. Ships as a single ES module.
 
 ---
 

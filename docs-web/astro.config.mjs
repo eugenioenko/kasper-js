@@ -6,7 +6,7 @@ export default defineConfig({
     starlight({
       customCss: ['./src/styles/custom.css'],
       title: 'Kasper.js',
-      description: 'A lightweight component framework with fine-grained signal-based reactivity.',
+      description: 'Reactive components without the complexity. A signal, a class, and an HTML template — for developers and AI agents.',
       logo: {
         src: './src/assets/kasper.svg',
       },
@@ -30,6 +30,7 @@ export default defineConfig({
             { label: 'Pipes', link: '/guides/pipes/' },
             { label: 'Routing', link: '/guides/routing/' },
             { label: 'Lazy Loading', link: '/guides/lazy-loading/' },
+            { label: 'Without a Build Pipeline', link: '/guides/without-a-build/' },
             { label: 'AI-Driven Development', link: '/guides/agents/' },
             { label: 'Vite Integration', link: '/guides/vite/' }
           ]

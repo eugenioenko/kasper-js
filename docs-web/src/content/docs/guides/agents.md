@@ -3,7 +3,7 @@ title: Using with AI Agents
 description: Using Kasper.js with AI coding agents and LLMs.
 ---
 
-Kasper.js is small enough that an AI agent can hold its entire API surface in a single context window. This makes it well-suited for AI-assisted development — agents can generate correct, idiomatic Kasper code without hallucinating patterns from larger frameworks.
+Kasper.js works well with AI coding agents for two reasons. First, HTML-first templates mean agents generate valid markup rather than composing JSX or managing tagged template literal syntax. Second, the entire API surface fits in a single context window, so agents can write correct, idiomatic Kasper code without guessing patterns from larger frameworks.
 
 ## llms.txt
 
