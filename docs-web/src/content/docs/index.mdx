@@ -1,10 +1,10 @@
 ---
 title: Kasper.js
-description: A lightweight component framework with fine-grained signal-based reactivity.
+description: Reactive components without the complexity. A signal, a class, and an HTML template — for developers and AI agents.
 template: splash
 hero:
   title: Kasper.js
-  tagline: A lightweight component framework with fine-grained signal-based reactivity and single-file components.
+  tagline: A signal, a class, and an HTML template. That's all you need, whether you're writing the code yourself or working with an AI agent.
   actions:
     - text: Get Started
       link: /getting-started/installation/
@@ -25,25 +25,25 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-Kasper.js is a lightweight framework for building reactive web UIs. It sits between simple templating engines and full frameworks like Vue or React — small enough to understand completely, powerful enough for real applications.
+Kasper exists because building reactive UIs shouldn't require understanding a compiler, a scheduler, a virtual DOM reconciler, and a hook dependency system.
 
 <CardGrid>
-  <Card title="Fine-grained Signals" icon="rocket">
+  <Card title="No Build Step Required" icon="rocket">
+    Drop a 16KB script tag and start building. Signals, router, slots, and lazy loading all work without a bundler. A build pipeline adds only the `.kasper` single-file component format.
+  </Card>
+  <Card title="HTML-first Templates" icon="document">
+    Directives are standard HTML attributes: `@if`, `@each`, `@on:click`. Write `@if` where you'd write `if`. Templates are readable by anyone who knows HTML.
+  </Card>
+  <Card title="Automatic Cleanup" icon="approve-check">
+    Components are classes. `this.watch()`, `this.effect()`, and `this.computed()` all release automatically on destroy. No dependency arrays, no manual unsubscribe.
+  </Card>
+  <Card title="Fine-grained Signals" icon="list-format">
     Reactive primitives that update only the exact DOM nodes that depend on them. No virtual DOM, no diffing, no full re-renders.
   </Card>
-  <Card title="Single-file Components" icon="document">
-    Write `<template>`, `<script>`, and `<style>` in a single `.kasper` file. Powered by a Vite plugin with full TypeScript support.
+  <Card title="AI Agent Ready" icon="star">
+    Entire API fits in a single context window. Paste [llms.txt](https://kasperjs.top/llms.txt) into any agent and it can write idiomatic Kasper code from scratch.
   </Card>
   <Card title="Rich Expression Language" icon="puzzle">
     Arrow functions, pipeline operator `|>`, optional chaining, spread, and more — a proper AST-based expression interpreter, not eval.
-  </Card>
-  <Card title="Template Directives" icon="list-format">
-    `@if`, `@each`, `@let`, `@on`, `@attr`, `@ref` — valid HTML attributes with surgical DOM updates and automatic cleanup.
-  </Card>
-  <Card title="AI Agent Ready" icon="star">
-    16KB, zero dependencies, entire API fits in a single context window. Paste [llms.txt](https://kasperjs.top/llms.txt) into any agent and it can write idiomatic Kasper code from scratch.
-  </Card>
-    <Card title="TypeScript First" icon="approve-check">
-    Written in TypeScript, ships declaration files. Full type checking and autocomplete out of the box.
   </Card>
 </CardGrid>
