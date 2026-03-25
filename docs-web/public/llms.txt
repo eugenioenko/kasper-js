@@ -289,6 +289,12 @@ user.value.name = 'Alice';                       // does NOT trigger ✗
 <!-- system modifiers: .ctrl .shift .alt .meta -->
 <!-- $event is the only implicit variable in event handlers — it holds the raw DOM event -->
 
+<!-- {{ }} interpolation works inside attribute values — reactive, updates when signals change -->
+<div class="item {{isActive ? 'active' : ''}}"></div>
+<a href="/user/{{userId}}">link</a>
+<!-- Use this for mixing static and dynamic parts in an attribute value -->
+<!-- For class/style, @class and @style are preferred when the whole value is dynamic -->
+
 <!-- Attribute binding shorthand — @attr-name="expr" works for ANY valid HTML attribute -->
 <!-- This is a general mechanism, not a list of special directives -->
 <input @value="name.value" @placeholder="hint" />

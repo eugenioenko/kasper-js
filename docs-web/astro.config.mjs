@@ -4,6 +4,9 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
   integrations: [
     starlight({
+      components: {
+        SocialIcons: './src/components/SocialIcons.astro',
+      },
       customCss: ['./src/styles/custom.css'],
       head: [
         {
@@ -48,7 +51,8 @@ gtag('config', 'G-04FFNYJXWM');`,
             { label: 'Lazy Loading', link: '/guides/lazy-loading/' },
             { label: 'Without a Build Pipeline', link: '/guides/without-a-build/' },
             { label: 'AI-Driven Development', link: '/guides/agents/' },
-            { label: 'Vite Integration', link: '/guides/vite/' }
+            { label: 'Vite Integration', link: '/guides/vite/' },
+            { label: 'Examples', link: '/guides/examples/' }
           ]
         },
         { label: 'Reference', autogenerate: { directory: 'reference' } },

@@ -1,0 +1,20 @@
+---
+import Default from '@astrojs/starlight/components/SocialIcons.astro';
+---
+
+<a href="/playground/" class="nav-playground-link">Playground</a>
+<Default {...Astro.props} />
+
+<style>
+  .nav-playground-link {
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .nav-playground-link:hover {
+    color: var(--sl-color-white);
+  }
+</style>
