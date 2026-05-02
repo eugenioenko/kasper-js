@@ -6,8 +6,8 @@ import { navigate, Router } from "./router";
 import { Scanner } from "./scanner";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
-import { signal, effect, computed, batch, watch } from "./signal";
+import { Signal, SignalOptions, signal, effect, computed, batch, watch } from "./signal";
 import { nextTick } from "./scheduler";
 
-export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, signal, effect, computed, batch, watch, nextTick };
+export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, Signal, SignalOptions, signal, effect, computed, batch, watch, nextTick };
 export { execute, transpile, bootstrap as App, lazy, Component, navigate, Router };
