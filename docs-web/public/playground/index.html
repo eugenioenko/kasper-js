@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kasper.js Playground</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: #1e1e1e;
+    }
+
+    nav {
+      height: 48px;
+      background: #23262f;
+      display: flex;
+      align-items: center;
+      padding: 0 1.25rem;
+      border-bottom: 1px solid #2e3140;
+      flex-shrink: 0;
+      gap: 1rem;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .nav-brand img { width: 22px; height: 22px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-left: auto;
+    }
+
+    .nav-links a {
+      color: #a0a8c0;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .nav-links a:hover { color: #fff; }
+
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    #editor-pane {
+      flex: 1;
+      overflow: hidden;
+      border-right: 1px solid #2e3140;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #editor { flex: 1; overflow: hidden; }
+
+    #preview-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #181a20;
+    }
+
+    #preview {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: transparent;
+    }
+
+    #error-bar {
+      display: none;
+      background: #2a1a1a;
+      color: #f88;
+      font-size: 0.8rem;
+      font-family: monospace;
+      padding: 0.5rem 1rem;
+      border-top: 1px solid #5a2a2a;
+      white-space: pre-wrap;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    #error-bar.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="/">
+      <img src="/kasper.svg" alt="Kasper.js" />
+      Kasper.js Playground
+    </a>
+    <div class="nav-links">
+      <a href="/getting-started/introduction/">Docs</a>
+      <a href="https://github.com/eugenioenko/kasper-js" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.579.688.481C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <main>
+    <div id="editor-pane">
+      <div id="editor"></div>
+      <div id="error-bar"></div>
+    </div>
+    <div id="preview-pane">
+      <iframe id="preview" sandbox="allow-scripts"></iframe>
+    </div>
+  </main>
+
+  <script>
+    var require = { paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+  <script>
+    const CDN = 'https://cdn.jsdelivr.net/npm/kasper-js/dist/kasper.min.js';
+
+    const DEFAULT_EXAMPLE = `<template>
+  <div class="rating">
+    <h2 class="title">Rate your experience</h2>
+
+    <div class="stars">
+      <span
+        @each="star of stars.value"
+        @on:click="select(star)"
+        @on:mouseover="hovered.value = star"
+        @on:mouseleave="hovered.value = 0"
+        class="star {{star <= (hovered.value || rating.value) ? 'lit star-pop' : ''}}"
+      >★</span>
+    </div>
+
+    <p class="label">{{label.value}}</p>
+
+    <p @if="rating.value > 0" class="feedback">
+      You rated this {{rating.value}} out of 5.
+    </p>
+    <p @else class="feedback muted">Hover to preview, click to rate.</p>
+
+    <ul @if="history.value.length > 0" class="history">
+      <li @each="r of history.value" class="history-item">★ {{r}}</li>
+    </ul>
+  </div>
+</template>
+
+<script>
+import { Component, signal, computed } from 'kasper-js';
+
+export class App extends Component {
+  stars = signal([1, 2, 3, 4, 5]);
+  rating = signal(0);
+  hovered = signal(0);
+  history = signal([]);
+
+  label = computed(() => {
+    const r = this.hovered.value || this.rating.value;
+    return ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'][r] ?? '';
+  });
+
+  select(star) { this.rating.value = star; }
+
+  onMount() {
+    this.effect(() => {
+      if (this.rating.value > 0) {
+        this.history.value = [...this.history.peek(), this.rating.value];
+      }
+    });
+  }
+}
+<\/script>
+
+<style>
+	.stars  { display: flex; gap: 0.5rem; font-size: 2.5rem; margin: 1rem 0; justify-content: center; }
+	.star     { cursor: pointer; color: #3a3f52; transition: color 0.1s; }
+	.star.lit { color: #e04f9a; }
+	.label  { text-align: center; font-size: 1.1rem; font-weight: 600; min-height: 1.5rem; color: #e04f9a; }
+	.feedback { text-align: center; color: #a0a8c0; font-size: 0.875rem; margin-top: 0.5rem; }
+	.muted  { color: #555; }
+</style>`;
+
+    const PREVIEW_GLOBAL_STYLES = `
+      @keyframes star-pop {
+        0%   { transform: scale(1); }
+        40%  { transform: scale(1.5); }
+        70%  { transform: scale(0.95); }
+        100% { transform: scale(1.15); }
+      }
+      .star-pop { animation: star-pop 0.25s ease-out forwards; }
+      .history { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; margin-top: 0.75rem; list-style: none; padding: 0; }
+      .history-item { font-size: 0.75rem; color: #e04f9a99; }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        height: 100%;
+        background: #181a20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: #e0e6f0;
+      }
+      .card {
+        background: #23262f;
+        border: 1px solid #2e3140;
+        border-radius: 12px;
+        padding: 1.5rem;
+        width: 100%;
+        max-width: 400px;
+      }
+      input {
+        background: #181a20;
+        border: 1px solid #3a3f52;
+        color: #e0e6f0;
+        padding: 0.45rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        width: 100%;
+        outline: none;
+      }
+      input:focus { border-color: #e04f9a; }
+      input::placeholder { color: #555; }
+      button {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: 1px solid #3a3f52;
+        background: #2e3140;
+        color: #e0e6f0;
+        border-radius: 6px;
+        transition: background 0.15s;
+      }
+      button:hover { background: #383d52; }
+      ul { list-style: none; padding: 0; }
+      .btn-add { background: #e04f9a22; border-color: #e04f9a55; color: #e04f9a; white-space: nowrap; }
+      .btn-add:hover { background: #e04f9a33; }
+    `;
+
+    function transformSFC(source) {
+      const templateMatch = source.match(/<template>([\s\S]*?)<\/template>/);
+      const scriptMatch = source.match(/<script>([\s\S]*?)<\/script>/);
+      const styleMatch = source.match(/<style>([\s\S]*?)<\/style>/);
+
+      const template = templateMatch?.[1]?.trim() ?? '';
+      const script = scriptMatch?.[1]?.trim() ?? '';
+      const style = styleMatch?.[1]?.trim() ?? '';
+
+      const classMatch = script.match(/export\s+class\s+(\w+)/);
+      const className = classMatch?.[1] ?? 'App';
+
+      const tagName = className.replace(/([A-Z])/g, (m, l, i) => (i > 0 ? '-' : '') + l.toLowerCase());
+
+      const escapedTemplate = template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
+      let transformed = script;
+      transformed += `\n\n${className}.template = \`${escapedTemplate}\`;`;
+      transformed += `\nimport { App as __KasperApp } from 'kasper-js';`;
+      transformed += `\n__KasperApp({ root: document.querySelector('.card'), entry: '${tagName}', registry: { '${tagName}': { component: ${className} } } });`;
+
+      return { script: transformed, style };
+    }
+
+    function buildPreviewHTML({ script, style }) {
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <script type="importmap">{"imports":{"kasper-js":"${CDN}"}}<\/script>
+  <style>${PREVIEW_GLOBAL_STYLES}</style>
+  <style>${style}</style>
+</head>
+<body>
+  <div class="card"></div>
+  <script type="module">
+${script}
+  <\/script>
+</body>
+</html>`;
+    }
+
+    const errorBar = document.getElementById('error-bar');
+
+    function showError(msg) {
+      errorBar.textContent = msg;
+      errorBar.classList.add('visible');
+    }
+
+    function clearError() {
+      errorBar.classList.remove('visible');
+      errorBar.textContent = '';
+    }
+
+    function updatePreview(source) {
+      clearError();
+      try {
+        const transformed = transformSFC(source);
+        const html = buildPreviewHTML(transformed);
+        document.getElementById('preview').srcdoc = html;
+      } catch (e) {
+        showError(e.message);
+      }
+    }
+
+    let updateTimer;
+    function scheduleUpdate(source) {
+      clearTimeout(updateTimer);
+      updateTimer = setTimeout(() => updatePreview(source), 500);
+    }
+
+    require(['vs/editor/editor.main'], function () {
+      const editor = monaco.editor.create(document.getElementById('editor'), {
+        value: DEFAULT_EXAMPLE,
+        language: 'html',
+        theme: 'vs-dark',
+        fontSize: 14,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        tabSize: 2,
+        automaticLayout: true,
+        padding: { top: 12 },
+      });
+
+      updatePreview(editor.getValue());
+
+      editor.onDidChangeModelContent(() => {
+        scheduleUpdate(editor.getValue());
+      });
+    });
+  </script>
+
+</body>
+</html>
