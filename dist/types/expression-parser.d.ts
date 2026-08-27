@@ -3,7 +3,8 @@ import { Token } from "./types/token";
 export declare class ExpressionParser {
     private current;
     private tokens;
-    parse(tokens: Token[]): Expr.Expr[];
+    private source;
+    parse(tokens: Token[], source?: string): Expr.Expr[];
     private match;
     private advance;
     private peek;

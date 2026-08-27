@@ -54,7 +54,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   }
 
   public error(code: KErrorCodeType, args: any = {}, line?: number, col?: number): void {
-    throw new KasperError(code, args, line, col);
+    throw new KasperError(code, args, { line, col });
   }
 
   public visitVariableExpr(expr: Expr.Variable): any {
@@ -127,7 +127,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
 
   private templateParse(source: string): string {
     const tokens = this.scanner.scan(source);
-    const expressions = this.parser.parse(tokens);
+    const expressions = this.parser.parse(tokens, source);
     let result = "";
     for (const expression of expressions) {
       result += this.evaluate(expression).toString();

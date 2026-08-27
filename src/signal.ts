@@ -1,4 +1,5 @@
 import { KasperError, KErrorCode } from "./types/error";
+import { handleError } from "./error-handler";
 
 type Listener = () => void;
 
@@ -45,7 +46,7 @@ export class Signal<T> {
           sub();
         }
         for (const watcher of this.watchers) {
-          try { watcher(newValue, oldValue); } catch (e) { console.error("Watcher error:", e); }
+          try { watcher(newValue, oldValue); } catch (e) { handleError(e, 'watcher'); }
         }
       }
     }
@@ -162,7 +163,7 @@ export function batch(fn: () => void): void {
       sub();
     }
     for (const watcher of watchers) {
-      try { watcher(); } catch (e) { console.error("Watcher error:", e); }
+      try { watcher(); } catch (e) { handleError(e, 'watcher'); }
     }
   }
 }

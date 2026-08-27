@@ -79,33 +79,64 @@ export const ErrorTemplates: Record<string, (args: any) => string> = {
   "K007-2": (a) => a.message,
 };
 
+function codeSnippet(source: string, line: number, col: number, context = 2): string {
+  const lines = source.split("\n");
+  const errorLine = line - 1;
+  const start = Math.max(0, errorLine - context);
+  const end = Math.min(lines.length - 1, errorLine + context);
+
+  const result: string[] = [""];
+  for (let i = start; i <= end; i++) {
+    const indicator = i === errorLine ? ">" : " ";
+    result.push(`  ${indicator} | ${lines[i]}`);
+    if (i === errorLine && col > 0) {
+      const pointer = " ".repeat(6 + col - 1) + "^";
+      result.push(pointer);
+    }
+  }
+  return result.join("\n");
+}
+
+export interface KasperErrorOptions {
+  line?: number;
+  col?: number;
+  tag?: string;
+  source?: string;
+}
+
 export class KasperError extends Error {
+  public line?: number;
+  public col?: number;
+  public tagName?: string;
+
   constructor(
     public code: KErrorCodeType,
     public args: any = {},
-    public line?: number,
-    public col?: number,
-    public tagName?: string
+    options: KasperErrorOptions = {}
   ) {
-    // Detect environment
+    const { line, col, tag, source } = options;
+
     const isDev =
       typeof process !== "undefined"
         ? process.env.NODE_ENV !== "production"
         : (import.meta as any).env?.MODE !== "production";
 
     const template = ErrorTemplates[code];
-    const message = template 
-      ? template(args) 
+    const message = template
+      ? template(args)
       : (typeof args === 'string' ? args : "Unknown error");
-    
-    const location = line !== undefined ? ` (${line}:${col})` : "";
-    const tagInfo = tagName ? `\n  at <${tagName}>` : "";
+
+    const tagInfo = tag ? `\n  at <${tag}>` : "";
+    const snippet = line !== undefined && source ? codeSnippet(source, line, col ?? 0) : "";
     const link = isDev
-      ? `\n\nSee: https://kasperjs.top/reference/errors#${code.toLowerCase().replace(".", "")}`
+      ? `\n\nSee: https://kasperjs.top/reference/errors#${code.toLowerCase().replace(".", "")}\n`
       : "";
 
-    super(`[${code}] ${message}${location}${tagInfo}${link}`);
+    super(`[${code}] ${message}${tagInfo}${snippet}${link}`);
     this.name = "KasperError";
+    this.line = line;
+    this.col = col;
+    this.tagName = tag;
   }
 
   public withTag(tagName: string): this {

@@ -34,6 +34,7 @@ export declare class Component<TArgs extends Record<string, any> = Record<string
     onRender(): void;
     onChanges(): void;
     onDestroy(): void;
+    onError?(error: Error, phase: string): void;
     render(): void;
 }
 export type KasperEntity = Component | Record<string, any> | null | undefined;

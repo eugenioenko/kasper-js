@@ -13,3 +13,4 @@ import { nextTick } from "./scheduler";
 export { ExpressionParser, Interpreter, Scanner, TemplateParser, Transpiler, Signal, signal, effect, computed, batch, watch, nextTick };
 export type { SignalOptions };
 export { execute, transpile, bootstrap as App, lazy, Component, navigate, Router };
+export type { ErrorHandlerFn } from "./error-handler";

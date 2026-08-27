@@ -17,20 +17,19 @@ describe("KasperError", () => {
   });
 
   it("message includes code and value", () => {
-    const err = new KasperError("K000" as any, "something failed", 3, 5);
-    expect(err.message).toContain("[K000] something failed (3:5)");
+    const err = new KasperError("K000" as any, "something failed");
+    expect(err.message).toContain("[K000] something failed");
     expect(err.message).toContain("See: https://kasperjs.top/reference/errors#k000");
   });
 
   it("exposes line and col", () => {
-    const err = new KasperError("K000" as any, "something failed", 3, 5);
+    const err = new KasperError("K000" as any, "something failed", { line: 3, col: 5 });
     expect(err.line).toBe(3);
     expect(err.col).toBe(5);
   });
 
-
   it("has a stack trace", () => {
-    expect(new KasperError("K000" as any, "something failed", 3, 5).stack).toBeDefined();
+    expect(new KasperError("K000" as any, "something failed").stack).toBeDefined();
   });
 });
 
