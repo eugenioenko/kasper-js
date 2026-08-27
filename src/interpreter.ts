@@ -54,7 +54,7 @@ export class Interpreter implements Expr.ExprVisitor<any> {
   }
 
   public error(code: KErrorCodeType, args: any = {}, line?: number, col?: number): void {
-    throw new KasperError(code, args, { line, col });
+    throw new KasperError(code, args, { line: line, col: col });
   }
 
   public visitVariableExpr(expr: Expr.Variable): any {

@@ -18,16 +18,18 @@ export function handleError(error: unknown, phase: ErrorPhase, component?: any):
     try {
       component.onError(err, phase);
       return;
-    } catch (e) {
-      // onError itself threw, fall through with original error
+    } catch {
+      // onError itself threw, fall through
     }
   }
 
   if (globalHandler) {
     try {
-      globalHandler(err, { component, phase });
+      globalHandler(err, { component: component, phase: phase });
       return;
-    } catch (_) {}
+    } catch {
+      // global handler threw, fall through
+    }
   }
 
   console.error(`[Kasper] Error during ${phase}:`, err);
