@@ -1,4 +1,5 @@
 import { ComponentClass, ComponentRegistry } from "./component";
+import { ErrorHandlerFn } from "./error-handler";
 export declare function lazy(importer: () => Promise<Record<string, ComponentClass>>): {
     component: () => Promise<ComponentClass>;
     lazy: true;
@@ -12,5 +13,6 @@ export interface KasperConfig {
     entry?: string;
     registry: ComponentRegistry;
     mode?: "development" | "production";
+    onError?: ErrorHandlerFn;
 }
 export declare function bootstrap(config: KasperConfig): import("./component").Component<Record<string, any>>;

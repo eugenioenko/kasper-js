@@ -1,0 +1,18 @@
+<script type="module">
+  import {
+    App,
+    Component,
+    signal,
+  } from "https://cdn.jsdelivr.net/npm/kasper-js/dist/kasper.min.js";
+
+  class Counter extends Component {
+    count = signal(0);
+  }
+  Counter.template = `<button @on:click="count.value++">{{count.value}}</button>`;
+
+  App({
+    root: document.body,
+    entry: "counter",
+    registry: { counter: { component: Counter } },
+  });
+</script>

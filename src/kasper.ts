@@ -2,6 +2,7 @@ import { ComponentClass, ComponentRegistry } from "./component";
 import { TemplateParser } from "./template-parser";
 import { Transpiler } from "./transpiler";
 import { KasperError, KErrorCode } from "./types/error";
+import { setErrorHandler, ErrorHandlerFn } from "./error-handler";
 
 export function lazy(
   importer: () => Promise<Record<string, ComponentClass>>
@@ -40,6 +41,7 @@ export interface KasperConfig {
   entry?: string;
   registry: ComponentRegistry;
   mode?: "development" | "production";
+  onError?: ErrorHandlerFn;
 }
 
 function createComponent(transpiler: Transpiler, tag: string) {
@@ -76,6 +78,10 @@ export function bootstrap(config: KasperConfig) {
       KErrorCode.ENTRY_COMPONENT_NOT_FOUND,
       { tag: entryTag }
     );
+  }
+
+  if (config.onError) {
+    setErrorHandler(config.onError);
   }
 
   const transpiler = new Transpiler({ registry: config.registry });

@@ -347,6 +347,6 @@ export class Scanner {
   }
 
   private error(code: KErrorCodeType, args: any = {}): void {
-    throw new KasperError(code, args, this.line, this.col);
+    throw new KasperError(code, args, { line: this.line, col: this.col, source: this.source });
   }
 }
